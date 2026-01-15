@@ -1,0 +1,16 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Hexagon Border (Control Plane) - Lighter for dark bg -->
+  <path d="M32 4L56.785 18V46L32 60L7.215 46V18L32 4Z"
+        stroke="#94A3B8"
+        stroke-width="3"
+        fill="none"
+        stroke-linejoin="round"/>
+
+  <!-- Inner 3D Cube (Data Plane / Pod) - Brighter for dark bg -->
+  <!-- Top face -->
+  <path d="M32 18L44 25V25L32 32L20 25V25L32 18Z" fill="#67E8F9"/>
+  <!-- Left face -->
+  <path d="M20 25L32 32V46L20 39V25Z" fill="#22D3EE"/>
+  <!-- Right face -->
+  <path d="M44 25L32 32V46L44 39V25Z" fill="#06B6D4"/>
+</svg>

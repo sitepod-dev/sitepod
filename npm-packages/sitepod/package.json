@@ -1,0 +1,35 @@
+{
+  "name": "sitepod",
+  "version": "0.1.0",
+  "description": "Self-hosted static site deployments - deploy once, rollback in seconds",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sitepod-dev/sitepod"
+  },
+  "homepage": "https://sitepod.dev",
+  "keywords": [
+    "static-site",
+    "deployment",
+    "hosting",
+    "cli",
+    "self-hosted",
+    "jamstack"
+  ],
+  "bin": {
+    "sitepod": "bin/sitepod.js"
+  },
+  "files": [
+    "bin"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "optionalDependencies": {
+    "@sitepod/darwin-arm64": "0.1.0",
+    "@sitepod/darwin-x64": "0.1.0",
+    "@sitepod/linux-x64": "0.1.0",
+    "@sitepod/linux-arm64": "0.1.0",
+    "@sitepod/win32-x64": "0.1.0"
+  }
+}

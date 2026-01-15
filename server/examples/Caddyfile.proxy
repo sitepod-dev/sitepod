@@ -1,0 +1,21 @@
+# Caddyfile for Reverse Proxy Mode
+# Use when running behind Traefik, Nginx, Coolify, or other reverse proxy
+#
+# Configure your proxy to:
+#   1. Route *.{SITEPOD_DOMAIN} to this container:8080
+#   2. Handle SSL termination
+#   3. Pass Host header correctly
+
+{
+    admin off
+    auto_https off
+    order sitepod first
+}
+
+:8080 {
+    sitepod {
+        storage_path {$SITEPOD_DATA_DIR:/data}
+        data_dir {$SITEPOD_DATA_DIR:/data}
+        domain {$SITEPOD_DOMAIN}
+    }
+}

@@ -1,0 +1,94 @@
+<div class="relative w-full h-[320px] rounded-lg border border-slate-800 bg-slate-950 overflow-hidden font-mono text-xs select-none shadow-xl">
+    <!-- Diagram Grid -->
+    <div class="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:16px_16px]"></div>
+
+    <div class="relative z-10 grid h-full grid-cols-[minmax(0,1fr)_3rem_minmax(0,1fr)_3rem_minmax(0,1fr)] px-6 py-6">
+        <!-- CONTROL PLANE -->
+        <div class="flex flex-col gap-3 min-h-0">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Control Plane (Refs)</div>
+            <div class="flex flex-col gap-3 flex-1 min-h-0 justify-center">
+                <div class="group relative flex items-center gap-3 p-2 pr-4 rounded bg-slate-900 border border-slate-800 shadow-sm hover:border-cyan-500/50 transition-colors cursor-default">
+                    <div class="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.5)]"></div>
+                    <div>
+                        <div class="text-slate-200 font-bold">prod</div>
+                        <div class="text-slate-500 text-[10px]">refs/heads/main</div>
+                    </div>
+                </div>
+                <div class="group relative flex items-center gap-3 p-2 pr-4 rounded bg-slate-900 border border-slate-800 shadow-sm hover:border-slate-700 transition-colors opacity-60">
+                    <div class="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+                    <div>
+                        <div class="text-slate-300 font-bold">beta</div>
+                        <div class="text-slate-600 text-[10px]">refs/heads/dev</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONNECTOR: CONTROL -> DATA -->
+        <div class="flex items-center justify-center">
+            <svg class="w-full h-6" viewBox="0 0 100 20" preserveAspectRatio="none">
+                <line x1="0" y1="10" x2="88" y2="10" stroke="#334155" stroke-width="2" />
+                <polygon points="88,5 100,10 88,15" fill="#334155" />
+            </svg>
+        </div>
+
+        <!-- DATA PLANE -->
+        <div class="flex flex-col gap-3 min-h-0">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Data Plane (Snapshots)</div>
+            <div class="flex flex-col gap-3 flex-1 min-h-0 justify-center">
+                <div class="relative w-48 p-3 rounded bg-slate-900 border border-slate-700 shadow-xl">
+                    <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
+                        <span class="text-cyan-400 font-bold uppercase">c8f1a2...</span>
+                        <span class="text-[10px] text-slate-500">2m ago</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>index.html</span>
+                            <span class="text-slate-600">e4b1...</span>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>app.js</span>
+                            <span class="text-slate-600">92a8...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONNECTOR: DATA -> STORAGE -->
+        <div class="flex items-center justify-center">
+            <svg class="w-full h-16" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path d="M0 50 H35" stroke="#334155" stroke-width="2" fill="none" />
+                <path d="M35 50 C55 50 65 30 100 30" stroke="#334155" stroke-width="2" fill="none" />
+                <path d="M35 50 C55 50 65 70 100 70" stroke="#334155" stroke-width="2" fill="none" />
+                <polygon points="96,26 100,30 96,34" fill="#334155" />
+                <polygon points="96,66 100,70 96,74" fill="#334155" />
+            </svg>
+        </div>
+
+        <!-- STORAGE -->
+        <div class="flex flex-col gap-3 min-h-0">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold text-right">Content Addressable</div>
+            <div class="flex flex-col gap-2 flex-1 min-h-0 justify-center items-end">
+                <div class="flex items-center gap-2 justify-end">
+                    <span class="text-slate-600 text-[10px]">e4b1...</span>
+                    <div class="w-8 h-8 rounded bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-400 text-[10px] font-bold">HTML</div>
+                </div>
+                <div class="flex items-center gap-2 justify-end">
+                    <span class="text-slate-600 text-[10px]">92a8...</span>
+                    <div class="w-8 h-8 rounded bg-slate-950 border border-slate-800 flex items-center justify-center text-cyan-500/80 text-[10px] font-bold">JS</div>
+                </div>
+                <div class="flex items-center gap-2 justify-end opacity-50">
+                    <span class="text-slate-600 text-[10px]">7f2c...</span>
+                    <div class="w-8 h-8 rounded bg-slate-950 border border-slate-800 flex items-center justify-center text-slate-600 text-[10px] font-bold">CSS</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Flair: Active Status Pulse -->
+    <div class="absolute bottom-4 left-4 flex items-center gap-2 px-2 py-1 rounded border border-lime-400/20 bg-lime-400/5">
+        <div class="w-1.5 h-1.5 rounded-full bg-lime-400 animate-pulse"></div>
+        <span class="text-[10px] font-bold text-lime-400">SYSTEM ONLINE</span>
+    </div>
+</div>

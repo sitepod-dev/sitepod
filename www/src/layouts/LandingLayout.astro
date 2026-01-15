@@ -1,0 +1,76 @@
+---
+import '../styles/global.css';
+
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="description" content="Deploy static sites with instant rollback. Self-hosted alternative to Vercel/Netlify. One command deploy, immutable versions, zero vendor lock-in." />
+		<meta name="keywords" content="static site, deployment, self-hosted, vercel alternative, netlify alternative, rollback, CDN" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+        <script is:inline>
+            (() => {
+                try {
+                    const theme = localStorage.getItem('starlight-theme') || 'dark';
+                    document.documentElement.setAttribute('data-theme', theme);
+                } catch {
+                    document.documentElement.setAttribute('data-theme', 'dark');
+                }
+            })();
+        </script>
+	</head>
+	<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-300 font-sans antialiased selection:bg-cyan-200 selection:text-cyan-900 dark:selection:bg-cyan-500/30 dark:selection:text-cyan-200">
+        <!-- Engineering Grid Background -->
+        <div class="fixed inset-0 z-[-1] pointer-events-none">
+            <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+            <div class="absolute left-0 right-0 top-0 -z-10 m-auto h-[310px] w-[310px] rounded-full bg-cyan-500/5 opacity-20 blur-[100px]"></div>
+        </div>
+		<slot />
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--font-sans: 'Inter', system-ui, sans-serif;
+		--font-mono: 'JetBrains Mono', monospace;
+	}
+	body {
+		font-family: var(--font-sans);
+	}
+    h1, h2, h3, h4, .font-display {
+        letter-spacing: -0.02em;
+    }
+	code, pre, .font-mono {
+		font-family: var(--font-mono);
+	}
+    /* Ops-grade Scrollbar */
+    ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+        background: var(--sp-bg);
+        border-left: 1px solid var(--sp-border);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: var(--sp-border);
+        border: 2px solid var(--sp-bg);
+        border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--sp-text-secondary);
+    }
+</style>

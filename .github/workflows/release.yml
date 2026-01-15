@@ -1,0 +1,217 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-cli:
+    name: Build CLI
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: sitepod-linux-amd64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact: sitepod-linux-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: sitepod-darwin-amd64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: sitepod-darwin-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: sitepod-windows-amd64.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ matrix.target }}
+
+      - name: Install cross-compilation tools (Linux ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+
+      - name: Build
+        working-directory: ./cli
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Rename binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mv cli/target/${{ matrix.target }}/release/sitepod ${{ matrix.artifact }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          mv cli/target/${{ matrix.target }}/release/sitepod.exe ${{ matrix.artifact }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+
+  build-server:
+    name: Build Server
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build for Linux AMD64
+        working-directory: ./server
+        run: |
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -o ../sitepod-server-linux-amd64 .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitepod-server-linux-amd64
+          path: sitepod-server-linux-amd64
+
+  docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [build-cli, build-server]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.VERSION }}
+          platforms: linux/amd64
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build-cli, build-server, docker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec mv {} release/ \;
+          ls -la release/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release/*
+          generate_release_notes: true
+
+  npm-publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: [build-cli]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Extract version
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update package versions
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          # Update main package
+          jq --arg v "$VERSION" '.version = $v | .optionalDependencies |= with_entries(.value = $v)' \
+            npm-packages/sitepod/package.json > tmp.json && mv tmp.json npm-packages/sitepod/package.json
+          # Update platform packages
+          for pkg in darwin-arm64 darwin-x64 linux-x64 linux-arm64 win32-x64; do
+            jq --arg v "$VERSION" '.version = $v' \
+              npm-packages/@sitepod/$pkg/package.json > tmp.json && mv tmp.json npm-packages/@sitepod/$pkg/package.json
+          done
+
+      - name: Download CLI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Copy binaries to npm packages
+        run: |
+          # macOS ARM64
+          cp artifacts/sitepod-darwin-arm64/sitepod-darwin-arm64 npm-packages/@sitepod/darwin-arm64/bin/sitepod
+          chmod +x npm-packages/@sitepod/darwin-arm64/bin/sitepod
+
+          # macOS x64
+          cp artifacts/sitepod-darwin-amd64/sitepod-darwin-amd64 npm-packages/@sitepod/darwin-x64/bin/sitepod
+          chmod +x npm-packages/@sitepod/darwin-x64/bin/sitepod
+
+          # Linux x64
+          cp artifacts/sitepod-linux-amd64/sitepod-linux-amd64 npm-packages/@sitepod/linux-x64/bin/sitepod
+          chmod +x npm-packages/@sitepod/linux-x64/bin/sitepod
+
+          # Linux ARM64
+          cp artifacts/sitepod-linux-arm64/sitepod-linux-arm64 npm-packages/@sitepod/linux-arm64/bin/sitepod
+          chmod +x npm-packages/@sitepod/linux-arm64/bin/sitepod
+
+          # Windows x64
+          cp artifacts/sitepod-windows-amd64.exe/sitepod-windows-amd64.exe npm-packages/@sitepod/win32-x64/bin/sitepod.exe
+
+      - name: Publish platform packages
+        run: |
+          for pkg in darwin-arm64 darwin-x64 linux-x64 linux-arm64 win32-x64; do
+            echo "Publishing @sitepod/$pkg..."
+            cd npm-packages/@sitepod/$pkg
+            npm publish --access public
+            cd ../../..
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish main package
+        run: |
+          cd npm-packages/sitepod
+          npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

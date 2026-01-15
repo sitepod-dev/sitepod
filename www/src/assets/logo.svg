@@ -1,0 +1,24 @@
+<svg width="200" height="64" viewBox="0 0 200 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icon -->
+  <g transform="translate(0, 0)">
+    <!-- Outer Hexagon Border -->
+    <path d="M32 4L56.785 18V46L32 60L7.215 46V18L32 4Z"
+          stroke="#64748B"
+          stroke-width="3"
+          fill="none"
+          stroke-linejoin="round"/>
+
+    <!-- Inner 3D Cube -->
+    <path d="M32 18L44 25V25L32 32L20 25V25L32 18Z" fill="#22D3EE"/>
+    <path d="M20 25L32 32V46L20 39V25Z" fill="#0891B2"/>
+    <path d="M44 25L32 32V46L44 39V25Z" fill="#0E7490"/>
+  </g>
+
+  <!-- Text: SitePod -->
+  <text x="72" y="42"
+        font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        font-size="28"
+        font-weight="600"
+        fill="#0F172A"
+        letter-spacing="-0.02em">SitePod</text>
+</svg>

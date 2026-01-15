@@ -1,0 +1,26 @@
+# Caddyfile for Wildcard SSL with DNS Challenge
+# Use when you need wildcard certificates and SitePod manages SSL directly
+#
+# Requirements:
+#   - CF_API_TOKEN environment variable with Cloudflare API token
+#   - Token needs Zone:DNS:Edit permissions
+#
+# Other DNS providers:
+#   Replace 'cloudflare' with your provider (route53, digitalocean, etc.)
+#   See: https://caddyserver.com/docs/automatic-https#dns-challenge
+
+{
+    admin off
+    order sitepod first
+}
+
+{$SITEPOD_DOMAIN}, *.{$SITEPOD_DOMAIN}, *.beta.{$SITEPOD_DOMAIN} {
+    tls {
+        dns cloudflare {env.CF_API_TOKEN}
+    }
+    sitepod {
+        storage_path {$SITEPOD_DATA_DIR:/data}
+        data_dir {$SITEPOD_DATA_DIR:/data}
+        domain {$SITEPOD_DOMAIN}
+    }
+}

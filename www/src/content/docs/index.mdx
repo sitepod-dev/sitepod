@@ -1,0 +1,166 @@
+---
+title: SitePod
+description: Self-hosted static site deployment platform. Deploy once, rollback in seconds.
+template: splash
+hero:
+  tagline: |
+    <span class="badge">Open Source</span>
+    <br/><br/>
+    Self-hosted static site deployment.
+    <br/>
+    <span class="glow-text">Single binary. Instant rollbacks. Zero config.</span>
+  actions:
+    - text: Get Started
+      link: /docs/quickstart/
+      icon: right-arrow
+    - text: GitHub
+      link: https://github.com/sitepod-dev/sitepod
+      icon: github
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+<div class="terminal-demo">
+  <div class="terminal-header">
+    <span class="terminal-dot red"></span>
+    <span class="terminal-dot yellow"></span>
+    <span class="terminal-dot green"></span>
+    <span class="terminal-title">~/my-project</span>
+  </div>
+  <div class="terminal-body" id="terminal">
+    <div class="terminal-line">
+      <span class="terminal-prompt">$</span>
+      <span class="terminal-command">sitepod deploy</span>
+    </div>
+    <div class="terminal-output"><span style="color: #22d3ee; margin-right: 8px;">◐</span>Scanning ./dist</div>
+    <div class="terminal-output"><span class="terminal-success">✓</span><span style="color: #f0f6fc; margin-left: 8px;">Found 42 files</span></div>
+    <div class="terminal-output"><span style="color: #22d3ee; margin-right: 8px;">◐</span>Planning deployment</div>
+    <div class="terminal-output"><span style="color: #22d3ee; margin-right: 8px;">→</span>12 new, 30 reused (71%)</div>
+    <div class="terminal-output"><span style="color: #22d3ee; margin-right: 8px;">◐</span>Uploading 12 files</div>
+    <div class="terminal-output"><span class="terminal-success">✓</span><span style="color: #f0f6fc; margin-left: 8px;">Upload complete</span></div>
+    <div class="terminal-output"><span style="color: #22d3ee; margin-right: 8px;">◐</span>Releasing to beta</div>
+    <div class="terminal-line">
+      <span class="terminal-success">✓</span>
+      <span style="color: #f0f6fc; margin-left: 8px;">Released to <span style="color: #f59e0b; font-weight: 600;">beta</span></span>
+    </div>
+    <div class="terminal-output">  <span class="terminal-url">https://my-project.beta.sitepod.dev</span></div>
+    <div class="terminal-output"></div>
+    <div class="terminal-line">
+      <span class="terminal-prompt">$</span>
+      <span class="terminal-command">sitepod deploy --prod</span>
+    </div>
+    <div class="terminal-line">
+      <span class="terminal-success">✓</span>
+      <span style="color: #f0f6fc; margin-left: 8px;">Released to <span style="color: #f59e0b; font-weight: 600;">prod</span></span>
+    </div>
+    <div class="terminal-output"></div>
+    <div class="terminal-output">  <span class="terminal-url">https://my-project.sitepod.dev</span></div>
+    <div class="terminal-output" style="margin-top: 8px;">
+      <span style="color: #6b7280">Rollback anytime:</span> <span style="color: #8b949e">sitepod rollback</span>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; margin: -1rem 0 3rem 0; color: #64748b; font-size: 0.875rem;">
+  One command. Zero config. Production ready.
+</div>
+
+## Why SitePod?
+
+<CardGrid>
+  <Card title="Single Binary" icon="rocket">
+    Caddy + PocketBase + SQLite in one executable. No Docker required. No external dependencies. Just download and run.
+  </Card>
+  <Card title="Instant Rollback" icon="seti:clock">
+    Every deploy is an immutable snapshot. Roll back to any version in **< 1 second**. No rebuild, no redeploy.
+  </Card>
+  <Card title="Zero Config" icon="seti:config">
+    Auto-detect build directory. Generate subdomains. Handle SSL. Just run `deploy` and you're live.
+  </Card>
+  <Card title="Self-Hosted" icon="seti:lock">
+    Your server. Your data. Your rules. Works on any $5/mo VPS. No vendor lock-in.
+  </Card>
+</CardGrid>
+
+## How It Works
+
+<div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 2rem; margin: 2rem 0;">
+
+```
+                    DEPLOY                          SERVE
+                      │                               │
+     ┌────────────────┼────────────────┐              │
+     │                │                │              │
+     ▼                ▼                ▼              │
+┌─────────┐     ┌─────────┐     ┌─────────┐          │
+│ Pod v1  │     │ Pod v2  │     │ Pod v3  │    ◄─────┤
+│ ─────── │     │ ─────── │     │ ─────── │          │
+│ snap-   │     │ snap-   │     │ snap-   │          │
+│ shot    │     │ shot    │     │ shot    │          │
+└─────────┘     └─────────┘     └─────────┘          │
+                      ▲               ▲               │
+                      │               │               │
+                ┌─────┴───┐     ┌─────┴───┐          │
+                │  beta   │     │  prod   │    ◄─────┘
+                │  (ref)  │     │  (ref)  │
+                └─────────┘     └─────────┘
+
+     Rollback = move pointer (instant, no rebuild)
+```
+
+</div>
+
+<CardGrid>
+  <Card title="Content-Addressed" icon="seti:folder">
+    Files stored by hash. Same file = one copy. Deploy 100MB, change 1KB, upload only 1KB.
+  </Card>
+  <Card title="Preview Links" icon="seti:image">
+    Share WIP with your team. Auto-expiring URLs. No environment pollution.
+  </Card>
+  <Card title="Multi-Environment" icon="seti:git">
+    Built-in beta + prod. Or create custom environments. Switch instantly.
+  </Card>
+  <Card title="Custom Domains" icon="seti:favicon">
+    Bring your domain. Auto SSL via Let's Encrypt. Wildcard support.
+  </Card>
+</CardGrid>
+
+## Quick Start
+
+<CardGrid>
+  <LinkCard
+    title="Deploy in 30 Seconds"
+    description="npx sitepod deploy — that's it"
+    href="/docs/quickstart/"
+  />
+  <LinkCard
+    title="Self-Host Guide"
+    description="Run on your own VPS or Kubernetes"
+    href="/docs/self-hosting/overview/"
+  />
+  <LinkCard
+    title="CLI Reference"
+    description="deploy, rollback, preview, history..."
+    href="/docs/cli/deploy/"
+  />
+  <LinkCard
+    title="API Docs"
+    description="CI/CD integration, webhooks, automation"
+    href="/docs/api/overview/"
+  />
+</CardGrid>
+
+<div style="text-align: center; margin-top: 4rem; padding: 2rem; border-top: 1px solid rgba(30, 41, 59, 0.5);">
+  <div style="font-family: var(--sl-font-mono); font-size: 11px; color: #475569; line-height: 1.3; white-space: pre;">
+{`   _____ _ _       _____          _
+  / ____(_) |     |  __ \\        | |
+ | (___  _| |_ ___| |__) |__   __| |
+  \\___ \\| | __/ _ \\  ___/ _ \\ / _\` |
+  ____) | | ||  __/ |  | (_) | (_| |
+ |_____/|_|\\__\\___|_|   \\___/ \\__,_|`}
+  </div>
+  <div style="margin-top: 1rem; color: #64748b; font-size: 0.875rem;">
+    Deploy once. Rollback in seconds.
+  </div>
+</div>

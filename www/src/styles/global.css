@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+/* Configure dark mode to use Starlight's data attribute */
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* SitePod Brand Colors */
+:root {
+  /* Primary - Cyan (Data Plane) */
+  --sp-primary: #0891B2;
+  --sp-primary-light: #22D3EE;
+  --sp-primary-dark: #0E7490;
+
+  /* Accent - Lime (Success states) */
+  --sp-accent: #84CC16;
+  --sp-accent-light: #A3E635;
+
+  /* Control Plane - Slate */
+  --sp-control: #64748B;
+  --sp-control-light: #94A3B8;
+
+  /* Neutral */
+  --sp-bg: #FFFFFF;
+  --sp-bg-secondary: #F8FAFC;
+  --sp-border: #E2E8F0;
+  --sp-text: #0F172A;
+  --sp-text-secondary: #64748B;
+
+  /* Status */
+  --sp-success: #22C55E;
+  --sp-warning: #F59E0B;
+  --sp-error: #EF4444;
+  --sp-info: #0891B2;
+}
+
+/* Dark mode */
+:root[data-theme='dark'] {
+  --sp-primary: #22D3EE;
+  --sp-primary-light: #67E8F9;
+  --sp-primary-dark: #06B6D4;
+
+  --sp-accent: #A3E635;
+  --sp-accent-light: #BEF264;
+
+  --sp-control: #94A3B8;
+  --sp-control-light: #CBD5E1;
+
+  --sp-bg: #0F172A;
+  --sp-bg-secondary: #1E293B;
+  --sp-border: #334155;
+  --sp-text: #F8FAFC;
+  --sp-text-secondary: #94A3B8;
+}

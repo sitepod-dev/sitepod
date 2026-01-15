@@ -1,0 +1,33 @@
+# SitePod Local Development Caddyfile
+#
+# Single binary - all API and static file serving handled by sitepod module
+# Run: ./bin/sitepod-server run --config Caddyfile.local
+
+{
+	# Disable admin API
+	admin off
+
+	# Disable automatic HTTPS for local dev
+	auto_https off
+
+	# Register sitepod directive order
+	order sitepod first
+
+	# Debug logging
+	log {
+		level DEBUG
+	}
+}
+
+# All traffic on port 8080 (HTTP only for local dev)
+http://:8080, http://*.localhost:8080 {
+	# SitePod module handles everything:
+	# - /api/v1/* - API routes (auth, deploy, release, etc.)
+	# - /* - Static file serving for deployed sites
+	sitepod {
+		storage_path ./data
+		data_dir ./data
+		cache_ttl 1s
+		domain localhost:8080
+	}
+}

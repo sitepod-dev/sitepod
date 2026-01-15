@@ -1,0 +1,11 @@
+# SitePod Example Configuration
+
+[project]
+name = "demo-site"
+
+[build]
+directory = "./dist"
+
+[deploy]
+ignore = ["**/*.map", ".*", "node_modules/**"]
+concurrent = 20

@@ -1,0 +1,29 @@
+# SitePod Default Caddyfile
+# Direct SSL mode - SitePod manages certificates via Let's Encrypt
+#
+# For other deployment scenarios, see server/examples/:
+#   - Caddyfile.cloudflare  - Behind Cloudflare proxy
+#   - Caddyfile.proxy       - Behind reverse proxy (Traefik, Nginx, Coolify)
+#   - Caddyfile.wildcard    - Wildcard certs with DNS challenge
+
+{
+    admin off
+    order sitepod first
+
+    # On-demand TLS for project subdomains
+    on_demand_tls {
+        ask http://127.0.0.1/api/v1/domains/check
+    }
+}
+
+{$SITEPOD_DOMAIN:localhost}, *.{$SITEPOD_DOMAIN:localhost}, *.beta.{$SITEPOD_DOMAIN:localhost} {
+    tls {
+        on_demand
+    }
+    sitepod {
+        storage_path {$SITEPOD_DATA_DIR:/data}
+        data_dir {$SITEPOD_DATA_DIR:/data}
+        cache_ttl 5s
+        domain {$SITEPOD_DOMAIN:localhost}
+    }
+}

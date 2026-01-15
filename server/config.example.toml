@@ -1,0 +1,67 @@
+# SitePod Server Configuration
+# Copy this file to config.toml and adjust values
+
+[server]
+# HTTP address for serving sites (Caddy handles TLS)
+http_addr = ":80"
+https_addr = ":443"
+
+# PocketBase admin/API address (internal)
+admin_addr = ":8090"
+
+[domain]
+# Primary domain for the service
+primary = "example.com"
+
+# Email for Let's Encrypt certificates
+acme_email = "admin@example.com"
+
+[storage]
+# Storage type: "local", "s3", "oss", "r2"
+type = "local"
+
+# Local storage path (used when type = "local")
+path = "/data"
+
+# S3 configuration (used when type = "s3", "oss", "r2")
+[storage.s3]
+bucket = ""
+region = "us-east-1"
+endpoint = ""  # Custom endpoint for OSS/R2
+# access_key and secret_key via environment variables:
+# SITEPOD_S3_ACCESS_KEY, SITEPOD_S3_SECRET_KEY
+
+[database]
+# SQLite database path
+path = "/data/sitepod.db"
+
+[cache]
+# How long to cache ref files in memory
+# Short TTL ensures quick updates while reducing storage reads
+manifest_ttl = "5s"
+
+# Maximum number of cached refs
+max_entries = 1000
+
+[gc]
+# Enable automatic garbage collection
+enabled = true
+
+# How often to run GC
+interval = "24h"
+
+# Don't delete blobs newer than this
+grace_period = "1h"
+
+# Keep at least this many versions per environment
+min_versions = 5
+
+# Keep versions for at least this many days
+keep_days = 30
+
+[log]
+# Log level: "debug", "info", "warn", "error"
+level = "info"
+
+# Log format: "json", "text"
+format = "json"

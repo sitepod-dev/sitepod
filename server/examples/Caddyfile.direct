@@ -1,0 +1,28 @@
+# Caddyfile for Direct SSL Mode (Default)
+# SitePod manages SSL certificates via Let's Encrypt
+#
+# Requirements:
+#   - Ports 80 and 443 accessible from internet
+#   - DNS points to your server
+#   - For wildcards, use Caddyfile.wildcard instead
+
+{
+    admin off
+    order sitepod first
+
+    # On-demand TLS for project subdomains
+    on_demand_tls {
+        ask http://127.0.0.1/api/v1/domains/check
+    }
+}
+
+{$SITEPOD_DOMAIN}, *.{$SITEPOD_DOMAIN}, *.beta.{$SITEPOD_DOMAIN} {
+    tls {
+        on_demand
+    }
+    sitepod {
+        storage_path {$SITEPOD_DATA_DIR:/data}
+        data_dir {$SITEPOD_DATA_DIR:/data}
+        domain {$SITEPOD_DOMAIN}
+    }
+}

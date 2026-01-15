@@ -1,0 +1,101 @@
+<div class="relative rounded border border-slate-800 bg-slate-950 font-mono text-sm leading-relaxed w-full max-w-lg mx-auto shadow-2xl shadow-black/50">
+    <!-- Header (Minimal) -->
+    <div class="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-900">
+        <div class="text-xs text-slate-500">zsh — sitepod deploy</div>
+        <div class="flex gap-1.5">
+            <div class="w-2 h-2 rounded-full bg-slate-700"></div>
+        </div>
+    </div>
+
+    <!-- Terminal Content -->
+    <div class="p-4 h-[300px] text-slate-400 overflow-y-auto overflow-x-hidden" id="terminal-output">
+        <div class="flex mt-2 mb-1">
+            <span class="text-cyan-500 mr-2">$</span>
+            <span class="text-slate-100">sitepod deploy</span>
+        </div>
+        <div class="text-slate-400"><span class="text-cyan-500 mr-2">◐</span>Scanning ./dist</div>
+        <div class="text-slate-400"><span class="text-cyan-500 mr-2">→</span>12 new, 30 reused (71%)</div>
+        <div class="text-slate-300"><span class="text-lime-400 mr-2">✓</span>Released to prod</div>
+        <div>
+            <span class="text-slate-500 w-20 inline-block">url:</span>
+            <span class="text-slate-300">https://sitepod.dev</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    const steps = [
+        { text: "sitepod deploy", type: "input", delay: 800 },
+        { text: "Scanning ./dist", type: "step", delay: 400 },
+        { text: "Found 42 files", type: "success", delay: 300 },
+        { text: "Planning deployment", type: "step", delay: 400 },
+        { text: "12 new, 30 reused (71%)", type: "info", delay: 300 },
+        { text: "Uploading 12 files", type: "step", delay: 300 },
+        { text: "Upload complete", type: "success", delay: 500 },
+        { text: "Committing", type: "step", delay: 300 },
+        { text: "Commit ready", type: "success", delay: 300 },
+        { text: "Releasing to prod", type: "step", delay: 300 },
+        { text: "Released to prod", type: "success", delay: 400 },
+        { text: "url: https://sitepod.dev", type: "kv", delay: 800 },
+        { text: "", type: "spacer", delay: 800 },
+        { text: "sitepod status", type: "input", delay: 800 },
+        { text: "Domain:   sitepod.dev", type: "kv", delay: 100 },
+        { text: "Version:  v12 (current)", type: "kv-highlight", delay: 100 },
+        { text: "Ref:      prod", type: "kv", delay: 100 },
+    ];
+
+    function runAnimation() {
+        const container = document.getElementById('terminal-output');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        let timer = 0;
+
+        steps.forEach(step => {
+            setTimeout(() => {
+                const line = document.createElement('div');
+                
+                if (step.type === 'input') {
+                    line.className = "flex mt-2 mb-1";
+                    line.innerHTML = `<span class="text-cyan-500 mr-2">$</span><span class="text-slate-100">${step.text}</span>`;
+                } else if (step.type === 'step') {
+                    line.className = "text-slate-400";
+                    line.innerHTML = `<span class="text-cyan-500 mr-2">◐</span>${step.text}`;
+                } else if (step.type === 'success') {
+                    line.className = "text-slate-300";
+                    line.innerHTML = `<span class="text-lime-400 mr-2">✓</span>${step.text}`;
+                } else if (step.type === 'info') {
+                    line.className = "text-slate-400";
+                    line.innerHTML = `<span class="text-cyan-500 mr-2">→</span>${step.text}`;
+                } else if (step.type === 'link') {
+                    line.className = "text-cyan-400 underline decoration-cyan-400/30 underline-offset-4 mt-1 mb-2 block";
+                    line.innerText = step.text;
+                } else if (step.type === 'detail') {
+                     line.className = "text-slate-600 pl-4 text-xs";
+                     line.innerText = step.text;
+                } else if (step.type === 'kv') {
+                    const [k, ...rest] = step.text.split(':');
+                    const v = rest.join(':').trim();
+                    line.innerHTML = `<span class="text-slate-500 w-20 inline-block">${k}:</span><span class="text-slate-300">${v}</span>`;
+                } else if (step.type === 'kv-highlight') {
+                    const [k, ...rest] = step.text.split(':');
+                    const v = rest.join(':').trim();
+                    line.innerHTML = `<span class="text-slate-500 w-20 inline-block">${k}:</span><span class="text-lime-400">${v}</span>`;
+                } else if (step.type === 'spacer') {
+                    line.innerHTML = '&nbsp;';
+                } else {
+                    line.className = "text-slate-400";
+                    line.innerText = step.text;
+                }
+
+                container.appendChild(line);
+                container.scrollTop = container.scrollHeight;
+            }, timer);
+            timer += step.delay;
+        });
+
+        setTimeout(runAnimation, timer + 3000);
+    }
+
+    runAnimation();
+</script>

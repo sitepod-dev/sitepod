@@ -1,0 +1,251 @@
+/* SitePod Docs Theme - v5 (Isolation & Safety) */
+
+/* 0. RESET & BASICS (Defensive against Tailwind Preflight leak) */
+:root {
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* 1. PALETTE (Slate/Cyan) */
+:root {
+  --slate-50: #f8fafc;
+  --slate-100: #f1f5f9;
+  --slate-200: #e2e8f0;
+  --slate-300: #cbd5e1;
+  --slate-400: #94a3b8;
+  --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1e293b;
+  --slate-900: #0f172a;
+  --slate-950: #020617;
+
+  --cyan-100: #cffafe;
+  --cyan-400: #22d3ee;
+  --cyan-600: #0891b2;
+  --cyan-900: #164e63;
+}
+
+/* 2. THEME DEFINITIONS - STRICT SEPARATION */
+
+/* === LIGHT MODE === */
+/* Applied when data-theme='light' OR no theme is set (default fallback) */
+:root,
+:root[data-theme='light'] {
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: rgba(255, 255, 255, 0.95);
+  --sl-color-bg-sidebar: var(--slate-50);
+  
+  --sl-color-text: var(--slate-900);
+  --sl-color-text-accent: var(--cyan-600);
+  --sl-color-text-invert: #ffffff;
+  
+  --sl-color-accent: var(--cyan-600);
+  --sl-color-accent-low: var(--cyan-100);
+  --sl-color-accent-high: var(--cyan-900);
+  
+  --sl-color-hairline-light: var(--slate-200);
+  --sl-color-hairline-shade: var(--slate-100);
+  
+  --sl-color-gray-1: var(--slate-900);
+  --sl-color-gray-2: var(--slate-800);
+  --sl-color-gray-3: var(--slate-600);
+  --sl-color-gray-4: var(--slate-400);
+  --sl-color-gray-5: var(--slate-200);
+  --sl-color-gray-6: var(--slate-100);
+  --sl-color-gray-7: var(--slate-50);
+  
+  --sl-color-black: var(--slate-900);
+  --sl-color-white: #ffffff;
+}
+
+/* Light mode: undo Starlight's hardcoded white/black usage */
+:root:not([data-theme='dark']) {
+  --sl-color-text-strong: var(--sl-color-text);
+  --sl-color-surface: var(--sl-color-bg);
+  --sl-color-surface-muted: var(--sl-color-bg-sidebar);
+}
+
+:root:not([data-theme='dark']) .sl-markdown-content h1,
+:root:not([data-theme='dark']) .sl-markdown-content h2,
+:root:not([data-theme='dark']) .sl-markdown-content h3,
+:root:not([data-theme='dark']) .sl-markdown-content h4,
+:root:not([data-theme='dark']) .sl-markdown-content h5,
+:root:not([data-theme='dark']) .sl-markdown-content h6,
+:root:not([data-theme='dark']) .sl-markdown-content th,
+:root:not([data-theme='dark']) .sl-markdown-content summary,
+:root:not([data-theme='dark']) .sl-markdown-content a:hover,
+:root:not([data-theme='dark']) .starlight-aside,
+:root:not([data-theme='dark']) h1#_top,
+:root:not([data-theme='dark']) [data-page-title],
+:root:not([data-theme='dark']) .pagination-links .link-title,
+:root:not([data-theme='dark']) .card .title,
+:root:not([data-theme='dark']) a.card .title,
+:root:not([data-theme='dark']) .sl-link-card .title,
+:root:not([data-theme='dark']) .sl-link-card:hover .icon,
+:root:not([data-theme='dark']) .sl-link-button.secondary,
+:root:not([data-theme='dark']) .sl-link-button.minimal,
+:root:not([data-theme='dark']) .sl-steps > li::before,
+:root:not([data-theme='dark']) .tab [role='tab'][aria-selected='true'],
+:root:not([data-theme='dark']) starlight-file-tree .directory > details > summary,
+:root:not([data-theme='dark']) starlight-file-tree .file,
+:root:not([data-theme='dark']) .right-sidebar-panel h2,
+:root:not([data-theme='dark']) .right-sidebar-panel a:hover,
+:root:not([data-theme='dark']) .isMobile a[aria-current='true'],
+:root:not([data-theme='dark']) .sidebar-content .large,
+:root:not([data-theme='dark']) footer .meta a:hover,
+:root:not([data-theme='dark']) footer .kudos:hover {
+  color: var(--sl-color-text-strong);
+}
+
+:root:not([data-theme='dark']) .card {
+  background-color: var(--sl-color-surface);
+}
+
+:root:not([data-theme='dark']) .sidebar-pane {
+  background-color: var(--sl-color-surface-muted);
+}
+
+:root:not([data-theme='dark']) starlight-menu-button button {
+  background-color: var(--sl-color-surface);
+  color: var(--sl-color-text);
+}
+
+:root:not([data-theme='dark']) mobile-starlight-toc .toggle {
+  background-color: var(--sl-color-surface);
+  color: var(--sl-color-text);
+}
+:root:not([data-theme='dark']) mobile-starlight-toc details[open] .toggle,
+:root:not([data-theme='dark']) mobile-starlight-toc details .toggle:hover,
+:root:not([data-theme='dark']) mobile-starlight-toc .display-current {
+  color: var(--sl-color-text);
+}
+:root:not([data-theme='dark']) mobile-starlight-toc .dropdown {
+  background-color: var(--sl-color-surface);
+}
+
+@media (min-width: 50rem) {
+  :root:not([data-theme='dark']) button[data-open-modal] {
+    background-color: var(--sl-color-surface);
+  }
+  :root:not([data-theme='dark']) button[data-open-modal]:hover {
+    color: var(--sl-color-text);
+  }
+}
+:root:not([data-theme='dark']) #starlight__search {
+  --pagefind-ui-background: var(--sl-color-surface);
+  --pagefind-ui-text: var(--sl-color-text);
+}
+:root:not([data-theme='dark']) #starlight__search .pagefind-ui__search-input {
+  color: var(--sl-color-text);
+}
+:root:not([data-theme='dark']) #starlight__search .pagefind-ui__result-link {
+  --pagefind-ui-text: var(--sl-color-text);
+}
+:root:not([data-theme='dark']) #starlight__search .pagefind-ui__result-title,
+:root:not([data-theme='dark']) #starlight__search .pagefind-ui__result-nested,
+:root:not([data-theme='dark']) #starlight__search .pagefind-ui__result-tags {
+  background-color: var(--sl-color-surface);
+}
+
+
+/* === DARK MODE === */
+/* Only applied when data-theme='dark' is EXPLICITLY set */
+:root[data-theme='dark'] {
+  --sl-color-bg: var(--slate-900);
+  --sl-color-bg-nav: rgba(15, 23, 42, 0.9);
+  --sl-color-bg-sidebar: var(--slate-900);
+
+  --sl-color-text: var(--slate-200);
+  --sl-color-text-accent: var(--cyan-400);
+  --sl-color-text-invert: var(--slate-900);
+
+  --sl-color-accent: var(--cyan-400);
+  --sl-color-accent-low: var(--cyan-900);
+  --sl-color-accent-high: var(--cyan-100);
+  
+  --sl-color-hairline-light: var(--slate-800);
+  --sl-color-hairline-shade: var(--slate-900);
+
+  --sl-color-gray-1: var(--slate-100);
+  --sl-color-gray-2: var(--slate-200);
+  --sl-color-gray-3: var(--slate-400);
+  --sl-color-gray-4: var(--slate-500);
+  --sl-color-gray-5: var(--slate-700);
+  --sl-color-gray-6: var(--slate-800);
+}
+
+/* 3. CORE OVERRIDES */
+
+/* Fonts */
+body { font-family: var(--font-sans); }
+code, pre { font-family: var(--font-mono); }
+
+/* Background Texture */
+body {
+    background-color: var(--sl-color-bg);
+    background-image: radial-gradient(var(--slate-200) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+:root[data-theme='dark'] body {
+    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
+}
+
+/* Sidebar Links - High Contrast Fix */
+.sidebar-content a { color: var(--sl-color-gray-2); }
+.sidebar-content a:hover { color: var(--sl-color-accent); }
+.sidebar-content a[aria-current="page"] {
+    color: var(--sl-color-accent);
+    background-color: var(--sl-color-accent-low);
+    border-left: 3px solid var(--sl-color-accent);
+}
+
+/* Navbar - Force Visibility of Icons/Text */
+header .site-title { color: var(--sl-color-text) !important; }
+header .social-icons a { color: var(--sl-color-gray-3) !important; }
+header .social-icons a:hover { color: var(--sl-color-text) !important; }
+
+/* 4. DEFENSIVE CODE BLOCK STYLES (Ignore Theme) */
+/* Force Dark Mode for Code Blocks regardless of theme */
+
+.expressive-code .frame {
+    background-color: #0f172a !important; /* Slate-900 */
+    border: 1px solid #334155 !important;
+}
+.expressive-code .frame figcaption,
+.expressive-code .frame .header {
+    background-color: #1e293b !important; /* Slate-800 */
+    border-bottom: 1px solid #334155 !important;
+    color: #94a3b8 !important;
+}
+.expressive-code pre {
+    background-color: #0f172a !important;
+    border: none !important;
+}
+.expressive-code pre code,
+.expressive-code pre span {
+    color: #e2e8f0; /* Ensure text is light */
+}
+
+/* Inline Code - Adaptive */
+:not(pre) > code {
+    background-color: var(--sl-color-accent-low);
+    color: var(--sl-color-accent);
+    border: 1px solid var(--sl-color-accent); /* Use border to guarantee visibility */
+    opacity: 0.9;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+}
+/* Reduce border opacity for cleaner look */
+:root[data-theme='light'] :not(pre) > code { border-color: rgba(8, 145, 178, 0.2); }
+:root[data-theme='dark'] :not(pre) > code { border-color: rgba(34, 211, 238, 0.2); }
+
+/* Selection */
+::selection {
+    background-color: #cffafe;
+    color: #0f172a;
+}
+:root[data-theme='dark'] ::selection {
+    background-color: #164e63;
+    color: #cffafe;
+}

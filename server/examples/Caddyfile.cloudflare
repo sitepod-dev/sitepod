@@ -1,0 +1,20 @@
+# Caddyfile for Cloudflare Proxy
+# Use when Cloudflare handles SSL (orange cloud enabled)
+#
+# Cloudflare Settings:
+#   - SSL/TLS mode: Flexible (or Full with origin cert)
+#   - DNS: Proxy enabled for all records
+
+{
+    admin off
+    auto_https off
+    order sitepod first
+}
+
+http://{$SITEPOD_DOMAIN}, http://*.{$SITEPOD_DOMAIN}, http://*.beta.{$SITEPOD_DOMAIN} {
+    sitepod {
+        storage_path {$SITEPOD_DATA_DIR:/data}
+        data_dir {$SITEPOD_DATA_DIR:/data}
+        domain {$SITEPOD_DOMAIN}
+    }
+}

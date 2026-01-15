@@ -1,0 +1,20 @@
+{
+  "name": "@sitepod/darwin-arm64",
+  "version": "0.1.0",
+  "description": "SitePod CLI binary for macOS ARM64 (Apple Silicon)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sitepod-dev/sitepod"
+  },
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "arm64"
+  ],
+  "files": [
+    "bin"
+  ],
+  "preferUnplugged": true
+}

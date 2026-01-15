@@ -1,0 +1,52 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="#0F172A"/>
+
+  <!-- Subtle grid pattern -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1E293B" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+
+  <!-- Logo Icon (centered, larger) -->
+  <g transform="translate(510, 140) scale(2)">
+    <!-- Outer Hexagon Border -->
+    <path d="M45 6L78.6 25V63L45 82L11.4 63V25L45 6Z"
+          stroke="#94A3B8"
+          stroke-width="3"
+          fill="none"
+          stroke-linejoin="round"/>
+
+    <!-- Inner 3D Cube -->
+    <path d="M45 26L62 36V36L45 46L28 36V36L45 26Z" fill="#67E8F9"/>
+    <path d="M28 36L45 46V66L28 56V36Z" fill="#22D3EE"/>
+    <path d="M62 36L45 46V66L62 56V36Z" fill="#06B6D4"/>
+  </g>
+
+  <!-- Text: SitePod -->
+  <text x="600" y="420"
+        font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="72"
+        font-weight="600"
+        fill="#F8FAFC"
+        text-anchor="middle"
+        letter-spacing="-0.02em">SitePod</text>
+
+  <!-- Tagline -->
+  <text x="600" y="480"
+        font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="28"
+        font-weight="400"
+        fill="#94A3B8"
+        text-anchor="middle">Self-hosted static deployments</text>
+
+  <!-- Bottom tagline -->
+  <text x="600" y="540"
+        font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="22"
+        font-weight="400"
+        fill="#64748B"
+        text-anchor="middle">Deploy once, rollback in seconds</text>
+</svg>

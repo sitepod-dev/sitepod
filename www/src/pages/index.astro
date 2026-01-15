@@ -1,0 +1,193 @@
+---
+import LandingLayout from '../layouts/LandingLayout.astro';
+import Navbar from '../components/Navbar.astro';
+import TerminalDemo from '../components/TerminalDemo.astro';
+import ArchitectureDiagram from '../components/ArchitectureDiagram.astro';
+import { VERSION } from '../consts';
+
+const currentYear = new Date().getFullYear();
+---
+
+<LandingLayout title="SitePod — Self-hosted static deployments">
+	<Navbar />
+	
+	<main class="relative pt-32 pb-16">
+		<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <!-- HERO -->
+            <div class="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-10 items-center mb-24">
+                <div class="max-w-3xl">
+                    <div class="inline-flex items-center gap-2 px-2 py-1 mb-6 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <span class="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                        <span class="text-[10px] font-mono font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">v{VERSION} Public Beta</span>
+                    </div>
+                    <h1 class="text-5xl sm:text-7xl font-bold tracking-tight text-slate-900 dark:text-slate-50 mb-6 font-display leading-[1.1]">
+                        Deploy static sites, then <span class="text-cyan-600 dark:text-cyan-400">roll back in seconds</span>.
+                    </h1>
+                    <p class="text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+                        Self-hosted, one-binary deploys.
+                        <span class="text-slate-900 dark:text-slate-200 font-medium">Open-source alternative to surge.sh.</span>
+                    </p>
+
+                    <div class="mt-8 flex flex-wrap gap-4 items-start">
+                        <div class="relative group">
+                            <a class="relative px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-semibold rounded-md hover:translate-y-px transition-transform flex items-center gap-2" href="/docs/quickstart">
+                                Get Started
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            </a>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <button
+                                type="button"
+                                data-copy-text="curl -fsSL https://get.sitepod.dev | sh"
+                                class="px-6 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-300 font-mono text-sm rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-copy"
+                            >
+                                <span class="select-all">curl -fsSL https://get.sitepod.dev | sh</span>
+                            </button>
+                            <span class="text-[11px] text-slate-500 font-mono">Demo installer (not production)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <div class="flex justify-between items-baseline px-1">
+                        <h2 class="text-sm font-bold uppercase tracking-widest text-slate-500">CLI</h2>
+                        <span class="font-mono text-xs text-cyan-600 dark:text-cyan-400">Deterministic Output</span>
+                    </div>
+                    <TerminalDemo />
+                </div>
+            </div>
+
+            <!-- ENGINE SECTION -->
+            <div class="flex flex-col gap-4 mb-24">
+                 <div class="flex justify-between items-baseline px-1">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-slate-500">Engine</h2>
+                    <span class="font-mono text-xs text-lime-600 dark:text-lime-400">Immutable State</span>
+                </div>
+                <ArchitectureDiagram />
+                 <p class="text-sm text-slate-500 mt-2 px-1 max-w-2xl">
+                    Pointer-based releases. Rollback is a ref switch.
+                </p>
+            </div>
+
+            <!-- GRID SYSTEM: CONTROL vs DATA -->
+            <div class="border-t border-slate-200 dark:border-slate-800 pt-24">
+                 <div class="grid grid-cols-1 md:grid-cols-12 gap-8">
+                    
+                    <!-- Title -->
+                    <div class="md:col-span-3">
+                        <h2 class="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-4">System Components</h2>
+                        <p class="text-slate-500 text-sm leading-relaxed">
+                            SitePod separates the <strong>Control Plane</strong> (API/Auth) from the <strong>Data Plane</strong> (Serving) to guarantee stability and performance.
+                        </p>
+                    </div>
+
+                    <!-- Grid -->
+                    <div class="md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        
+                        <!-- Card 1: Control Plane -->
+                        <div class="group p-6 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 transition-colors">
+                            <div class="w-10 h-10 mb-4 rounded bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                            </div>
+                            <h3 class="font-bold text-slate-900 dark:text-slate-200 mb-2">Control Plane</h3>
+                            <ul class="space-y-2 text-sm text-slate-500 font-mono">
+                                <li class="flex items-center gap-2">
+                                    <span class="w-1 h-1 rounded-full bg-slate-400"></span>
+                                    Built-in Auth (PocketBase)
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="w-1 h-1 rounded-full bg-slate-400"></span>
+                                    Environment Management
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="w-1 h-1 rounded-full bg-slate-400"></span>
+                                    Preview URL Generation
+                                </li>
+                            </ul>
+                        </div>
+
+                         <!-- Card 2: Data Plane -->
+                        <div class="group p-6 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-cyan-500/30 transition-colors">
+                            <div class="w-10 h-10 mb-4 rounded bg-cyan-500/10 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
+                            </div>
+                            <h3 class="font-bold text-slate-900 dark:text-slate-200 mb-2">Data Plane</h3>
+                            <ul class="space-y-2 text-sm text-slate-500 font-mono">
+                                <li class="flex items-center gap-2">
+                                    <span class="w-1 h-1 rounded-full bg-cyan-500"></span>
+                                    Content-Addressed Storage
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="w-1 h-1 rounded-full bg-cyan-500"></span>
+                                    Caddy Web Server
+                                </li>
+                                <li class="flex items-center gap-2">
+                                    <span class="w-1 h-1 rounded-full bg-cyan-500"></span>
+                                    Automatic SSL/TLS
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Card 3: Storage -->
+                         <div class="group p-6 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700 transition-colors md:col-span-2">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h3 class="font-bold text-slate-900 dark:text-slate-200 mb-2">Zero Dependencies</h3>
+                                    <p class="text-sm text-slate-500 max-w-sm">
+                                        No Docker. No Kubernetes. Just one binary.
+                                        Runs on any Linux VPS with 512MB RAM.
+                                    </p>
+                                </div>
+                                <div class="hidden sm:flex font-mono text-xs gap-4 text-slate-400">
+                                    <div class="text-center">
+                                        <div class="font-bold text-slate-300">50MB</div>
+                                        <div>Binary</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="font-bold text-zinc-300">10ms</div>
+                                        <div>Startup</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                 </div>
+            </div>
+            
+            <!-- FOOTER -->
+            <footer class="mt-32 border-t border-slate-200 dark:border-slate-800 pt-12 pb-12">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-500">
+                    <div class="flex items-center gap-4">
+                         <img src="/logo-mono.svg" alt="SitePod" class="h-4 opacity-50" />
+                        <span>© {currentYear} SitePod. <a href="https://github.com/sitepod-dev/sitepod/blob/main/LICENSE" class="underline decoration-slate-700 hover:text-slate-300">MIT Licensed</a>.</span>
+                    </div>
+                    <div class="flex gap-6 font-mono">
+                        <a href="https://github.com/sitepod-dev/sitepod" class="hover:text-slate-300 transition-colors">GitHub</a>
+                        <a href="/docs/introduction" class="hover:text-slate-300 transition-colors">Docs</a>
+                        <a href="/docs/api" class="hover:text-slate-300 transition-colors">API</a>
+                    </div>
+                </div>
+            </footer>
+
+		</div>
+	</main>
+
+    <script is:inline>
+        document.querySelectorAll('[data-copy-text]').forEach((button) => {
+            button.addEventListener('click', async () => {
+                const text = button.getAttribute('data-copy-text') || '';
+                if (!text) return;
+                try {
+                    if (navigator.clipboard && window.isSecureContext) {
+                        await navigator.clipboard.writeText(text);
+                        return;
+                    }
+                } catch {
+                    // Fall through to prompt.
+                }
+                window.prompt('Copy this command:', text);
+            });
+        });
+    </script>
+</LandingLayout>
