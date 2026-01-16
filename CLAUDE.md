@@ -26,7 +26,7 @@ make run
 cd examples/simple-site
 ../../bin/sitepod deploy
 
-# Visit http://demo-site-beta.localhost:8080
+# Visit http://demo-site-beta.localhost:8080 (beta uses -beta suffix)
 ```
 
 > Anonymous sessions skip email verification for testing. Deployments expire in 24h.
@@ -64,31 +64,46 @@ make run
 | `data/refs/` | Environment pointers (prod/beta) |
 | `bin/` | Compiled binaries |
 
-## Build Commands
+## Make Commands
 
+### Build & Run
 ```bash
-# Build everything (server + CLI)
-make build
+make build          # Build server + CLI
+make build-server   # Build server only
+make build-cli      # Build CLI only
+make run            # Run server (localhost:8080)
+make quick-start    # First time setup: build + create data dir
+```
 
-# Build server only (Caddy with embedded API)
-make build-server
-# Or: cd server && go build -o ../bin/sitepod-server ./cmd/caddy
-
-# Build CLI only
-make build-cli
-# Or: cd cli && cargo build --release
-
-# Run server
-make run
-
-# Run tests
-make test
+### Testing
+```bash
+make test           # Run all tests
 make test-server    # Go tests only
 make test-cli       # Rust tests only
+./test-e2e.sh       # End-to-end tests
+```
 
-# Docker
-make docker-build
-make docker-run
+### Docker
+```bash
+make docker-build   # Build image (sitepod:latest)
+make docker-run     # Run container
+make docker-stop    # Stop container
+make docker-logs    # View logs
+make docker-push    # Push to ghcr.io/sitepod-dev/sitepod:latest
+```
+
+### Release & Publish
+```bash
+make bump-patch     # Bump version x.y.Z
+make bump-minor     # Bump version x.Y.0
+make bump-major     # Bump version X.0.0
+make release        # Create git tag and push
+make npm-publish    # Publish CLI to npm
+```
+
+### Cleanup
+```bash
+make clean          # Remove bin/, data/, and build artifacts
 ```
 
 ## Project Structure
