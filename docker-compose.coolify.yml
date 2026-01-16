@@ -43,6 +43,8 @@ services:
     environment:
       # Required: Your base domain (without protocol)
       - SITEPOD_DOMAIN=${SITEPOD_DOMAIN:?SITEPOD_DOMAIN is required}
+      # Required for Coolify: Disable SSL, listen on 8080
+      - SITEPOD_PROXY_MODE=1
       - SITEPOD_DATA_DIR=/data
       - SITEPOD_STORAGE_TYPE=${SITEPOD_STORAGE_TYPE:-local}
 

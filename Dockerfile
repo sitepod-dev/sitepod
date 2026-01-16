@@ -76,8 +76,13 @@ RUN apk add --no-cache ca-certificates tzdata wget
 COPY --from=caddy-builder /app/caddy-sitepod /usr/local/bin/caddy
 COPY --from=cli-builder /app/target/release/sitepod /usr/local/bin/sitepod
 
-# Copy Caddyfile
+# Copy Caddyfiles (both modes)
 COPY server/Caddyfile /etc/caddy/Caddyfile
+COPY server/examples/Caddyfile.proxy /etc/caddy/Caddyfile.proxy
+
+# Copy entrypoint script
+COPY server/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
 # Create directories
 RUN mkdir -p /data /caddy-data /caddy-config
@@ -87,13 +92,15 @@ ENV SITEPOD_DATA_DIR=/data
 ENV SITEPOD_STORAGE_TYPE=local
 ENV XDG_DATA_HOME=/caddy-data
 ENV XDG_CONFIG_HOME=/caddy-config
+# Set SITEPOD_PROXY_MODE=1 when behind reverse proxy (Coolify, Traefik, Nginx)
+ENV SITEPOD_PROXY_MODE=
 
-EXPOSE 80 443
+EXPOSE 80 443 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1/api/v1/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/api/v1/health || wget --no-verbose --tries=1 --spider http://127.0.0.1/api/v1/health || exit 1
 
-CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+CMD ["/docker-entrypoint.sh"]
 
 # -----------------------------------------------------------------------------
 # Target: Caddy - Alias for full (also default)

@@ -32,7 +32,10 @@ Coolify 支持三种部署方式，任选其一：
 **环境变量：**
 ```
 SITEPOD_DOMAIN=sitepod.example.com
+SITEPOD_PROXY_MODE=1
 ```
+
+> **重要**：`SITEPOD_PROXY_MODE=1` 让 SitePod 监听 8080 端口并禁用 SSL，由 Coolify/Traefik 处理 SSL。
 
 **持久化存储：**
 - 挂载路径：`/data`
@@ -50,17 +53,23 @@ SITEPOD_DOMAIN=sitepod.example.com
 
 ## 方式二：Dockerfile
 
-从源码构建，使用最小化 Dockerfile。
+从源码构建。
 
 ### 1. 创建服务
 
 1. 登录 Coolify → **New Resource** → **Dockerfile**
 2. Git 仓库：`https://github.com/sitepod-dev/sitepod`
-3. Dockerfile 路径：`Dockerfile.coolify`
+3. Dockerfile 路径：`Dockerfile`（默认即可）
 
 ### 2. 配置
 
-同上方式一的环境变量、存储和域名配置。
+**环境变量：**
+```
+SITEPOD_DOMAIN=sitepod.example.com
+SITEPOD_PROXY_MODE=1
+```
+
+其他配置同方式一（存储、域名）。
 
 ### 3. 部署
 
@@ -83,6 +92,7 @@ SITEPOD_DOMAIN=sitepod.example.com
 环境变量在 Coolify 界面设置：
 ```
 SITEPOD_DOMAIN=sitepod.example.com
+SITEPOD_PROXY_MODE=1
 ```
 
 域名配置同上。
@@ -112,6 +122,7 @@ SITEPOD_DOMAIN=sitepod.example.com
 | 变量 | 值 | 说明 |
 |------|---|------|
 | `SITEPOD_DOMAIN` | `sitepod.example.com` | **必填**，你的基础域名 |
+| `SITEPOD_PROXY_MODE` | `1` | **Coolify 必填**，禁用 SSL，监听 8080 |
 | `SITEPOD_STORAGE_TYPE` | `local` | 存储类型，默认 local |
 
 **可选的 S3 存储配置**（如使用 Cloudflare R2）：
