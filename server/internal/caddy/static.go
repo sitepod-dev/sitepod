@@ -113,7 +113,12 @@ func (h *SitePodHandler) resolveRouting(host, path string) (string, string, stri
 // - {project}--{slug}.{domain}/__preview__/{slug}/ → preview
 func (h *SitePodHandler) extractProjectAndEnv(host string) (string, string) {
 	// Strip the base domain to get subdomain
+	// Remove port from base domain for comparison (host already has port stripped)
 	baseDomain := h.Domain
+	if idx := strings.Index(baseDomain, ":"); idx != -1 {
+		baseDomain = baseDomain[:idx]
+	}
+
 	if !strings.HasSuffix(host, baseDomain) {
 		// Host doesn't match our domain
 		return "", ""
