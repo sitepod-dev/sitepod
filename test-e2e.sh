@@ -91,9 +91,9 @@ else
     fail "Welcome site returned $WELCOME"
 fi
 
-# Test console site
+# Test console site (now at root domain)
 info "Testing console site..."
-CONSOLE=$(curl -s -o /dev/null -w "%{http_code}" "http://console.localhost:8080/")
+CONSOLE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:8080/")
 if [ "$CONSOLE" = "200" ]; then
     pass "Console site accessible"
 else
@@ -150,10 +150,10 @@ else
     fail "Deploy failed"
 fi
 
-# Verify deployed site
+# Verify deployed site (beta uses -beta suffix now)
 info "Verifying deployed site..."
 sleep 2
-SITE=$(curl -s "http://test-project.beta.localhost:8080/")
+SITE=$(curl -s "http://test-project-beta.localhost:8080/")
 if echo "$SITE" | grep -q "Test Site"; then
     pass "Deployed site accessible and correct"
 else
