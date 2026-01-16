@@ -84,7 +84,7 @@ export const api = {
 
   // Deployments
   async getCurrentDeployment(projectName: string, env: string = 'prod'): Promise<CurrentDeployment> {
-    return request(`/current?project=${projectName}&env=${env}`)
+    return request(`/current?project=${projectName}&environment=${env}`)
   },
 
   // Images

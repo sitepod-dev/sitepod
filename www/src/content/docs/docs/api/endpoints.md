@@ -65,24 +65,7 @@ POST /api/v1/auth/anonymous
 
 ### POST /auth/bind
 
-Bind email to upgrade anonymous account.
-
-```http
-POST /api/v1/auth/bind
-Content-Type: application/json
-Authorization: Bearer <token>
-
-{
-  "email": "user@example.com"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Verification email sent. Please check your inbox."
-}
-```
+Not supported yet. This endpoint returns `501 Not Implemented`.
 
 ### DELETE /account
 

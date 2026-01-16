@@ -231,6 +231,7 @@ func (h *SitePodHandler) servePreviewBySlug(w http.ResponseWriter, r *http.Reque
 	}
 
 	if time.Now().After(preview.ExpiresAt) {
+		_ = h.storage.DeletePreview(project, slug)
 		return caddyhttp.Error(http.StatusGone, errors.New("preview expired"))
 	}
 

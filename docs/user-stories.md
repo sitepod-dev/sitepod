@@ -14,7 +14,7 @@ $ npx sitepod deploy
 
 # 检测到未登录，自动创建匿名账户
 ✓ 已创建匿名账户 (24小时有效)
-  提示: 运行 sitepod bind 绑定邮箱，保留账户和部署
+  提示: 绑定邮箱暂未支持，匿名账户 24h 后过期
 
 # 检测到没有 sitepod.toml，自动初始化
 ? 项目名称: my-project
@@ -31,7 +31,7 @@ $ npx sitepod deploy
   https://my-project-beta.sitepod.dev
 
   ⚠ 匿名账户将在 24 小时后过期
-  运行 sitepod bind 绑定邮箱以保留部署
+  绑定邮箱暂未支持，匿名部署 24h 后过期
 ```
 
 **子域名冲突时：**
@@ -53,7 +53,7 @@ $ npx sitepod deploy
 ### 绑定邮箱升级账户
 
 ```bash
-$ sitepod bind
+$ # bind 暂未支持
 ? 邮箱: alice@example.com
 ✓ 验证邮件已发送，请查收
 
@@ -141,13 +141,13 @@ directory = "./dist"
 
 ## 2. 路径模式：多项目共享域名
 
-**Bob 在一家公司工作，公司有多个 H5 项目，都部署在 `h5.company.com` 下。**
+**Bob 在一家公司工作，公司有多个 H5 项目，都部署在 `h5.example.com` 下。**
 
 ### 初始化项目
 
 ```bash
 # 1. 登录公司内部 SitePod
-$ sitepod login --endpoint https://sitepod.company.com
+$ sitepod login --endpoint https://sitepod.example.com
 ✓ 已登录为 bob
 
 # 2. 初始化播客管理后台项目
@@ -156,7 +156,7 @@ $ sitepod init
 ? 项目名称: blog-admin
 ? 构建目录: ./dist
 ? 路由模式: 路径模式 (多项目共享域名)
-? 域名: h5.company.com
+? 域名: h5.example.com
 ? 路径前缀: /blog-admin
 ✓ 已创建 sitepod.toml
 ```
@@ -173,7 +173,7 @@ routing_mode = "path"
 directory = "./dist"
 
 [deploy.routing]
-domain = "h5.company.com"
+domain = "h5.example.com"
 slug = "/blog-admin"
 ```
 
@@ -186,13 +186,13 @@ $ sitepod deploy
 上传中... 156/156 (3.8 MB)
 ✓ 已部署到 beta
 
-  https://h5.company.com/blog-admin/?env=beta
+  https://h5.example.com/blog-admin/?env=beta
 
 # 4. 部署到生产
 $ sitepod deploy --prod
 ✓ 已部署到 prod
 
-  https://h5.company.com/blog-admin/
+  https://h5.example.com/blog-admin/
 ```
 
 ### 同事部署另一个项目
@@ -203,30 +203,30 @@ $ cd user-center
 $ sitepod init
 ? 项目名称: user-center
 ? 路由模式: 路径模式
-? 域名: h5.company.com        # 同一个域名
+? 域名: h5.example.com        # 同一个域名
 ? 路径前缀: /user-center      # 不同的路径
 
 $ sitepod deploy --prod
 ✓ 已部署到 prod
 
-  https://h5.company.com/user-center/
+  https://h5.example.com/user-center/
 ```
 
 ### 最终效果
 
-`h5.company.com` 下有多个项目：
+`h5.example.com` 下有多个项目：
 
 | 项目 | URL |
 |------|-----|
-| blog-admin | `https://h5.company.com/blog-admin/` |
-| user-center | `https://h5.company.com/user-center/` |
-| ... | `https://h5.company.com/...` |
+| blog-admin | `https://h5.example.com/blog-admin/` |
+| user-center | `https://h5.example.com/user-center/` |
+| ... | `https://h5.example.com/...` |
 
 ---
 
 ## 3. 路径模式：单域名
 
-**Dave 为客户开发了一个官网，客户要求部署到 `www.client.com`。**
+**Dave 为客户开发了一个官网，客户要求部署到 `www.example.com`。**
 
 ### 配置和部署
 
@@ -235,26 +235,26 @@ $ cd client-website
 $ sitepod init
 ? 项目名称: client-website
 ? 路由模式: 路径模式 (自定义域名)
-? 域名: www.client.com
+? 域名: www.example.com
 ? 路径前缀: /                 # 独占整个域名
 ✓ 已创建 sitepod.toml
 
 # 添加并验证域名
-$ sitepod domain add www.client.com
+$ sitepod domain add www.example.com
 
 添加 DNS 记录：
   类型: CNAME
-  名称: www.client.com
+  名称: www.example.com
   值:   cname.sitepod.dev
 
-$ sitepod domain verify www.client.com
+$ sitepod domain verify www.example.com
 ✓ 域名已验证
 
 # 部署
 $ sitepod deploy --prod
 ✓ 已部署到 prod
 
-  https://www.client.com/
+  https://www.example.com/
 ```
 
 ### 生成的配置文件
@@ -269,7 +269,7 @@ routing_mode = "path"
 directory = "./dist"
 
 [deploy.routing]
-domain = "www.client.com"
+domain = "www.example.com"
 slug = "/"
 ```
 
@@ -303,7 +303,7 @@ $ sitepod deploy --prod
 $ sitepod preview
 ✓ 已创建预览
 
-  https://h5.company.com/blog-admin/?preview=feat-login
+  https://h5.example.com/blog-admin/?preview=feat-login
   有效期: 24 小时
 
 # Frank 打开链接
@@ -401,11 +401,11 @@ jobs:
 
       - name: Deploy to SitePod
         run: |
-          curl -fsSL https://sitepod.dev/install.sh | sh
+          curl -fsSL https://get.sitepod.dev | sh
           sitepod deploy --prod
         env:
           SITEPOD_TOKEN: ${{ secrets.SITEPOD_TOKEN }}
-          SITEPOD_ENDPOINT: https://sitepod.company.com
+          SITEPOD_ENDPOINT: https://sitepod.example.com
 ```
 
 ---
@@ -463,9 +463,9 @@ Beta环境:  https://my-app-beta.sitepod.dev
 ### 路径模式
 
 ```
-生产环境:  https://h5.company.com/my-app/
-Beta环境:  https://h5.company.com/my-app/?env=beta  (设置 Cookie 后重定向)
-预览环境:  https://h5.company.com/my-app/?preview={slug}
+生产环境:  https://h5.example.com/my-app/
+Beta环境:  https://h5.example.com/my-app/?env=beta  (设置 Cookie 后重定向)
+预览环境:  https://h5.example.com/my-app/?preview={slug}
 ```
 
 路径模式下，首次访问带 `?env=beta` 或 `?preview=xxx` 参数，服务端会：

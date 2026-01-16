@@ -14,6 +14,7 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/models"
+	"github.com/sitepod/sitepod/internal/gc"
 	"github.com/sitepod/sitepod/internal/storage"
 	"go.uber.org/zap"
 
@@ -37,6 +38,7 @@ type SitePodHandler struct {
 	cache        *refCache
 	routingCache *routingCache
 	cacheTTL     time.Duration
+	gc           *gc.GC
 	logger       *zap.Logger
 	startTime    time.Time
 }
@@ -129,6 +131,10 @@ func (h *SitePodHandler) Provision(ctx caddy.Context) error {
 	h.cache = newRefCache(h.cacheTTL)
 	h.routingCache = newRoutingCache(h.cacheTTL)
 
+	// Start GC background worker
+	h.gc = gc.New(h.app, h.storage, gc.DefaultConfig())
+	go h.gc.Start(ctx.Context)
+
 	// Get PocketBase router for forwarding requests
 	pbRouter, err := apis.InitApi(h.app)
 	if err != nil {
@@ -216,7 +222,7 @@ func (h *SitePodHandler) handleAPI(w http.ResponseWriter, r *http.Request) error
 		return h.apiListProjects(w, r, user)
 	case strings.HasPrefix(path, "/projects/") && r.Method == "GET":
 		projectName := strings.TrimPrefix(path, "/projects/")
-		return h.apiGetProject(w, r, projectName)
+		return h.apiGetProject(w, r, projectName, user)
 
 	// Subdomain check
 	case path == "/subdomain/check" && r.Method == "GET":
@@ -224,43 +230,43 @@ func (h *SitePodHandler) handleAPI(w http.ResponseWriter, r *http.Request) error
 
 	// Plan/Commit flow
 	case path == "/plan" && r.Method == "POST":
-		return h.apiPlan(w, r)
+		return h.apiPlan(w, r, user)
 	case strings.HasPrefix(path, "/upload/") && r.Method == "POST":
-		return h.apiUpload(w, r, path)
+		return h.apiUpload(w, r, path, user)
 	case path == "/commit" && r.Method == "POST":
-		return h.apiCommit(w, r)
+		return h.apiCommit(w, r, user)
 
 	// Release/Rollback
 	case path == "/release" && r.Method == "POST":
-		return h.apiRelease(w, r)
+		return h.apiRelease(w, r, user)
 	case path == "/rollback" && r.Method == "POST":
-		return h.apiRollback(w, r)
+		return h.apiRollback(w, r, user)
 
 	// Preview
 	case path == "/preview" && r.Method == "POST":
-		return h.apiCreatePreview(w, r)
+		return h.apiCreatePreview(w, r, user)
 
 	// Query
 	case path == "/current" && r.Method == "GET":
-		return h.apiGetCurrent(w, r)
+		return h.apiGetCurrent(w, r, user)
 	case path == "/history" && r.Method == "GET":
-		return h.apiGetHistory(w, r)
+		return h.apiGetHistory(w, r, user)
 	case path == "/images" && r.Method == "GET":
-		return h.apiListImages(w, r)
+		return h.apiListImages(w, r, user)
 
 	// Domain management
 	case path == "/domains" && r.Method == "POST":
-		return h.apiAddDomain(w, r)
+		return h.apiAddDomain(w, r, user)
 	case path == "/domains" && r.Method == "GET":
-		return h.apiListDomains(w, r)
+		return h.apiListDomains(w, r, user)
 	case strings.HasPrefix(path, "/domains/") && strings.HasSuffix(path, "/verify") && r.Method == "POST":
 		domain := strings.TrimSuffix(strings.TrimPrefix(path, "/domains/"), "/verify")
-		return h.apiVerifyDomain(w, r, domain)
+		return h.apiVerifyDomain(w, r, domain, user)
 	case strings.HasPrefix(path, "/domains/") && r.Method == "DELETE":
 		domain := strings.TrimPrefix(path, "/domains/")
-		return h.apiRemoveDomain(w, r, domain)
+		return h.apiRemoveDomain(w, r, domain, user)
 	case path == "/domains/rename" && r.Method == "PUT":
-		return h.apiRenameDomain(w, r)
+		return h.apiRenameDomain(w, r, user)
 
 	// Admin routes
 	case path == "/admin/cache/invalidate" && r.Method == "POST":
@@ -288,6 +294,13 @@ func (h *SitePodHandler) authenticate(r *http.Request) (*models.Record, error) {
 	record, err := h.app.Dao().FindAuthRecordByToken(token, h.app.Settings().RecordAuthToken.Secret)
 	if err != nil {
 		return nil, err
+	}
+
+	if record.GetBool("is_anonymous") {
+		expiresAt := record.GetDateTime("anonymous_expires_at")
+		if !expiresAt.IsZero() && time.Now().After(expiresAt.Time()) {
+			return nil, errors.New("anonymous session expired")
+		}
 	}
 
 	return record, nil

@@ -12,6 +12,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ENDPOINT="http://localhost:8080"
 DATA_DIR="$SCRIPT_DIR/data"
 SERVER_PID=""
+ADMIN_TOKEN="test-admin-token"
 
 cleanup() {
     echo -e "\n${YELLOW}Cleaning up...${NC}"
@@ -52,7 +53,7 @@ info "Starting server..."
 rm -rf "$DATA_DIR"
 mkdir -p "$DATA_DIR"
 cd "$SCRIPT_DIR"
-"$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
+SITEPOD_ADMIN_TOKEN="$ADMIN_TOKEN" "$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
 SERVER_PID=$!
 sleep 8
 
@@ -142,7 +143,7 @@ pass "Project config created"
 # Deploy
 info "Testing sitepod deploy..."
 $SCRIPT_DIR/bin/sitepod deploy > /tmp/sitepod-deploy.log 2>&1
-if grep -q "Deployed successfully" /tmp/sitepod-deploy.log; then
+if grep -q "Released to" /tmp/sitepod-deploy.log; then
     pass "Deploy successful"
 else
     cat /tmp/sitepod-deploy.log
@@ -200,7 +201,7 @@ fi
 # Deploy to prod (use --yes to skip confirmation)
 info "Testing deploy to prod..."
 $SCRIPT_DIR/bin/sitepod deploy --prod --yes > /tmp/sitepod-deploy-prod.log 2>&1 || true
-if grep -q "Deployed successfully" /tmp/sitepod-deploy-prod.log; then
+if grep -q "Released to" /tmp/sitepod-deploy-prod.log; then
     pass "Prod deploy successful"
 else
     cat /tmp/sitepod-deploy-prod.log
@@ -234,7 +235,7 @@ fi
 
 # Test cleanup API
 info "Testing cleanup API..."
-CLEANUP_RESP=$(curl -s -X POST "$ENDPOINT/api/v1/cleanup")
+CLEANUP_RESP=$(curl -s -X POST -H "X-Sitepod-Admin-Token: $ADMIN_TOKEN" "$ENDPOINT/api/v1/cleanup")
 if echo "$CLEANUP_RESP" | grep -q "expired_users_deleted"; then
     pass "Cleanup API working"
 else
@@ -243,7 +244,7 @@ fi
 
 # Test garbage collection API
 info "Testing GC API..."
-GC_RESP=$(curl -s -X POST "$ENDPOINT/api/v1/gc")
+GC_RESP=$(curl -s -X POST -H "X-Sitepod-Admin-Token: $ADMIN_TOKEN" "$ENDPOINT/api/v1/gc")
 if echo "$GC_RESP" | grep -q "deleted_blobs"; then
     pass "GC API working"
 else

@@ -38,17 +38,25 @@ function createAuth() {
     get token() { return state.token },
     get loading() { return state.loading },
 
-    async login(email: string) {
+    async login(email: string, password: string) {
       state.loading = true
       try {
-        const response = await fetch('/api/v1/auth/login', {
+        const response = await fetch('/api/collections/users/auth-with-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
+          body: JSON.stringify({ identity: email, password })
         })
         if (!response.ok) throw new Error('Login failed')
-        // Email verification flow - show message
-        return { success: true, message: 'Check your email for verification link' }
+        const data = await response.json()
+        state.token = data.token
+        state.user = {
+          id: data.record?.id || '',
+          email: data.record?.email || email,
+          isAnonymous: data.record?.is_anonymous || false
+        }
+        state.isAuthenticated = true
+        localStorage.setItem('sitepod_token', data.token)
+        return { success: true, message: 'Logged in' }
       } finally {
         state.loading = false
       }

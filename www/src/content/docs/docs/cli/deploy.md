@@ -72,7 +72,7 @@ $ sitepod deploy
 ◐ Creating anonymous session
 ✓ Anonymous session
   expires: 24h
-  next: sitepod bind
+  note: anonymous sessions expire in 24h
 
 # No sitepod.toml? Prompts for project setup
 ? Project name: my-site

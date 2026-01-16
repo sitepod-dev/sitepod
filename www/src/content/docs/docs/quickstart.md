@@ -30,7 +30,7 @@ $ npx sitepod deploy
 ◐ Creating anonymous session
 ✓ Anonymous session
   expires: 24h
-  next: sitepod bind
+  note: anonymous sessions expire in 24h
 
 ? Project name: my-site
 ? Build directory (detected dist/): dist
@@ -58,27 +58,12 @@ $ npx sitepod deploy
   url: https://my-site-beta.sitepod.dev
 
 ⚠ Anonymous session - expires in 24h
-  next: sitepod bind
+  note: anonymous sessions expire in 24h
 ```
 
 ## Keep your account
 
-Bind an email to preserve your deployments beyond 24 hours:
-
-```bash
-sitepod bind
-```
-
-```
-? Email: you@example.com
-◐ Sending verification email
-✓ Email sent
-
-Next:
-  - Check your inbox
-  - Click the verification link
-  - Account upgraded
-```
+Email binding is not supported yet. Anonymous sessions expire after 24 hours.
 
 ## Deploy to production
 

@@ -79,17 +79,16 @@ func (b *S3Backend) UploadMode() string {
 func (b *S3Backend) PutBlob(hash string, r io.Reader, size int64) error {
 	ctx := context.Background()
 
-	data, err := io.ReadAll(r)
-	if err != nil {
-		return err
+	input := &s3.PutObjectInput{
+		Bucket: aws.String(b.bucket),
+		Key:    aws.String(b.blobKey(hash)),
+		Body:   r,
+	}
+	if size >= 0 {
+		input.ContentLength = aws.Int64(size)
 	}
 
-	_, err = b.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:        aws.String(b.bucket),
-		Key:           aws.String(b.blobKey(hash)),
-		Body:          bytes.NewReader(data),
-		ContentLength: aws.Int64(int64(len(data))),
-	})
+	_, err := b.client.PutObject(ctx, input)
 
 	return err
 }

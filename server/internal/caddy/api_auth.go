@@ -1,9 +1,7 @@
 package caddy
 
 import (
-	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -50,34 +48,7 @@ func (h *SitePodHandler) apiAnonymousAuth(w http.ResponseWriter, r *http.Request
 
 // API: Bind Email
 func (h *SitePodHandler) apiBindEmail(w http.ResponseWriter, r *http.Request, user *models.Record) error {
-	var req struct {
-		Email string `json:"email"`
-	}
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return h.jsonError(w, http.StatusBadRequest, "invalid request")
-	}
-
-	if req.Email == "" || !strings.Contains(req.Email, "@") {
-		return h.jsonError(w, http.StatusBadRequest, "valid email required")
-	}
-
-	existing, _ := h.app.Dao().FindFirstRecordByData("users", "email", req.Email)
-	if existing != nil && existing.Id != user.Id {
-		return h.jsonError(w, http.StatusConflict, "email already in use")
-	}
-
-	user.Set("email", req.Email)
-	user.Set("verified", false)
-	user.Set("is_anonymous", false)
-	user.Set("anonymous_expires_at", nil)
-
-	if err := h.app.Dao().SaveRecord(user); err != nil {
-		return h.jsonError(w, http.StatusInternalServerError, "failed to update account")
-	}
-
-	return h.jsonResponse(w, http.StatusOK, map[string]string{
-		"message": "Verification email sent. Please check your inbox.",
-	})
+	return h.jsonError(w, http.StatusNotImplemented, "email binding is not supported; use anonymous or password login")
 }
 
 // API: Delete Account - cascade deletes all user data

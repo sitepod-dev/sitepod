@@ -28,7 +28,7 @@ sitepod login
 ### Login to custom server
 
 ```bash
-sitepod login --endpoint https://sitepod.company.com
+sitepod login --endpoint https://sitepod.example.com
 ```
 
 ### Local development
@@ -71,13 +71,13 @@ $ sitepod login
 ◐ Creating anonymous session
 ✓ Anonymous session
   expires: 24h
-  next: sitepod bind
+  note: anonymous sessions expire in 24h
 ```
 
 Anonymous limitations:
 - Account expires in 24 hours
 - Deployments are deleted when account expires
-- Can be upgraded with `sitepod bind`
+- Binding emails is not supported yet
 
 ## Configuration
 
@@ -107,5 +107,5 @@ sitepod --endpoint https://other-server.com deploy
 
 ## See also
 
-- [sitepod bind](/docs/cli/bind/) - Upgrade anonymous account
+- [sitepod deploy](/docs/cli/deploy/) - Deploy your site
 - [sitepod deploy](/docs/cli/deploy/) - Deploy your site

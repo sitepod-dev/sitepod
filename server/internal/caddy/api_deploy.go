@@ -3,8 +3,10 @@ package caddy
 import (
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -15,13 +17,7 @@ import (
 )
 
 // API: Plan
-func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request) error {
-	// Get authenticated user
-	user, err := h.authenticate(r)
-	if err != nil {
-		return h.jsonError(w, http.StatusUnauthorized, "authentication required")
-	}
-
+func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	var req struct {
 		Project string      `json:"project"`
 		Files   []FileEntry `json:"files"`
@@ -34,6 +30,9 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request) error {
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return h.jsonError(w, http.StatusBadRequest, "invalid request")
+	}
+	if req.Project == "" {
+		return h.jsonError(w, http.StatusBadRequest, "project required")
 	}
 
 	// Check quotas
@@ -52,12 +51,19 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request) error {
 
 	project, err := h.getOrCreateProjectWithOwner(req.Project, user.Id)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusInternalServerError, err.Error())
 	}
 
-	// Calculate content hash
+	// Calculate content hash (stable order by path)
+	files := append([]FileEntry(nil), req.Files...)
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Path < files[j].Path
+	})
 	hasher := blake3.New()
-	for _, f := range req.Files {
+	for _, f := range files {
 		hasher.Write([]byte(f.Path))
 		hasher.Write([]byte(f.Blake3))
 	}
@@ -153,7 +159,7 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request) error {
 }
 
 // API: Upload
-func (h *SitePodHandler) apiUpload(w http.ResponseWriter, r *http.Request, path string) error {
+func (h *SitePodHandler) apiUpload(w http.ResponseWriter, r *http.Request, path string, user *models.Record) error {
 	// Parse: /upload/{plan_id}/{hash}
 	parts := strings.Split(strings.TrimPrefix(path, "/upload/"), "/")
 	if len(parts) != 2 {
@@ -162,13 +168,51 @@ func (h *SitePodHandler) apiUpload(w http.ResponseWriter, r *http.Request, path 
 
 	planID, hash := parts[0], parts[1]
 
-	plan, err := h.app.Dao().FindFirstRecordByData("plans", "plan_id", planID)
+	plan, project, err := h.requirePlanOwner(planID, user)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "plan not found")
 	}
 
 	if plan.GetString("status") != "pending" {
 		return h.jsonError(w, http.StatusBadRequest, "plan is not pending")
+	}
+	if planExpired(plan) {
+		plan.Set("status", "expired")
+		h.app.Dao().SaveRecord(plan)
+		return h.jsonError(w, http.StatusBadRequest, "plan expired")
+	}
+
+	if project == nil {
+		return h.jsonError(w, http.StatusNotFound, "project not found")
+	}
+
+	var missing []struct {
+		Hash string `json:"hash"`
+		Size int64  `json:"size"`
+	}
+	if err := json.Unmarshal([]byte(plan.GetString("missing_blobs")), &missing); err != nil {
+		return h.jsonError(w, http.StatusInternalServerError, "invalid plan")
+	}
+
+	var expectedSize int64 = -1
+	for _, entry := range missing {
+		if entry.Hash == hash {
+			expectedSize = entry.Size
+			break
+		}
+	}
+	if expectedSize < 0 {
+		return h.jsonError(w, http.StatusBadRequest, "blob not in plan")
+	}
+
+	if r.ContentLength < 0 {
+		return h.jsonError(w, http.StatusBadRequest, "content-length required")
+	}
+	if expectedSize != r.ContentLength {
+		return h.jsonError(w, http.StatusBadRequest, "size mismatch")
 	}
 
 	// Store the blob
@@ -184,7 +228,7 @@ func (h *SitePodHandler) apiUpload(w http.ResponseWriter, r *http.Request, path 
 }
 
 // API: Commit
-func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	var req struct {
 		PlanID string `json:"plan_id"`
 	}
@@ -192,13 +236,25 @@ func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request) error
 		return h.jsonError(w, http.StatusBadRequest, "invalid request")
 	}
 
-	plan, err := h.app.Dao().FindFirstRecordByData("plans", "plan_id", req.PlanID)
+	plan, project, err := h.requirePlanOwner(req.PlanID, user)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "plan not found")
 	}
 
 	if plan.GetString("status") != "pending" {
 		return h.jsonError(w, http.StatusBadRequest, "plan is not pending")
+	}
+	if planExpired(plan) {
+		plan.Set("status", "expired")
+		h.app.Dao().SaveRecord(plan)
+		return h.jsonError(w, http.StatusBadRequest, "plan expired")
+	}
+
+	if project == nil {
+		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
 	// Verify all blobs exist
@@ -256,7 +312,7 @@ func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request) error
 }
 
 // API: Release
-func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	var req struct {
 		Project     string `json:"project"`
 		ProjectID   string `json:"project_id"`
@@ -283,6 +339,9 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
+	if !h.userOwnsProject(user, project) {
+		return h.jsonError(w, http.StatusForbidden, "forbidden")
+	}
 	projectName := project.GetString("name")
 
 	// Find image
@@ -301,6 +360,9 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request) erro
 
 	if err != nil || image == nil {
 		return h.jsonError(w, http.StatusNotFound, "image not found")
+	}
+	if image.GetString("project_id") != project.Id {
+		return h.jsonError(w, http.StatusForbidden, "forbidden")
 	}
 
 	// Get current ref for audit
@@ -349,7 +411,7 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request) erro
 }
 
 // API: Rollback
-func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	var req struct {
 		Project     string `json:"project"`
 		Environment string `json:"environment"`
@@ -358,15 +420,24 @@ func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request) err
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return h.jsonError(w, http.StatusBadRequest, "invalid request")
 	}
+	if req.Environment != "prod" && req.Environment != "beta" {
+		return h.jsonError(w, http.StatusBadRequest, "environment must be 'prod' or 'beta'")
+	}
 
 	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", req.Project)
 	if err != nil {
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
+	if !h.userOwnsProject(user, project) {
+		return h.jsonError(w, http.StatusForbidden, "forbidden")
+	}
 
 	image, err := h.app.Dao().FindFirstRecordByData("images", "image_id", req.ImageID)
 	if err != nil {
 		return h.jsonError(w, http.StatusNotFound, "image not found")
+	}
+	if image.GetString("project_id") != project.Id {
+		return h.jsonError(w, http.StatusForbidden, "forbidden")
 	}
 
 	// Get current ref
@@ -417,8 +488,16 @@ func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request) err
 	})
 }
 
+func planExpired(plan *models.Record) bool {
+	expiresAt := plan.GetDateTime("expires_at")
+	if expiresAt.IsZero() {
+		return false
+	}
+	return time.Now().After(expiresAt.Time())
+}
+
 // API: Create Preview
-func (h *SitePodHandler) apiCreatePreview(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiCreatePreview(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	var req struct {
 		Project   string `json:"project"`
 		ImageID   string `json:"image_id"`
@@ -429,9 +508,20 @@ func (h *SitePodHandler) apiCreatePreview(w http.ResponseWriter, r *http.Request
 		return h.jsonError(w, http.StatusBadRequest, "invalid request")
 	}
 
+	project, err := h.requireProjectOwnerByName(req.Project, user)
+	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
+		return h.jsonError(w, http.StatusNotFound, "project not found")
+	}
+
 	image, err := h.app.Dao().FindFirstRecordByData("images", "image_id", req.ImageID)
 	if err != nil {
 		return h.jsonError(w, http.StatusNotFound, "image not found")
+	}
+	if image.GetString("project_id") != project.Id {
+		return h.jsonError(w, http.StatusForbidden, "forbidden")
 	}
 
 	slug := req.Slug

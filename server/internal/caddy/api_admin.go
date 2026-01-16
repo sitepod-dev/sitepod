@@ -2,6 +2,7 @@ package caddy
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -13,6 +14,13 @@ import (
 
 // API: Cleanup - removes expired anonymous accounts and previews
 func (h *SitePodHandler) apiCleanup(w http.ResponseWriter, r *http.Request) error {
+	if err := h.requireAdminToken(r); err != nil {
+		if errors.Is(err, errAdminTokenMissing) {
+			return h.jsonError(w, http.StatusForbidden, "admin token not configured")
+		}
+		return h.jsonError(w, http.StatusForbidden, "forbidden")
+	}
+
 	h.logger.Info("Starting cleanup task")
 
 	result := map[string]any{
@@ -134,14 +142,30 @@ func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
 // cleanupExpiredPreviews removes expired preview deployments for a project
 func (h *SitePodHandler) cleanupExpiredPreviews(projectName string) int {
 	deleted := 0
-	// This is a simplified version - in production, we'd scan the previews directory
-	// For now, previews are stored in storage as JSON files with expiry info
-	// The storage backend would need to implement preview listing
+	collection, err := h.app.Dao().FindCollectionByNameOrId("previews")
+	if err != nil || collection == nil {
+		return 0
+	}
 
-	// Try to list and check each preview (implementation depends on storage backend)
-	// For local storage, we can scan the previews directory
-	if localBackend, ok := h.storage.(*storage.LocalBackend); ok {
-		_ = localBackend // Use local backend specific methods if needed
+	now := time.Now().UTC().Format("2006-01-02 15:04:05.000Z")
+	previews, err := h.app.Dao().FindRecordsByFilter(
+		"previews",
+		"project = {:project} && expires_at < {:now}",
+		"",
+		1000,
+		0,
+		map[string]any{"project": projectName, "now": now},
+	)
+	if err != nil {
+		return 0
+	}
+
+	for _, preview := range previews {
+		slug := preview.GetString("slug")
+		if err := h.storage.DeletePreview(projectName, slug); err == nil {
+			deleted++
+		}
+		_ = h.app.Dao().DeleteRecord(preview)
 	}
 
 	return deleted
@@ -149,6 +173,13 @@ func (h *SitePodHandler) cleanupExpiredPreviews(projectName string) int {
 
 // API: Garbage Collection - removes unreferenced blobs
 func (h *SitePodHandler) apiGarbageCollect(w http.ResponseWriter, r *http.Request) error {
+	if err := h.requireAdminToken(r); err != nil {
+		if errors.Is(err, errAdminTokenMissing) {
+			return h.jsonError(w, http.StatusForbidden, "admin token not configured")
+		}
+		return h.jsonError(w, http.StatusForbidden, "forbidden")
+	}
+
 	h.logger.Info("Starting garbage collection")
 
 	// 1. Collect all referenced blob hashes from refs and previews

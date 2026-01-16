@@ -57,6 +57,7 @@ func (h *SitePodHandler) ensureDefaultAdmin() error {
 	password := os.Getenv("SITEPOD_ADMIN_PASSWORD")
 	if password == "" {
 		password = "sitepod123"
+		h.logger.Warn("SITEPOD_ADMIN_PASSWORD not set; default admin password in use")
 	}
 
 	// Create admin

@@ -2,6 +2,7 @@ package caddy
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 )
 
 // API: Add Domain
-func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	var req struct {
 		Project string `json:"project"`
 		Domain  string `json:"domain"`
@@ -35,8 +36,11 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request) er
 		slug = "/" + slug
 	}
 
-	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", req.Project)
+	project, err := h.requireProjectOwnerByName(req.Project, user)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
@@ -97,14 +101,17 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request) er
 }
 
 // API: List Domains
-func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	projectName := r.URL.Query().Get("project")
 	if projectName == "" {
 		return h.jsonError(w, http.StatusBadRequest, "project required")
 	}
 
-	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", projectName)
+	project, err := h.requireProjectOwnerByName(projectName, user)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
@@ -132,9 +139,12 @@ func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request) 
 }
 
 // API: Verify Domain
-func (h *SitePodHandler) apiVerifyDomain(w http.ResponseWriter, r *http.Request, domain string) error {
-	domainRecord, err := h.app.Dao().FindFirstRecordByData("domains", "domain", domain)
+func (h *SitePodHandler) apiVerifyDomain(w http.ResponseWriter, r *http.Request, domain string, user *models.Record) error {
+	domainRecord, _, err := h.requireDomainOwner(domain, user)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "domain not found")
 	}
 
@@ -186,9 +196,12 @@ func (h *SitePodHandler) apiVerifyDomain(w http.ResponseWriter, r *http.Request,
 }
 
 // API: Remove Domain
-func (h *SitePodHandler) apiRemoveDomain(w http.ResponseWriter, r *http.Request, domain string) error {
-	domainRecord, err := h.app.Dao().FindFirstRecordByData("domains", "domain", domain)
+func (h *SitePodHandler) apiRemoveDomain(w http.ResponseWriter, r *http.Request, domain string, user *models.Record) error {
+	domainRecord, _, err := h.requireDomainOwner(domain, user)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "domain not found")
 	}
 
@@ -207,7 +220,7 @@ func (h *SitePodHandler) apiRemoveDomain(w http.ResponseWriter, r *http.Request,
 }
 
 // API: Rename Domain
-func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	projectName := r.URL.Query().Get("project")
 	if projectName == "" {
 		return h.jsonError(w, http.StatusBadRequest, "project required")
@@ -230,8 +243,11 @@ func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request)
 		return h.jsonError(w, http.StatusConflict, "subdomain already in use")
 	}
 
-	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", projectName)
+	project, err := h.requireProjectOwnerByName(projectName, user)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
@@ -294,13 +310,6 @@ func (h *SitePodHandler) apiCheckDomain(w http.ResponseWriter, r *http.Request) 
 	// Check if domain exists in domains table
 	existing, _ := h.app.Dao().FindFirstRecordByData("domains", "domain", domain)
 	if existing != nil && existing.GetString("status") == "active" {
-		w.WriteHeader(http.StatusOK)
-		return nil
-	}
-
-	// Check if it's a system subdomain
-	baseDomain := h.Domain
-	if strings.HasSuffix(domain, "."+baseDomain) {
 		w.WriteHeader(http.StatusOK)
 		return nil
 	}

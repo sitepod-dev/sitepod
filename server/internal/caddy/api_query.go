@@ -2,6 +2,7 @@ package caddy
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -49,12 +50,19 @@ func (h *SitePodHandler) apiMetrics(w http.ResponseWriter, r *http.Request) erro
 }
 
 // API: Get Current
-func (h *SitePodHandler) apiGetCurrent(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiGetCurrent(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	project := r.URL.Query().Get("project")
 	env := r.URL.Query().Get("environment")
 
 	if project == "" || env == "" {
 		return h.jsonError(w, http.StatusBadRequest, "project and environment required")
+	}
+
+	if _, err := h.requireProjectOwnerByName(project, user); err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
+		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
 	refData, err := h.storage.GetRef(project, env)
@@ -75,11 +83,14 @@ func (h *SitePodHandler) apiGetCurrent(w http.ResponseWriter, r *http.Request) e
 }
 
 // API: Get History
-func (h *SitePodHandler) apiGetHistory(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiGetHistory(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	projectName := r.URL.Query().Get("project")
 
-	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", projectName)
+	project, err := h.requireProjectOwnerByName(projectName, user)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
@@ -105,7 +116,7 @@ func (h *SitePodHandler) apiGetHistory(w http.ResponseWriter, r *http.Request) e
 }
 
 // API: List Images
-func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request) error {
+func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	projectID := r.URL.Query().Get("project_id")
 	projectName := r.URL.Query().Get("project")
 
@@ -113,14 +124,17 @@ func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request) e
 	var err error
 
 	if projectID != "" {
-		project, err = h.app.Dao().FindRecordById("projects", projectID)
+		project, err = h.requireProjectOwnerByID(projectID, user)
 	} else if projectName != "" {
-		project, err = h.app.Dao().FindFirstRecordByData("projects", "name", projectName)
+		project, err = h.requireProjectOwnerByName(projectName, user)
 	} else {
 		return h.jsonError(w, http.StatusBadRequest, "project_id or project required")
 	}
 
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
@@ -207,9 +221,12 @@ func (h *SitePodHandler) apiListProjects(w http.ResponseWriter, r *http.Request,
 }
 
 // API: Get Project
-func (h *SitePodHandler) apiGetProject(w http.ResponseWriter, r *http.Request, projectName string) error {
-	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", projectName)
+func (h *SitePodHandler) apiGetProject(w http.ResponseWriter, r *http.Request, projectName string, user *models.Record) error {
+	project, err := h.requireProjectOwnerByName(projectName, user)
 	if err != nil {
+		if errors.Is(err, errForbidden) {
+			return h.jsonError(w, http.StatusForbidden, "forbidden")
+		}
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 

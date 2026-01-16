@@ -131,7 +131,7 @@ SitePod:  sitepod deploy --prod
 | `sitepod deploy` | 一键部署（自动登录、初始化） |
 | `sitepod deploy --prod` | 部署到生产环境 |
 | `sitepod login` | 登录认证（邮箱验证） |
-| `sitepod bind` | 匿名账户绑定邮箱升级 |
+| `sitepod bind` | （暂未支持）匿名账户绑定邮箱升级 |
 | `sitepod init` | 初始化项目配置 |
 | `sitepod preview` | 创建预览部署 |
 | `sitepod rollback` | 回滚到历史版本 |
@@ -162,7 +162,7 @@ sitepod deploy
 |------|------|
 | 自动创建 | 未登录时执行 deploy/preview 自动创建 |
 | 有效期 | 24 小时后过期，部署一并删除 |
-| 升级方式 | `sitepod bind` 绑定邮箱升级为正式账户 |
+| 升级方式 | （暂未支持）`sitepod bind` 绑定邮箱升级为正式账户 |
 | 升级后 | 账户永久保留，域名不变 |
 
 #### 系统域名
