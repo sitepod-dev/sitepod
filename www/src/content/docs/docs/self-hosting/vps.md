@@ -45,11 +45,12 @@ In your cloud console (AWS, GCP, DigitalOcean, etc.), ensure your security group
 
 Point your domain to your server. Example for `sitepod.example.com`:
 
-| Type | Name | Value |
-|------|------|-------|
-| A | sitepod | `<server-ip>` |
-| A | *.sitepod | `<server-ip>` |
-| A | *.beta.sitepod | `<server-ip>` |
+| Type | Name | Value | Purpose |
+|------|------|-------|---------|
+| A | sitepod | `<server-ip>` | Console + API |
+| A | *.sitepod | `<server-ip>` | User sites |
+
+> Beta uses `-beta` suffix (e.g., `myapp-beta.sitepod.example.com`), so only 2 records needed.
 
 Verify DNS propagation:
 

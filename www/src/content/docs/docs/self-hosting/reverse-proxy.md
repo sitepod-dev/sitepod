@@ -57,14 +57,14 @@ Create `/etc/nginx/sites-available/sitepod`:
 server {
     listen 80;
     listen [::]:80;
-    server_name sitepod.example.com *.sitepod.example.com *.beta.sitepod.example.com;
+    server_name sitepod.example.com *.sitepod.example.com;
     return 301 https://$host$request_uri;
 }
 
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name sitepod.example.com *.sitepod.example.com *.beta.sitepod.example.com;
+    server_name sitepod.example.com *.sitepod.example.com;
 
     ssl_certificate /etc/letsencrypt/live/sitepod.example.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/sitepod.example.com/privkey.pem;
@@ -99,7 +99,7 @@ sudo systemctl reload nginx
 Add to your Caddyfile:
 
 ```caddyfile
-sitepod.example.com, *.sitepod.example.com, *.beta.sitepod.example.com {
+sitepod.example.com, *.sitepod.example.com {
     reverse_proxy localhost:8080
 }
 ```
@@ -125,7 +125,7 @@ services:
       - SITEPOD_DOMAIN=sitepod.example.com
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.sitepod.rule=HostRegexp(`sitepod.example.com`, `{subdomain:[a-z0-9-]+}.sitepod.example.com`, `{subdomain:[a-z0-9-]+}.beta.sitepod.example.com`)"
+      - "traefik.http.routers.sitepod.rule=HostRegexp(`sitepod.example.com`, `{subdomain:[a-z0-9-]+}.sitepod.example.com`)"
       - "traefik.http.routers.sitepod.entrypoints=websecure"
       - "traefik.http.routers.sitepod.tls.certresolver=letsencrypt"
       - "traefik.http.services.sitepod.loadbalancer.server.port=8080"
@@ -152,8 +152,7 @@ sudo certbot certonly \
   --dns-cloudflare \
   --dns-cloudflare-credentials ~/.cloudflare.ini \
   -d sitepod.example.com \
-  -d "*.sitepod.example.com" \
-  -d "*.beta.sitepod.example.com"
+  -d "*.sitepod.example.com"
 ```
 
 ### acme.sh + Other DNS providers
@@ -166,8 +165,7 @@ curl https://get.acme.sh | sh
 export CF_Token="your-token"
 acme.sh --issue --dns dns_cf \
   -d sitepod.example.com \
-  -d "*.sitepod.example.com" \
-  -d "*.beta.sitepod.example.com"
+  -d "*.sitepod.example.com"
 
 # Install to Nginx
 acme.sh --install-cert -d sitepod.example.com \

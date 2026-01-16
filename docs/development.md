@@ -77,7 +77,7 @@ cd examples/simple-site
 
 # 部署到 beta
 ../../bin/sitepod deploy
-# 访问: http://demo-site.beta.localhost:8080
+# 访问: http://demo-site-beta.localhost:8080
 
 # 部署到 prod
 ../../bin/sitepod deploy --prod
@@ -97,7 +97,7 @@ cd /path/to/your/site
 /path/to/sitepod/bin/sitepod deploy
 
 # 访问
-# http://my-test.beta.localhost:8080
+# http://my-test-beta.localhost:8080
 ```
 
 ### CLI 命令参考

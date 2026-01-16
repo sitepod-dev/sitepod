@@ -13,10 +13,10 @@ sitepod console
 
 ## What happens
 
-The command constructs the console URL based on your configured endpoint:
+The command opens the console at your configured endpoint (root domain):
 
-- **Local development**: `http://console.localhost:8080`
-- **Production**: `https://console.sitepod.dev`
+- **Local development**: `http://localhost:8080`
+- **Production**: `https://app.sitepod.dev`
 
 The URL is then opened in your default browser.
 
@@ -25,7 +25,7 @@ The URL is then opened in your default browser.
 ```bash
 $ sitepod console
 ◐ Opening console
-  url: https://console.sitepod.dev
+  url: https://app.sitepod.dev
 ```
 
 ## Requirements

@@ -60,10 +60,11 @@ docker run -d \
 Then point your DNS to the server:
 
 ```
-A    sitepod.example.com         → <server-ip>
-A    *.sitepod.example.com       → <server-ip>
-A    *.beta.sitepod.example.com  → <server-ip>
+A    sitepod.example.com         → <server-ip>  (Console + API)
+A    *.sitepod.example.com       → <server-ip>  (User sites)
 ```
+
+> Note: Only 2 DNS records needed. Beta uses `-beta` suffix (e.g., `myapp-beta.sitepod.example.com`).
 
 ## Configuration
 

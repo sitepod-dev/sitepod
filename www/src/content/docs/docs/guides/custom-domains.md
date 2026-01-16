@@ -113,7 +113,7 @@ Current subdomain: my-site-7x3k.sitepod.dev
 
 Your site is now at:
   https://my-awesome-site.sitepod.dev
-  https://my-awesome-site.beta.sitepod.dev
+  https://my-awesome-site-beta.sitepod.dev
 ```
 
 ## SSL certificates

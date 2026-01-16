@@ -55,7 +55,7 @@ $ npx sitepod deploy
 ◐ Releasing to beta
 ✓ Released to beta
 
-  url: https://my-site.beta.sitepod.dev
+  url: https://my-site-beta.sitepod.dev
 
 ⚠ Anonymous session - expires in 24h
   next: sitepod bind

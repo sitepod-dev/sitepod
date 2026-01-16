@@ -36,22 +36,22 @@ SitePod can be deployed on a root domain or subdomain:
 ### Root Domain (e.g., `sitepod.example.com`)
 
 ```
-A    sitepod.example.com         → <server-ip>
-A    *.sitepod.example.com       → <server-ip>
-A    *.beta.sitepod.example.com  → <server-ip>
+A    sitepod.example.com         → <server-ip>  (Console + API)
+A    *.sitepod.example.com       → <server-ip>  (User sites)
 ```
 
 ### Subdomain (e.g., `pods.sitepod.example.com`)
 
 ```
-A    pods.sitepod.example.com         → <server-ip>
-A    *.pods.sitepod.example.com       → <server-ip>
-A    *.beta.pods.sitepod.example.com  → <server-ip>
+A    pods.sitepod.example.com         → <server-ip>  (Console + API)
+A    *.pods.sitepod.example.com       → <server-ip>  (User sites)
 ```
 
 Set `SITEPOD_DOMAIN=pods.sitepod.example.com` and project URLs become:
 - Production: `myapp.pods.sitepod.example.com`
-- Beta: `myapp.beta.pods.sitepod.example.com`
+- Beta: `myapp-beta.pods.sitepod.example.com`
+
+> Note: Beta uses `-beta` suffix, not subdomain, so only 2 DNS records needed.
 
 ---
 

@@ -607,8 +607,8 @@ func (s *Storage) WriteRef(project, env string, ref RefData) error {
 │    LIMIT 1;                                                  │
 │                                                              │
 │ 2. 环境判断                                                  │
-│    - 域名包含 .beta. → env="beta"                           │
-│    - 域名包含 .preview. → 解析 preview slug                 │
+│    - 子域名以 -beta 结尾 → env="beta"                       │
+│    - 路径包含 /__preview__/ → 解析 preview slug             │
 │    - Cookie: __sitepod_env → 覆盖环境                       │
 │    - Cookie: __sitepod_preview → 覆盖为预览                 │
 │    - 默认 → env="prod"                                       │
@@ -623,8 +623,8 @@ func (s *Storage) WriteRef(project, env string, ref RefData) error {
 
 | 请求 | 查找条件 | 结果 |
 |------|----------|------|
-| `my-app-7x3k.sitepod.dev/index.html` | `domain='my-app-7x3k.sitepod.dev'` | project=my-app, env=prod |
-| `my-app-7x3k.beta.sitepod.dev/index.html` | `domain='my-app-7x3k.beta.sitepod.dev'` | project=my-app, env=beta |
+| `my-app.sitepod.dev/index.html` | `domain='my-app.sitepod.dev'` | project=my-app, env=prod |
+| `my-app-beta.sitepod.dev/index.html` | `domain='my-app-beta.sitepod.dev'` | project=my-app, env=beta |
 | `h5.example.com/blog/app.js` | `domain='h5.example.com', slug='/blog'` | project=blog, file=/app.js |
 | `www.mysite.com/about.html` | `domain='www.mysite.com', slug='/'` | project=mysite, file=/about.html |
 
@@ -716,8 +716,8 @@ func (h *SitePodHandler) determineEnv(host string, cookies []*http.Cookie) strin
         }
     }
 
-    // 2. 域名判断
-    if strings.Contains(host, ".beta.") {
+    // 2. 子域名判断 (检查 -beta 后缀)
+    if strings.HasSuffix(subdomain, "-beta") {
         return "beta"
     }
 
@@ -860,8 +860,8 @@ sitepod.dev {
     # 管理界面...
 }
 
-# 项目子域名
-*.sitepod.dev, *.beta.sitepod.dev, *.preview.sitepod.dev {
+# 项目子域名 (beta 使用 -beta 后缀, preview 使用路径)
+*.sitepod.dev {
     route /api/* {
         reverse_proxy localhost:8090
     }
@@ -922,8 +922,8 @@ sitepod.dev {
     }
 }
 
-# 子域名模式
-*.sitepod.dev, *.beta.sitepod.dev, *.preview.sitepod.dev {
+# 子域名模式 (只需一个通配符)
+*.sitepod.dev {
     sitepod {
         mode subdomain
         domain sitepod.dev
@@ -1121,7 +1121,7 @@ Committing...
   Content hash: 7d865e959b...
 
 Released to beta
-  URL: https://my-app.beta.example.com
+  URL: https://my-app-beta.example.com
 
 $ sitepod deploy --prod
 

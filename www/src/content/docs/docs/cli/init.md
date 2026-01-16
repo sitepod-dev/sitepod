@@ -67,8 +67,8 @@ directory = "./dist"
 ### Subdomain mode (default)
 
 Your site will be available at:
-- Beta: `https://my-blog.beta.sitepod.dev`
 - Prod: `https://my-blog.sitepod.dev`
+- Beta: `https://my-blog-beta.sitepod.dev`
 
 ### Path mode
 

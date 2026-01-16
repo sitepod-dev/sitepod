@@ -127,7 +127,7 @@ Previews are automatically deleted after expiry:
 |---------|---------|------|
 | Purpose | Temporary sharing | Ongoing staging |
 | Expiry | Yes (24h default) | No |
-| URL | `--slug.preview.` | `.beta.` |
+| URL | `/__preview__/{slug}/` | `-beta.{domain}` |
 | History | Not tracked | Full history |
 
 Use **previews** for temporary shares (PRs, demos).

@@ -29,7 +29,7 @@ cd examples/simple-site
 ../../bin/sitepod deploy
 
 # Visit your site
-open http://demo-site.beta.localhost:8080
+open http://demo-site-beta.localhost:8080
 ```
 
 > 💡 Anonymous sessions let you test without creating an account. Deployments expire in 24h unless you verify your email.

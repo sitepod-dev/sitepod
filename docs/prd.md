@@ -195,9 +195,9 @@ SitePod 支持两种部署模式，适应不同的基础设施环境：
 
 | 环境 | URL 格式 | 示例 |
 |------|----------|------|
-| prod | `{project}-{id}.{domain}` | `my-app-7x3k.sitepod.dev` |
-| beta | `{project}-{id}.beta.{domain}` | `my-app-7x3k.beta.sitepod.dev` |
-| preview | `{project}-{id}--{slug}.preview.{domain}` | `my-app-7x3k--feat1.preview.sitepod.dev` |
+| prod | `{project}.{domain}` | `my-app.sitepod.dev` |
+| beta | `{project}-beta.{domain}` | `my-app-beta.sitepod.dev` |
+| preview | `{project}.{domain}/__preview__/{slug}/` | `my-app.sitepod.dev/__preview__/feat1/` |
 
 > **说明：** 使用 `{project}-{短随机ID}` 格式确保全局唯一。用户可通过 `sitepod domain rename` 修改。
 
@@ -308,8 +308,8 @@ name = "my-app"
 # routing_mode = "subdomain"  # 默认值，可省略
 
 # 系统自动分配子域名:
-# → https://my-app-7x3k.sitepod.dev
-# → https://my-app-7x3k.beta.sitepod.dev
+# → https://my-app.sitepod.dev (prod)
+# → https://my-app-beta.sitepod.dev (beta)
 
 # 可修改子域名: sitepod domain rename my-preferred-name
 # 可绑定自定义域名: sitepod domain add www.mysite.com

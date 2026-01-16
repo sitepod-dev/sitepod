@@ -28,7 +28,7 @@ $ npx sitepod deploy
 上传中... 42/42 (1.2 MB)
 ✓ 已部署到 beta
 
-  https://my-project.beta.sitepod.dev
+  https://my-project-beta.sitepod.dev
 
   ⚠ 匿名账户将在 24 小时后过期
   运行 sitepod bind 绑定邮箱以保留部署
@@ -94,7 +94,7 @@ $ sitepod deploy
 上传中... 42/42 (1.2 MB)
 ✓ 已部署到 beta
 
-  https://my-blog-7x3k.beta.sitepod.dev
+  https://my-blog-7x3k-beta.sitepod.dev
 
 # 3. 确认没问题，发布到生产
 $ sitepod deploy --prod
@@ -287,7 +287,7 @@ $ sitepod preview
 上传中... 12/12 (新增文件)
 ✓ 已创建预览
 
-  https://my-app-3k7m--feat-login.preview.sitepod.dev
+  https://my-app.sitepod.dev/__preview__/feat-login/
   有效期: 24 小时
 
 # 发给 Frank 验收
@@ -317,7 +317,7 @@ $ sitepod preview
 $ sitepod preview --slug pr-123
 ✓ 已创建预览
 
-  https://my-app-3k7m--pr-123.preview.sitepod.dev
+  https://my-app.sitepod.dev/__preview__/pr-123/
   有效期: 24 小时
 ```
 
@@ -455,9 +455,9 @@ $ ../../bin/sitepod deploy
 ### 子域名模式
 
 ```
-生产环境:  https://my-app-9f2x.sitepod.dev
-Beta环境:  https://my-app-9f2x.beta.sitepod.dev
-预览环境:  https://my-app-9f2x--{slug}.preview.sitepod.dev
+生产环境:  https://my-app.sitepod.dev
+Beta环境:  https://my-app-beta.sitepod.dev
+预览环境:  https://my-app.sitepod.dev/__preview__/{slug}/
 ```
 
 ### 路径模式

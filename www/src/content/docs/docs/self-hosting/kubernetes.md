@@ -164,7 +164,6 @@ spec:
   - hosts:
     - "sitepod.example.com"
     - "*.sitepod.example.com"
-    - "*.beta.sitepod.example.com"
     secretName: sitepod-tls
   rules:
   - host: "sitepod.example.com"
@@ -178,16 +177,6 @@ spec:
             port:
               number: 80
   - host: "*.sitepod.example.com"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: sitepod
-            port:
-              number: 80
-  - host: "*.beta.sitepod.example.com"
     http:
       paths:
       - path: /

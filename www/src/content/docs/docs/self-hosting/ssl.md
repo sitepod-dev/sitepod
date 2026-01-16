@@ -127,7 +127,7 @@ Your reverse proxy handles SSL. See [Reverse Proxy guide](/docs/self-hosting/rev
     order sitepod first
 }
 
-sitepod.example.com, *.sitepod.example.com, *.beta.sitepod.example.com {
+sitepod.example.com, *.sitepod.example.com {
     tls {
         dns cloudflare {$CF_API_TOKEN}
     }
