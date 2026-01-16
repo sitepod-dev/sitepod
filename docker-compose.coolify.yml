@@ -12,11 +12,12 @@
 #
 # Domain Configuration in Coolify:
 # --------------------------------
-# You need to add THREE domain entries in Coolify's domain settings:
+# You need to add TWO domain entries in Coolify's domain settings:
 #
-#   1. sitepod.yourdomain.com        → Main domain
-#   2. *.sitepod.yourdomain.com      → Project subdomains (prod)
-#   3. *.beta.sitepod.yourdomain.com → Project subdomains (beta)
+#   1. sitepod.yourdomain.com        → Main domain (console + API)
+#   2. *.sitepod.yourdomain.com      → Project subdomains
+#
+# Beta environment uses -beta suffix (e.g., myapp-beta.sitepod.yourdomain.com)
 #
 # DNS Configuration:
 # ------------------
@@ -24,7 +25,6 @@
 #
 #   sitepod.yourdomain.com           A    your-server-ip
 #   *.sitepod.yourdomain.com         A    your-server-ip
-#   *.beta.sitepod.yourdomain.com    A    your-server-ip
 #
 # =============================================================================
 

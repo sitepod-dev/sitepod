@@ -36,12 +36,6 @@ pub struct DeleteAccountResponse {
 // Subdomain types
 // ============================================================================
 
-#[derive(Debug, Serialize)]
-#[allow(dead_code)]
-pub struct CheckSubdomainRequest {
-    pub subdomain: String,
-}
-
 #[derive(Debug, Deserialize)]
 pub struct CheckSubdomainResponse {
     pub available: bool,
@@ -230,9 +224,3 @@ pub struct HistoryItem {
     pub git_commit: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
-#[allow(dead_code)]
-pub struct ApiError {
-    pub code: String,
-    pub message: String,
-}

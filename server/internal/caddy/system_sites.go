@@ -213,11 +213,6 @@ func (h *SitePodHandler) ensureWelcomeSite(ownerID string) {
 		return
 	}
 
-	// Also write beta ref
-	if err := h.storage.PutRef("welcome", "beta", refBytes); err != nil {
-		h.logger.Warn("failed to write welcome beta ref", zap.Error(err))
-	}
-
 	h.logger.Info("Welcome site deployed", zap.String("url", fmt.Sprintf("%s://welcome.%s", scheme, h.Domain)))
 }
 
@@ -354,11 +349,6 @@ func (h *SitePodHandler) ensureConsoleSite(ownerID string) {
 	if err := h.storage.PutRef("console", "prod", refBytes); err != nil {
 		h.logger.Warn("failed to write console ref", zap.Error(err))
 		return
-	}
-
-	// Also write beta ref
-	if err := h.storage.PutRef("console", "beta", refBytes); err != nil {
-		h.logger.Warn("failed to write console beta ref", zap.Error(err))
 	}
 
 	scheme := "https"
