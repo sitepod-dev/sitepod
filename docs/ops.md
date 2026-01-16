@@ -1,494 +1,597 @@
-# SitePod Operations Manual
+# SitePod — Self-hosted static deployments
 
-## Architecture
+## 运维手册 (OPS)
 
-SitePod runs as a **single binary** containing:
+**版本**: v1.0
+**日期**: 2025-01-15
+**项目主页**: https://sitepod.dev
 
-- **Caddy** (port 80/443) - HTTP server, automatic HTTPS, static file serving
-- **PocketBase** (embedded) - API, auth, SQLite database
-
-```
-Client ──► Caddy (80/443) ──┬─► /api/v1/* ──► Embedded PocketBase API
-                           └─► Static files (from storage)
-```
+> 产品需求详见 [prd.md](./prd.md)
+> 技术设计详见 [tdd.md](./tdd.md)
+> 品牌规范详见 [brand.md](./brand.md)
 
 ---
 
-## Quick Start
+## 1. 部署指南
+
+### 1.1 系统要求
+
+| 项目 | 最低配置 | 推荐配置 |
+|------|----------|----------|
+| CPU | 1 核 | 2 核+ |
+| 内存 | 512MB | 2GB+ |
+| 磁盘 | 10GB | 50GB+ (取决于项目数量) |
+| 系统 | Linux/macOS/Windows | Linux |
+
+### 1.2 单二进制部署
 
 ```bash
-docker run -d \
-  --name sitepod \
-  -p 80:80 -p 443:443 \
-  -v sitepod-data:/data \
-  -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+# 下载
+curl -fsSL https://github.com/sitepod-dev/sitepod/releases/latest/download/sitepod-linux-amd64 -o sitepod
+chmod +x sitepod
+
+# 运行
+./sitepod serve --http :8080 --data /var/sitepod-data
 ```
 
-Caddy handles automatic HTTPS via Let's Encrypt.
-
----
-
-## DNS Configuration
-
-SitePod can be deployed on a root domain or subdomain:
-
-### Root Domain (e.g., `sitepod.example.com`)
-
-```
-A    sitepod.example.com         → <server-ip>  (Console + API)
-A    *.sitepod.example.com       → <server-ip>  (User sites)
-```
-
-### Subdomain (e.g., `pods.sitepod.example.com`)
-
-```
-A    pods.sitepod.example.com         → <server-ip>  (Console + API)
-A    *.pods.sitepod.example.com       → <server-ip>  (User sites)
-```
-
-Set `SITEPOD_DOMAIN=pods.sitepod.example.com` and project URLs become:
-- Production: `myapp.pods.sitepod.example.com`
-- Beta: `myapp-beta.pods.sitepod.example.com`
-
-> Note: Beta uses `-beta` suffix, not subdomain, so only 2 DNS records needed.
-
----
-
-## Docker Image Targets
-
-```bash
-# Full image (default) - Caddy with embedded API
-docker build --target full -t sitepod .
-
-# CLI only
-docker build --target cli -t sitepod-cli .
-```
-
----
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `SITEPOD_DOMAIN` | Yes | `localhost:8080` | Base domain (can be subdomain) |
-| `SITEPOD_STORAGE_TYPE` | No | `local` | `local`, `s3`, `oss`, `r2` |
-| `SITEPOD_DATA_DIR` | No | `/data` | Data directory |
-| `SITEPOD_GC_ENABLED` | No | `true` | Garbage collection |
-| `SITEPOD_ADMIN_EMAIL` | No | `admin@sitepod.local` | Default admin email |
-| `SITEPOD_ADMIN_PASSWORD` | No | `sitepod123` | Default admin password |
-
-> **Security Note**: Change the default admin credentials in production by setting `SITEPOD_ADMIN_EMAIL` and `SITEPOD_ADMIN_PASSWORD` environment variables. The admin account is only created on first startup if no admin exists.
-
-### For S3/R2/OSS Storage
-
-| Variable | Description |
-|----------|-------------|
-| `SITEPOD_S3_BUCKET` | Bucket name |
-| `SITEPOD_S3_REGION` | Region (`auto` for R2) |
-| `SITEPOD_S3_ENDPOINT` | Custom endpoint URL |
-| `AWS_ACCESS_KEY_ID` | Access key |
-| `AWS_SECRET_ACCESS_KEY` | Secret key |
-
----
-
-## Storage Backends
-
-### Local (Default)
-
-```bash
-docker run -d \
-  -p 80:80 -p 443:443 \
-  -v sitepod-data:/data \
-  -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
-```
-
-### Cloudflare R2
-
-```bash
-docker run -d \
-  -p 80:80 -p 443:443 \
-  -e SITEPOD_DOMAIN=sitepod.example.com \
-  -e SITEPOD_STORAGE_TYPE=r2 \
-  -e SITEPOD_S3_BUCKET=sitepod-data \
-  -e SITEPOD_S3_REGION=auto \
-  -e SITEPOD_S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com \
-  -e AWS_ACCESS_KEY_ID=xxx \
-  -e AWS_SECRET_ACCESS_KEY=xxx \
-  ghcr.io/sitepod/sitepod:latest
-```
-
-### AWS S3
-
-```bash
-docker run -d \
-  -p 80:80 -p 443:443 \
-  -e SITEPOD_DOMAIN=sitepod.example.com \
-  -e SITEPOD_STORAGE_TYPE=s3 \
-  -e SITEPOD_S3_BUCKET=sitepod-data \
-  -e SITEPOD_S3_REGION=us-east-1 \
-  ghcr.io/sitepod/sitepod:latest
-```
-
----
-
-## SSL/TLS Options
-
-### Option 1: Direct (SitePod manages SSL)
-
-Caddy automatically obtains Let's Encrypt certificates:
-
-```bash
-docker run -d \
-  -p 80:80 -p 443:443 \
-  -v sitepod-data:/data \
-  -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
-```
-
-Requirements:
-- Ports 80 and 443 accessible from internet
-- DNS points to your server
-- For wildcards, use DNS challenge (see below)
-
-### Option 2: Behind Cloudflare Proxy (Recommended)
-
-Cloudflare handles SSL, SitePod runs HTTP only:
-
-```bash
-# Download example Caddyfile
-curl -O https://raw.githubusercontent.com/sitepod/sitepod/main/server/examples/Caddyfile.cloudflare
-
-docker run -d \
-  -p 80:80 \
-  -v sitepod-data:/data \
-  -v ./Caddyfile.cloudflare:/etc/caddy/Caddyfile \
-  -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
-```
-
-See `server/examples/Caddyfile.cloudflare` for the full config.
-
-**Cloudflare Settings:**
-- SSL/TLS mode: **Flexible** (or Full with origin cert)
-- DNS: Orange cloud (proxied) for all records
-- Edge Certificates: Enable Universal SSL
-
-### Option 3: Behind Reverse Proxy (Traefik, Nginx, Coolify)
-
-When running behind another reverse proxy:
-
-```bash
-# Download example Caddyfile
-curl -O https://raw.githubusercontent.com/sitepod/sitepod/main/server/examples/Caddyfile.proxy
-
-docker run -d \
-  -p 8080:8080 \
-  -v sitepod-data:/data \
-  -v ./Caddyfile.proxy:/etc/caddy/Caddyfile \
-  -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
-```
-
-See `server/examples/Caddyfile.proxy` for the full config.
-
-Configure your reverse proxy to:
-1. Route `*.sitepod.example.com` → SitePod container:8080
-2. Handle SSL termination
-3. Pass `Host` header correctly
-
-### Option 4: Wildcard Certificates (DNS Challenge)
-
-For wildcards with direct SSL:
-
-```bash
-# Download example Caddyfile
-curl -O https://raw.githubusercontent.com/sitepod/sitepod/main/server/examples/Caddyfile.wildcard
-
-docker run -d \
-  -p 80:80 -p 443:443 \
-  -v sitepod-data:/data \
-  -v ./Caddyfile.wildcard:/etc/caddy/Caddyfile \
-  -e SITEPOD_DOMAIN=sitepod.example.com \
-  -e CF_API_TOKEN=your-cloudflare-token \
-  ghcr.io/sitepod/sitepod:latest
-```
-
-See `server/examples/Caddyfile.wildcard` for the full config.
-
----
-
-## Platform Deployment
-
-### Standalone VPS
-
-Direct deployment with SitePod managing SSL:
-
-```bash
-docker run -d \
-  --name sitepod \
-  --restart unless-stopped \
-  -p 80:80 -p 443:443 \
-  -v sitepod-data:/data \
-  -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
-```
-
-### Coolify
-
-Coolify uses Traefik for SSL. Choose one approach:
-
-#### Approach A: Coolify Manages SSL (Simple)
-
-1. Add new resource → Docker Image
-2. Image: `ghcr.io/sitepod/sitepod:latest`
-3. **Port**: `8080` (internal only, not 80/443)
-4. Environment variables:
-   - `SITEPOD_DOMAIN=pods.example.com`
-5. Volume: `/data`
-6. Custom Caddyfile mount: `/etc/caddy/Caddyfile`
-
-Use `Caddyfile.proxy` (see above) to run on port 8080.
-
-In Coolify domains, add:
-- `pods.example.com`
-- `*.pods.example.com` (requires Coolify wildcard support)
-
-#### Approach B: SitePod Manages SSL (Host Network)
-
-For full control, bypass Coolify's proxy:
-
-1. Add new resource → Docker Image
-2. Image: `ghcr.io/sitepod/sitepod:latest`
-3. **Network Mode**: `host`
-4. Environment variables:
-   - `SITEPOD_DOMAIN=pods.example.com`
-5. Volume: `/data`
-6. **Disable** Coolify's domain/proxy for this service
-
-SitePod will bind directly to ports 80/443 on the host.
-
-#### Approach C: Cloudflare + Coolify
-
-Let Cloudflare handle SSL, Coolify routes traffic:
-
-1. Deploy SitePod on port 8080 (Approach A)
-2. Cloudflare DNS: proxy enabled (orange cloud)
-3. Cloudflare SSL mode: Flexible
-4. Coolify handles routing, Cloudflare handles SSL
-
-### Kubernetes
+### 1.3 Docker 部署
 
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: sitepod
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: sitepod
-  template:
-    metadata:
-      labels:
-        app: sitepod
-    spec:
-      containers:
-      - name: sitepod
-        image: ghcr.io/sitepod/sitepod:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: SITEPOD_DOMAIN
-          value: sitepod.example.com
-        volumeMounts:
-        - name: data
-          mountPath: /data
-        - name: caddyfile
-          mountPath: /etc/caddy/Caddyfile
-          subPath: Caddyfile
-      volumes:
-      - name: data
-        persistentVolumeClaim:
-          claimName: sitepod-data
-      - name: caddyfile
-        configMap:
-          name: sitepod-caddyfile
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: sitepod-caddyfile
-data:
-  Caddyfile: |
-    {
-        admin off
-        auto_https off
-        order sitepod first
-    }
-    :8080 {
-        sitepod {
-            storage_path /data
-            data_dir /data
-            domain sitepod.example.com
-        }
-    }
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: sitepod
-spec:
-  selector:
-    app: sitepod
-  ports:
-  - port: 80
-    targetPort: 8080
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: sitepod
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-spec:
-  tls:
-  - hosts:
-    - "sitepod.example.com"
-    - "*.sitepod.example.com"
-    secretName: sitepod-tls
-  rules:
-  - host: "sitepod.example.com"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: sitepod
-            port:
-              number: 80
-  - host: "*.sitepod.example.com"
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: sitepod
-            port:
-              number: 80
-```
-
-### Docker Compose
-
-```yaml
-version: "3.8"
-
+# docker-compose.yml
+version: '3.8'
 services:
   sitepod:
-    image: ghcr.io/sitepod/sitepod:latest
-    restart: unless-stopped
+    image: ghcr.io/user/sitepod:latest
     ports:
       - "80:80"
       - "443:443"
-    environment:
-      - SITEPOD_DOMAIN=sitepod.example.com
-      - SITEPOD_STORAGE_TYPE=local
     volumes:
       - sitepod-data:/data
-      - caddy-data:/caddy-data
-      - caddy-config:/caddy-config
+    environment:
+      - SITEPOD_DOMAIN=example.com
+      - SITEPOD_ADMIN_EMAIL=admin@example.com
+    restart: unless-stopped
 
 volumes:
   sitepod-data:
-  caddy-data:
-  caddy-config:
+```
+
+```bash
+docker-compose up -d
+```
+
+### 1.4 环境变量
+
+| 变量 | 说明 | 默认值 |
+|------|------|--------|
+| `SITEPOD_DOMAIN` | 主域名 | 必填 |
+| `SITEPOD_DATA_DIR` | 数据目录 | `/data` |
+| `SITEPOD_ADMIN_EMAIL` | Let's Encrypt 邮箱 | 必填 |
+| `SITEPOD_STORAGE_TYPE` | 存储类型 (local/s3/oss/r2) | `local` |
+| `SITEPOD_S3_BUCKET` | S3 桶名 | - |
+| `SITEPOD_S3_REGION` | S3 区域 | - |
+| `SITEPOD_S3_ACCESS_KEY` | S3 Access Key | - |
+| `SITEPOD_S3_SECRET_KEY` | S3 Secret Key | - |
+
+---
+
+## 2. 配置说明
+
+### 2.1 服务端配置文件
+
+```toml
+# /etc/sitepod/config.toml
+
+[server]
+http_addr = ":80"
+https_addr = ":443"
+admin_addr = ":8090"  # 内部 API
+
+[domain]
+primary = "example.com"
+acme_email = "admin@example.com"
+
+[storage]
+type = "local"  # local | s3 | oss | r2
+path = "/data/blobs"
+
+# S3 配置 (type = "s3" 时)
+[storage.s3]
+bucket = "my-sitepod-bucket"
+region = "us-east-1"
+access_key = "${SITEPOD_S3_ACCESS_KEY}"
+secret_key = "${SITEPOD_S3_SECRET_KEY}"
+
+[database]
+path = "/data/sitepod.db"
+
+[cache]
+manifest_ttl = "5s"
+max_entries = 1000
+
+[gc]
+enabled = true
+interval = "24h"
+grace_period = "1h"
+min_versions = 5
+keep_days = 30
+
+[log]
+level = "info"  # debug | info | warn | error
+format = "json"  # json | text
+```
+
+### 2.2 CLI 配置
+
+```toml
+# ~/.sitepod/config.toml (全局)
+# ./sitepod.toml (项目级)
+
+[server]
+endpoint = "https://sitepod.example.com"
+
+[auth]
+token = "xxx"  # 或使用环境变量 SITEPOD_TOKEN
+
+[project]
+name = "my-app"
+
+[build]
+directory = "./dist"
+
+[deploy]
+ignore = ["**/*.map", ".*", "node_modules/**"]
+concurrent = 20
 ```
 
 ---
 
-## Data Layout
+## 3. 常用运维命令
 
+### 3.1 服务管理
+
+```bash
+# 启动服务
+./sitepod serve
+
+# 后台运行 (systemd)
+sudo systemctl start sitepod
+sudo systemctl enable sitepod
+
+# 查看状态
+sudo systemctl status sitepod
+
+# 查看日志
+journalctl -u sitepod -f
 ```
-/data/
-├── blobs/{hash[0:2]}/{hash}    # Content-addressed files
-├── refs/{project}/{env}.json   # Environment pointers
-├── routing/index.json          # Domain routing index
-├── previews/{project}/         # Preview deployments
-└── pb_data/                    # PocketBase database
+
+### 3.2 数据管理
+
+```bash
+# 手动触发 GC
+./sitepod gc --dry-run  # 预览
+./sitepod gc            # 执行
+
+# 导出数据
+./sitepod export --output /backup/sitepod-backup.tar.gz
+
+# 导入数据
+./sitepod import --input /backup/sitepod-backup.tar.gz
+
+# 数据库备份 (SQLite)
+sqlite3 /data/sitepod.db ".backup /backup/sitepod.db"
+```
+
+### 3.3 用户管理
+
+```bash
+# 创建管理员
+./sitepod admin create --email admin@example.com --password xxx
+
+# 创建 API Token
+./sitepod token create --name "ci-cd" --scope "deploy,preview"
+
+# 列出 Token
+./sitepod token list
+
+# 撤销 Token
+./sitepod token revoke <token-id>
+```
+
+### 3.4 项目管理
+
+```bash
+# 列出项目
+./sitepod project list
+
+# 查看项目详情
+./sitepod project info my-app
+
+# 删除项目 (危险操作)
+./sitepod project delete my-app --confirm
 ```
 
 ---
 
-## Monitoring
+## 4. 监控
 
-### Health Check
-
-```bash
-curl http://localhost/api/v1/health
-# or behind proxy:
-curl http://localhost:8080/api/v1/health
-```
-
-```json
-{"status":"healthy","database":"ok","storage":"ok","uptime":"1h23m"}
-```
-
-### Prometheus Metrics
+### 4.1 健康检查
 
 ```bash
-curl http://localhost/api/v1/metrics
+# HTTP 健康检查
+curl http://localhost:8090/health
+
+# 响应
+{
+  "status": "healthy",
+  "database": "ok",
+  "storage": "ok",
+  "uptime": "72h30m"
+}
+```
+
+### 4.2 Prometheus 指标
+
+```bash
+# 指标端点
+curl http://localhost:8090/metrics
+```
+
+关键指标:
+
+| 指标 | 说明 | 告警阈值建议 |
+|------|------|--------------|
+| `sitepod_deploys_total` | 部署总数 | - |
+| `sitepod_deploy_errors_total` | 部署失败数 | > 5/min |
+| `sitepod_storage_bytes` | 存储使用量 | > 80% 磁盘 |
+| `sitepod_http_request_duration_seconds` | 请求延迟 | p99 > 1s |
+| `sitepod_gc_duration_seconds` | GC 耗时 | > 1h |
+
+### 4.3 告警规则
+
+```yaml
+# prometheus-alerts.yml
+groups:
+  - name: sitepod
+    rules:
+      - alert: SitePodHighErrorRate
+        expr: rate(sitepod_deploy_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SitePod 部署错误率过高"
+
+      - alert: SitePodStorageHigh
+        expr: sitepod_storage_bytes / node_filesystem_size_bytes > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "SitePod 存储使用率超过 80%"
+
+      - alert: SitePodDown
+        expr: up{job="sitepod"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SitePod 服务不可用"
 ```
 
 ---
 
-## Backup
+## 5. 故障排查
 
-### Local Storage
+### 5.1 常见问题
+
+#### 问题: 部署超时
 
 ```bash
-docker run --rm \
-  -v sitepod-data:/data \
-  -v $(pwd):/backup \
-  alpine tar -czvf /backup/sitepod-backup.tar.gz /data
+# 检查网络连接
+curl -v https://sitepod.example.com/health
+
+# 检查服务日志
+journalctl -u sitepod --since "10 minutes ago" | grep -i error
+
+# 检查磁盘空间
+df -h /data
 ```
 
-### S3/R2
+#### 问题: 版本切换不生效
 
 ```bash
-rclone sync r2:sitepod-data ./backup/
+# 1. 检查 ref 文件是否写入成功
+cat /data/refs/my-app/prod.json
+
+# 2. 检查缓存是否失效
+curl http://localhost:8090/debug/cache
+
+# 3. 强制刷新缓存
+curl -X POST http://localhost:8090/admin/cache/invalidate?project=my-app&env=prod
+```
+
+#### 问题: Blob 上传失败
+
+```bash
+# 检查存储后端连接
+./sitepod storage check
+
+# 检查文件权限
+ls -la /data/blobs
+
+# S3 存储时检查凭证
+aws s3 ls s3://my-sitepod-bucket/
+```
+
+#### 问题: HTTPS 证书问题
+
+```bash
+# 检查证书状态
+./sitepod cert status
+
+# 强制更新证书
+./sitepod cert renew --force
+
+# 检查 ACME 日志
+journalctl -u sitepod | grep -i acme
+```
+
+### 5.2 日志分析
+
+```bash
+# 查找错误日志
+journalctl -u sitepod | jq 'select(.level == "error")'
+
+# 按请求追踪
+journalctl -u sitepod | jq 'select(.request_id == "xxx")'
+
+# 统计错误类型
+journalctl -u sitepod --since today | jq -r 'select(.level == "error") | .error_code' | sort | uniq -c
+```
+
+### 5.3 性能调优
+
+```bash
+# 查看慢请求
+journalctl -u sitepod | jq 'select(.duration_ms > 1000)'
+
+# 检查 SQLite 性能
+sqlite3 /data/sitepod.db "PRAGMA integrity_check"
+sqlite3 /data/sitepod.db "ANALYZE"
+
+# 检查缓存命中率
+curl http://localhost:8090/debug/cache/stats
 ```
 
 ---
 
-## Troubleshooting
+## 6. 备份与恢复
 
-### SSL Certificate Issues
+### 6.1 备份策略
 
-1. Ensure ports 80/443 are accessible (for direct mode)
-2. Check Caddy logs: `docker logs sitepod`
-3. For wildcards, verify DNS challenge token is correct
-4. Behind proxy? Use HTTP-only Caddyfile
+| 组件 | 备份频率 | 保留时间 |
+|------|----------|----------|
+| SQLite 数据库 | 每日 | 30 天 |
+| Blobs (增量) | 每周 | 永久 |
+| 配置文件 | 变更时 | Git 管理 |
 
-### Subdomain Not Working
+### 6.2 备份脚本
 
-1. Check DNS: `dig myapp.sitepod.example.com`
-2. Verify `SITEPOD_DOMAIN` matches your DNS
-3. Check container logs
-4. Verify wildcard DNS is configured
+```bash
+#!/bin/bash
+# /usr/local/bin/sitepod-backup.sh
 
-### Port Conflicts (Coolify/Traefik)
+set -e
 
-If Traefik occupies 80/443:
-- Use `Caddyfile.proxy` on port 8080
-- Or use host network mode
-- Or use Cloudflare for SSL termination
+BACKUP_DIR="/backup/sitepod"
+DATE=$(date +%Y%m%d)
 
-### Database Locked
+# 1. SQLite 在线备份
+mkdir -p $BACKUP_DIR/db
+sqlite3 /data/sitepod.db ".backup $BACKUP_DIR/db/sitepod-$DATE.db"
 
-- Ensure only one instance is running
-- Check disk space
-- For HA, use S3/R2 storage (SQLite still single-instance)
+# 2. 压缩旧备份
+find $BACKUP_DIR/db -name "*.db" -mtime +7 -exec gzip {} \;
+
+# 3. 清理过期备份
+find $BACKUP_DIR/db -name "*.gz" -mtime +30 -delete
+
+# 4. 同步 Blobs 到远程 (可选)
+# rclone sync /data/blobs remote:sitepod-blobs-backup
+```
+
+### 6.3 恢复流程
+
+```bash
+# 1. 停止服务
+sudo systemctl stop sitepod
+
+# 2. 恢复数据库
+cp /backup/sitepod/db/sitepod-20250115.db /data/sitepod.db
+
+# 3. 验证数据完整性
+sqlite3 /data/sitepod.db "PRAGMA integrity_check"
+
+# 4. 启动服务
+sudo systemctl start sitepod
+
+# 5. 验证服务
+curl http://localhost:8090/health
+```
+
+---
+
+## 7. 升级指南
+
+### 7.1 升级前检查
+
+```bash
+# 1. 检查当前版本
+./sitepod version
+
+# 2. 查看 changelog
+curl https://github.com/sitepod-dev/sitepod/releases
+
+# 3. 备份数据
+./sitepod-backup.sh
+
+# 4. 在测试环境验证
+```
+
+### 7.2 升级步骤
+
+```bash
+# 1. 下载新版本
+curl -fsSL https://github.com/sitepod-dev/sitepod/releases/download/vX.Y.Z/sitepod-linux-amd64 -o sitepod-new
+
+# 2. 停止服务
+sudo systemctl stop sitepod
+
+# 3. 替换二进制
+mv sitepod sitepod.bak
+mv sitepod-new sitepod
+chmod +x sitepod
+
+# 4. 运行数据库迁移 (如需要)
+./sitepod migrate
+
+# 5. 启动服务
+sudo systemctl start sitepod
+
+# 6. 验证
+curl http://localhost:8090/health
+./sitepod version
+```
+
+### 7.3 回滚
+
+```bash
+# 1. 停止服务
+sudo systemctl stop sitepod
+
+# 2. 恢复旧版本
+mv sitepod sitepod-failed
+mv sitepod.bak sitepod
+
+# 3. 恢复数据库 (如有迁移)
+cp /backup/sitepod/db/sitepod-pre-upgrade.db /data/sitepod.db
+
+# 4. 启动服务
+sudo systemctl start sitepod
+```
+
+---
+
+## 8. 安全加固
+
+### 8.1 网络安全
+
+```bash
+# 限制 Admin API 访问
+iptables -A INPUT -p tcp --dport 8090 -s 127.0.0.1 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8090 -j DROP
+
+# 或使用防火墙规则
+ufw allow from 192.168.1.0/24 to any port 8090
+```
+
+### 8.2 文件权限
+
+```bash
+# 数据目录权限
+chown -R sitepod:sitepod /data
+chmod 750 /data
+chmod 640 /data/sitepod.db
+
+# 配置文件权限
+chmod 600 /etc/sitepod/config.toml
+```
+
+### 8.3 Token 管理
+
+```bash
+# 定期轮换 API Token
+./sitepod token rotate --name "ci-cd"
+
+# 审计 Token 使用
+./sitepod token audit --name "ci-cd" --since "7 days ago"
+```
+
+---
+
+## 9. Systemd 服务配置
+
+```ini
+# /etc/systemd/system/sitepod.service
+[Unit]
+Description=SitePod Static Site Deployment Platform
+After=network.target
+
+[Service]
+Type=simple
+User=sitepod
+Group=sitepod
+ExecStart=/usr/local/bin/sitepod serve --config /etc/sitepod/config.toml
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# 安全限制
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/data
+
+# 资源限制
+LimitNOFILE=65535
+MemoryMax=2G
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```bash
+# 重新加载配置
+sudo systemctl daemon-reload
+sudo systemctl enable sitepod
+sudo systemctl start sitepod
+```
+
+---
+
+## 附录: 快速参考
+
+### A. 常用 CLI 命令
+
+| 命令 | 说明 |
+|------|------|
+| `sitepod login` | 登录 |
+| `sitepod deploy` | 部署到 beta |
+| `sitepod deploy --prod` | 部署到 prod |
+| `sitepod preview` | 创建预览 |
+| `sitepod rollback` | 回滚 |
+| `sitepod history` | 查看历史 |
+
+### B. 常用 API 端点
+
+| 端点 | 说明 |
+|------|------|
+| `GET /health` | 健康检查 |
+| `GET /metrics` | Prometheus 指标 |
+| `POST /api/v1/plan` | 提交部署计划 |
+| `POST /api/v1/commit` | 确认部署 |
+| `POST /api/v1/release` | 发布版本 |
+| `POST /api/v1/rollback` | 回滚版本 |
+
+### C. 重要文件路径
+
+| 路径 | 说明 |
+|------|------|
+| `/data/sitepod.db` | SQLite 数据库 |
+| `/data/blobs/` | Blob 存储 |
+| `/data/refs/` | Ref 文件 (数据面 SSOT) |
+| `/etc/sitepod/config.toml` | 服务配置 |
+| `~/.sitepod/config.toml` | CLI 全局配置 |
+| `./sitepod.toml` | 项目配置 |

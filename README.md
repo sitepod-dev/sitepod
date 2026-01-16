@@ -206,7 +206,7 @@ make docker-build
 
 - [Product Requirements](./prd.md)
 - [Technical Design](./tdd.md)
-- [Operations Manual](./ops.md)
+- [Operations Manual](./docs/ops.md)
 - [Brand Guidelines](./brand.md)
 
 ## License
