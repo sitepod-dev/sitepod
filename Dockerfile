@@ -3,10 +3,14 @@
 # =============================================================================
 # Single binary architecture: Caddy embeds PocketBase API
 #
-# Targets:
-#   - full:  Complete server (Caddy + embedded API) - default
-#   - caddy: Alias for full
+# Targets (last stage is default):
 #   - cli:   CLI binary only
+#   - full:  Complete server (Caddy + embedded API)
+#   - caddy: Alias for full (DEFAULT)
+#
+# Usage:
+#   docker build -t sitepod .              # builds server (default)
+#   docker build -t sitepod --target cli . # builds CLI only
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -49,7 +53,18 @@ COPY cli/src ./src
 RUN touch src/main.rs && cargo build --release
 
 # -----------------------------------------------------------------------------
-# Target: Full - Complete server (default)
+# Target: CLI - CLI binary only
+# -----------------------------------------------------------------------------
+FROM alpine:3.19 AS cli
+
+RUN apk add --no-cache ca-certificates
+
+COPY --from=cli-builder /app/target/release/sitepod /usr/local/bin/sitepod
+
+ENTRYPOINT ["sitepod"]
+
+# -----------------------------------------------------------------------------
+# Target: Full - Complete server (DEFAULT - must be last)
 # -----------------------------------------------------------------------------
 FROM alpine:3.19 AS full
 
@@ -81,17 +96,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
 CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
 
 # -----------------------------------------------------------------------------
-# Target: Caddy - Alias for full
+# Target: Caddy - Alias for full (also default)
 # -----------------------------------------------------------------------------
 FROM full AS caddy
-
-# -----------------------------------------------------------------------------
-# Target: CLI - CLI binary only
-# -----------------------------------------------------------------------------
-FROM alpine:3.19 AS cli
-
-RUN apk add --no-cache ca-certificates
-
-COPY --from=cli-builder /app/target/release/sitepod /usr/local/bin/sitepod
-
-ENTRYPOINT ["sitepod"]

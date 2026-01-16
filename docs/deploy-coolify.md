@@ -7,9 +7,93 @@
 - 已安装并运行的 Coolify 实例
 - 一个域名，可配置 DNS
 
-## 部署步骤
+## 部署方式
 
-### 1. 配置 DNS
+Coolify 支持三种部署方式，任选其一：
+
+| 方式 | 优点 | 适用场景 |
+|------|------|---------|
+| **Docker Image** | 最简单，无需构建 | 推荐，快速部署 |
+| **Dockerfile** | 可自定义构建 | 需要修改构建过程 |
+| **Docker Compose** | 完整配置 | 需要多服务编排 |
+
+## 方式一：Docker Image（推荐）
+
+最简单的部署方式，直接使用预构建镜像。
+
+### 1. 创建服务
+
+1. 登录 Coolify → **New Resource** → **Docker Image**
+2. 镜像地址：`ghcr.io/sitepod-dev/sitepod:latest`
+3. 端口映射：`8080`
+
+### 2. 配置
+
+**环境变量：**
+```
+SITEPOD_DOMAIN=sitepod.example.com
+```
+
+**持久化存储：**
+- 挂载路径：`/data`
+- 选择或创建 volume
+
+**域名配置（添加两个）：**
+- `sitepod.example.com`
+- `*.sitepod.example.com`
+
+### 3. 部署
+
+点击 **Deploy**，几秒内即可完成。
+
+---
+
+## 方式二：Dockerfile
+
+从源码构建，使用最小化 Dockerfile。
+
+### 1. 创建服务
+
+1. 登录 Coolify → **New Resource** → **Dockerfile**
+2. Git 仓库：`https://github.com/sitepod-dev/sitepod`
+3. Dockerfile 路径：`Dockerfile.coolify`
+
+### 2. 配置
+
+同上方式一的环境变量、存储和域名配置。
+
+### 3. 部署
+
+点击 **Deploy**，首次构建需要几分钟（编译 Go + Rust）。
+
+---
+
+## 方式三：Docker Compose
+
+使用 Compose 文件，配置更完整。
+
+### 1. 创建服务
+
+1. 登录 Coolify → **New Resource** → **Docker Compose**
+2. Git 仓库：`https://github.com/sitepod-dev/sitepod`
+3. Compose 文件：`docker-compose.coolify.yml`
+
+### 2. 配置
+
+环境变量在 Coolify 界面设置：
+```
+SITEPOD_DOMAIN=sitepod.example.com
+```
+
+域名配置同上。
+
+### 3. 部署
+
+点击 **Deploy**。
+
+---
+
+## DNS 配置
 
 在你的 DNS 提供商添加以下记录，指向 Coolify 服务器：
 
@@ -23,23 +107,12 @@
 > - 项目域名 (生产)：`myapp.sitepod.example.com`
 > - 项目域名 (Beta)：`myapp-beta.sitepod.example.com`
 
-### 2. 在 Coolify 创建服务
-
-1. 登录 Coolify 控制台
-2. 选择 **New Resource** → **Docker Compose**
-3. 连接到 SitePod 的 Git 仓库：`https://github.com/sitepod-dev/sitepod`
-4. 配置文件选择：
-   - **Docker Compose**: `docker-compose.coolify.yml`
-   - **Dockerfile**: `Dockerfile.coolify`
-
-### 3. 配置环境变量
-
-在 Coolify 的 **Environment Variables** 中添加：
+## 环境变量
 
 | 变量 | 值 | 说明 |
 |------|---|------|
 | `SITEPOD_DOMAIN` | `sitepod.example.com` | **必填**，你的基础域名 |
-| `SITEPOD_STORAGE_TYPE` | `local` | 存储类型，可选 |
+| `SITEPOD_STORAGE_TYPE` | `local` | 存储类型，默认 local |
 
 **可选的 S3 存储配置**（如使用 Cloudflare R2）：
 
@@ -50,23 +123,6 @@ SITEPOD_S3_ENDPOINT=https://ACCOUNT_ID.r2.cloudflarestorage.com
 AWS_ACCESS_KEY_ID=xxx
 AWS_SECRET_ACCESS_KEY=xxx
 ```
-
-### 4. 配置域名（重要！）
-
-在 Coolify 的 **Domains** 设置中，需要添加 **两个** 域名：
-
-| 域名 | 用途 |
-|------|------|
-| `sitepod.example.com` | 主域名 (Console + API) |
-| `*.sitepod.example.com` | 用户站点 (生产和 Beta) |
-
-> **注意**：Beta 环境使用 `-beta` 后缀 (如 `myapp-beta.sitepod.example.com`)，因此只需要一个通配符记录。
-
-### 5. 部署
-
-点击 **Deploy** 按钮，等待构建完成。
-
-首次构建可能需要几分钟（需要编译 Go 和 Rust 代码）。
 
 ## 验证部署
 
