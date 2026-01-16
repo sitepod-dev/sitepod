@@ -76,7 +76,7 @@ func (h *SitePodHandler) printStartupBanner() {
 	fmt.Println("---------------------------------------------------------------")
 	fmt.Println("  Endpoints:                                                   ")
 	fmt.Printf("    Admin UI:  %s\n", baseURL+"/_/")
-	fmt.Printf("    Console:   %s\n", fmt.Sprintf("%s://console.%s", scheme, h.Domain))
+	fmt.Printf("    Console:   %s\n", fmt.Sprintf("%s://%s", scheme, h.Domain))
 	fmt.Printf("    Welcome:   %s\n", fmt.Sprintf("%s://welcome.%s", scheme, h.Domain))
 	fmt.Printf("    Health:    %s\n", baseURL+"/api/v1/health")
 	fmt.Println("---------------------------------------------------------------")

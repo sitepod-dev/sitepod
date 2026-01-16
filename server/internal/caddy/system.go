@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pocketbase/pocketbase/models"
 	pbmigrations "github.com/pocketbase/pocketbase/migrations"
+	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/migrate"
 	"go.uber.org/zap"
 )
@@ -130,6 +130,23 @@ func (h *SitePodHandler) getOrCreateProject(name string) (*models.Record, error)
 func (h *SitePodHandler) getOrCreateProjectWithOwner(name string, ownerID string) (*models.Record, error) {
 	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", name)
 	if err == nil {
+		if ownerID != "" {
+			currentOwner := project.GetString("owner_id")
+			if currentOwner == "" {
+				systemUser, sysErr := h.getSystemUser()
+				if sysErr == nil && systemUser != nil && systemUser.Id == ownerID {
+					project.Set("owner_id", ownerID)
+					if err := h.app.Dao().SaveRecord(project); err != nil {
+						return nil, err
+					}
+					return project, nil
+				}
+				return nil, errForbidden
+			}
+			if currentOwner != ownerID {
+				return nil, errForbidden
+			}
+		}
 		return project, nil
 	}
 
@@ -197,7 +214,7 @@ func (h *SitePodHandler) buildURL(project, env string) string {
 		scheme = "http"
 	}
 	if env == "beta" {
-		return fmt.Sprintf("%s://%s.beta.%s", scheme, project, h.Domain)
+		return fmt.Sprintf("%s://%s-beta.%s", scheme, project, h.Domain)
 	}
 	return fmt.Sprintf("%s://%s.%s", scheme, project, h.Domain)
 }

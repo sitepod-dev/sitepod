@@ -367,7 +367,7 @@ func (h *SitePodHandler) ensureConsoleSite(ownerID string) {
 	}
 
 	h.logger.Info("Console site deployed",
-		zap.String("url", fmt.Sprintf("%s://console.%s", scheme, h.Domain)),
+		zap.String("url", fmt.Sprintf("%s://%s", scheme, h.Domain)),
 		zap.Int("files", len(manifest)),
 		zap.Int64("size", totalSize),
 	)

@@ -26,7 +26,7 @@ make run
 cd examples/simple-site
 ../../bin/sitepod deploy
 
-# Visit http://demo-site.beta.localhost:8080
+# Visit http://demo-site-beta.localhost:8080
 ```
 
 > Anonymous sessions skip email verification for testing. Deployments expire in 24h.

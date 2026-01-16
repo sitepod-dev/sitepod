@@ -17,12 +17,11 @@
 |------|---------|--------|
 | A | sitepod | Coolify 服务器 IP |
 | A | *.sitepod | Coolify 服务器 IP |
-| A | *.beta.sitepod | Coolify 服务器 IP |
 
 > 假设你的域名是 `example.com`，则配置后：
-> - 主域名：`sitepod.example.com`
-> - 项目域名：`myapp.sitepod.example.com`
-> - Beta 域名：`myapp.beta.sitepod.example.com`
+> - 主域名 (Console + API)：`sitepod.example.com`
+> - 项目域名 (生产)：`myapp.sitepod.example.com`
+> - 项目域名 (Beta)：`myapp-beta.sitepod.example.com`
 
 ### 2. 在 Coolify 创建服务
 
@@ -54,15 +53,14 @@ AWS_SECRET_ACCESS_KEY=xxx
 
 ### 4. 配置域名（重要！）
 
-在 Coolify 的 **Domains** 设置中，需要添加 **三个** 域名：
+在 Coolify 的 **Domains** 设置中，需要添加 **两个** 域名：
 
 | 域名 | 用途 |
 |------|------|
-| `sitepod.example.com` | 主域名、API、控制台 |
-| `*.sitepod.example.com` | 生产环境项目子域名 |
-| `*.beta.sitepod.example.com` | Beta 环境项目子域名 |
+| `sitepod.example.com` | 主域名 (Console + API) |
+| `*.sitepod.example.com` | 用户站点 (生产和 Beta) |
 
-> **注意**：通配符域名配置是 Coolify 部署的关键，确保 Traefik 能正确路由所有子域名。
+> **注意**：Beta 环境使用 `-beta` 后缀 (如 `myapp-beta.sitepod.example.com`)，因此只需要一个通配符记录。
 
 ### 5. 部署
 
@@ -80,7 +78,7 @@ curl https://sitepod.example.com/api/v1/health
 # {"status":"healthy","database":"ok","storage":"ok","uptime":"..."}
 ```
 
-访问控制台：`https://console.sitepod.example.com`
+访问控制台：`https://sitepod.example.com`
 
 ## 使用 CLI 部署站点
 

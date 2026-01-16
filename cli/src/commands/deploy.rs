@@ -16,7 +16,7 @@ use crate::config::{Config, ProjectToml};
 use crate::scanner::{get_source_dir, Scanner};
 use crate::ui;
 
-const DEFAULT_ENDPOINT: &str = "https://sitepod.dev";
+const DEFAULT_ENDPOINT: &str = "https://app.sitepod.dev";
 
 /// Run the deploy command with smart flow
 /// 1. Auto-login with anonymous account if not logged in

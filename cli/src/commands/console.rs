@@ -14,15 +14,8 @@ pub fn run(config: &Config) -> Result<()> {
     let url = url::Url::parse(endpoint).context("Invalid endpoint URL")?;
     let host = url.host_str().unwrap_or("localhost");
 
-    // Build console URL
-    let console_url = if host.contains("localhost") || host.starts_with("127.") {
-        // Local development - use subdomain
-        let port = url.port().map(|p| format!(":{}", p)).unwrap_or_default();
-        format!("{}://console.{}{}", url.scheme(), host, port)
-    } else {
-        // Production - use console subdomain
-        format!("{}://console.{}", url.scheme(), host)
-    };
+    // Console is now at the root domain (same as endpoint)
+    let console_url = endpoint.trim_end_matches('/').to_string();
 
     ui::info("Opening console");
     ui::kv("url", ui::accent(&console_url).underlined());

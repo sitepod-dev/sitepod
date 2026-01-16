@@ -106,21 +106,25 @@ sudo firewall-cmd --reload
 
 假设你的域名是 `sitepod.example.com`，服务器 IP 是 `1.2.3.4`。
 
-### 方式一：使用根域名
-
-在 DNS 服务商添加以下记录：
+只需要 **2 条 DNS 记录**：
 
 | 类型 | 主机记录 | 记录值 | 说明 |
 |------|---------|--------|------|
-| A | sitepod | 1.2.3.4 | 主域名 |
-| A | *.sitepod | 1.2.3.4 | 生产环境子域名 |
-| A | *.beta.sitepod | 1.2.3.4 | Beta 环境子域名 |
+| A | sitepod | 1.2.3.4 | 主域名 (Console + API) |
+| A | *.sitepod | 1.2.3.4 | 用户站点 |
 
-部署后的站点访问地址：
-- 生产环境：`https://myapp.sitepod.example.com`
-- Beta 环境：`https://myapp.beta.sitepod.example.com`
+部署后的访问地址：
 
-### 方式二：使用子域名
+| URL | 用途 |
+|-----|------|
+| `https://sitepod.example.com` | Console + API |
+| `https://myapp.sitepod.example.com` | 用户站点 (生产环境) |
+| `https://myapp-beta.sitepod.example.com` | 用户站点 (Beta 环境) |
+| `https://welcome.sitepod.example.com` | 欢迎页 |
+
+> **注意**：Beta 环境使用 `-beta` 后缀而非子域名，因此只需要一个通配符记录。
+
+### 示例：使用其他子域名
 
 如果想把 SitePod 部署在 `pods.example.com` 下：
 
@@ -128,7 +132,6 @@ sudo firewall-cmd --reload
 |------|---------|--------|
 | A | pods | 1.2.3.4 |
 | A | *.pods | 1.2.3.4 |
-| A | *.beta.pods | 1.2.3.4 |
 
 ### 验证 DNS
 
@@ -314,7 +317,7 @@ docker run -d \
 server {
     listen 80;
     listen [::]:80;
-    server_name sitepod.example.com *.sitepod.example.com *.beta.sitepod.example.com;
+    server_name sitepod.example.com *.sitepod.example.com;
 
     # 重定向到 HTTPS
     return 301 https://$host$request_uri;
@@ -323,7 +326,7 @@ server {
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name sitepod.example.com *.sitepod.example.com *.beta.sitepod.example.com;
+    server_name sitepod.example.com *.sitepod.example.com;
 
     # SSL 证书（使用 certbot 或其他方式获取）
     ssl_certificate /etc/letsencrypt/live/sitepod.example.com/fullchain.pem;
@@ -367,7 +370,7 @@ sudo systemctl reload nginx
 
 ```caddyfile
 # SitePod 泛域名
-sitepod.example.com, *.sitepod.example.com, *.beta.sitepod.example.com {
+sitepod.example.com, *.sitepod.example.com {
     reverse_proxy localhost:8080
 }
 ```
@@ -397,8 +400,7 @@ sudo certbot certonly \
   --dns-cloudflare \
   --dns-cloudflare-credentials ~/.cloudflare.ini \
   -d sitepod.example.com \
-  -d "*.sitepod.example.com" \
-  -d "*.beta.sitepod.example.com"
+  -d "*.sitepod.example.com"
 ```
 
 **使用 acme.sh + 阿里云 DNS：**
@@ -414,8 +416,7 @@ export Ali_Secret="YOUR_SECRET_KEY"
 # 申请证书
 acme.sh --issue --dns dns_ali \
   -d sitepod.example.com \
-  -d "*.sitepod.example.com" \
-  -d "*.beta.sitepod.example.com"
+  -d "*.sitepod.example.com"
 
 # 安装证书到 Nginx
 acme.sh --install-cert -d sitepod.example.com \
@@ -549,7 +550,7 @@ sitepod deploy --prod
 ```
 
 部署成功后会显示访问地址：
-- Beta: `https://my-website.beta.sitepod.example.com`
+- Beta: `https://my-website-beta.sitepod.example.com`
 - Prod: `https://my-website.sitepod.example.com`
 
 ### 4. 查看部署历史

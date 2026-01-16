@@ -106,25 +106,41 @@ func (h *SitePodHandler) resolveRouting(host, path string) (string, string, stri
 }
 
 // extractProjectAndEnv parses the host to determine project and environment
+// Domain structure:
+// - {domain} (root) → console project
+// - {project}.{domain} → prod env
+// - {project}-beta.{domain} → beta env
+// - {project}--{slug}.{domain}/__preview__/{slug}/ → preview
 func (h *SitePodHandler) extractProjectAndEnv(host string) (string, string) {
-	parts := strings.Split(host, ".")
-	if len(parts) < 2 {
+	// Strip the base domain to get subdomain
+	baseDomain := h.Domain
+	if !strings.HasSuffix(host, baseDomain) {
+		// Host doesn't match our domain
 		return "", ""
 	}
 
-	if len(parts) >= 3 && parts[1] == "preview" {
-		projectSlug := parts[0]
-		if idx := strings.Index(projectSlug, "--"); idx > 0 {
-			return projectSlug[:idx], "preview"
-		}
-		return projectSlug, "preview"
+	// Remove base domain and trailing dot
+	subdomain := strings.TrimSuffix(host, baseDomain)
+	subdomain = strings.TrimSuffix(subdomain, ".")
+
+	// Root domain → console
+	if subdomain == "" {
+		return "console", "prod"
 	}
 
-	if len(parts) >= 3 && parts[1] == "beta" {
-		return parts[0], "beta"
+	// Check for beta suffix: {project}-beta
+	if strings.HasSuffix(subdomain, "-beta") {
+		project := strings.TrimSuffix(subdomain, "-beta")
+		return project, "beta"
 	}
 
-	return parts[0], "prod"
+	// Check for preview: {project}--{slug}
+	if idx := strings.Index(subdomain, "--"); idx > 0 {
+		return subdomain[:idx], "preview"
+	}
+
+	// Default: {project} → prod
+	return subdomain, "prod"
 }
 
 // getRoutingIndex retrieves the cached routing index
