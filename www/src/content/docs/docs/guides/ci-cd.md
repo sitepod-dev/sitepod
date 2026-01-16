@@ -117,7 +117,7 @@ jobs:
     sitepod deploy --prod
   env:
     SITEPOD_TOKEN: ${{ secrets.SITEPOD_TOKEN }}
-    SITEPOD_ENDPOINT: https://sitepod.company.com
+    SITEPOD_ENDPOINT: https://sitepod.example.com
 ```
 
 ## GitLab CI

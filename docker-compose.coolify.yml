@@ -34,7 +34,7 @@ services:
       context: .
       dockerfile: Dockerfile.coolify
     # Or use pre-built image:
-    # image: ghcr.io/sitepod/sitepod:latest
+    # image: ghcr.io/sitepod-dev/sitepod:latest
     expose:
       - "8080"
     volumes:

@@ -84,7 +84,7 @@ spec:
     spec:
       containers:
       - name: sitepod
-        image: ghcr.io/sitepod/sitepod:latest
+        image: ghcr.io/sitepod-dev/sitepod:latest
         ports:
         - containerPort: 8080
         env:

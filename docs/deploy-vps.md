@@ -165,7 +165,7 @@ docker run -d \
   -e SITEPOD_DOMAIN=sitepod.example.com \
   -e SITEPOD_ADMIN_EMAIL=admin@example.com \
   -e SITEPOD_ADMIN_PASSWORD=YourSecurePassword123 \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 **环境变量说明：**
@@ -173,8 +173,8 @@ docker run -d \
 | 变量 | 必填 | 默认值 | 说明 |
 |------|-----|--------|------|
 | `SITEPOD_DOMAIN` | 是 | - | 你的域名 |
-| `SITEPOD_ADMIN_EMAIL` | 否 | 自动生成 | 管理员邮箱 |
-| `SITEPOD_ADMIN_PASSWORD` | 否 | 自动生成 | 管理员密码（查看日志获取） |
+| `SITEPOD_ADMIN_EMAIL` | 否 | `admin@sitepod.local` | 管理员邮箱 |
+| `SITEPOD_ADMIN_PASSWORD` | 否 | `sitepod123` | 管理员密码（首次启动若未设置） |
 | `SITEPOD_STORAGE_TYPE` | 否 | `local` | 存储类型：local, s3, oss, r2 |
 
 **配额限制（可选）：**
@@ -199,7 +199,7 @@ version: "3.8"
 
 services:
   sitepod:
-    image: ghcr.io/sitepod/sitepod:latest
+    image: ghcr.io/sitepod-dev/sitepod:latest
     container_name: sitepod
     restart: unless-stopped
     ports:
@@ -247,7 +247,7 @@ docker run -d \
   -e SITEPOD_S3_ENDPOINT=https://YOUR_ACCOUNT_ID.r2.cloudflarestorage.com \
   -e AWS_ACCESS_KEY_ID=your-access-key \
   -e AWS_SECRET_ACCESS_KEY=your-secret-key \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ### 方式四：已有 Nginx/Caddy 反向代理
@@ -303,7 +303,7 @@ docker run -d \
   -e SITEPOD_DOMAIN=sitepod.example.com \
   -e SITEPOD_ADMIN_EMAIL=admin@example.com \
   -e SITEPOD_ADMIN_PASSWORD=YourSecurePassword123 \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 > **注意**: `-p 127.0.0.1:8080:8080` 只绑定本地，不对外暴露。
@@ -432,7 +432,7 @@ version: "3.8"
 
 services:
   sitepod:
-    image: ghcr.io/sitepod/sitepod:latest
+    image: ghcr.io/sitepod-dev/sitepod:latest
     container_name: sitepod
     restart: unless-stopped
     ports:
@@ -584,7 +584,7 @@ docker logs --tail 100 sitepod
 
 ```bash
 # 拉取最新镜像
-docker pull ghcr.io/sitepod/sitepod:latest
+docker pull ghcr.io/sitepod-dev/sitepod:latest
 
 # 停止并删除旧容器
 docker stop sitepod
@@ -600,7 +600,7 @@ docker run -d \
   -e SITEPOD_DOMAIN=sitepod.example.com \
   -e SITEPOD_ADMIN_EMAIL=admin@example.com \
   -e SITEPOD_ADMIN_PASSWORD=YourSecurePassword123 \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 或使用 Docker Compose：
@@ -699,7 +699,7 @@ docker run -d \
   -v ./Caddyfile.wildcard:/etc/caddy/Caddyfile \
   -e SITEPOD_DOMAIN=sitepod.example.com \
   -e CF_API_TOKEN=your-cloudflare-api-token \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ### Q: 子域名无法访问

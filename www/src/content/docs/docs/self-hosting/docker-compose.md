@@ -14,7 +14,7 @@ version: "3.8"
 
 services:
   sitepod:
-    image: ghcr.io/sitepod/sitepod:latest
+    image: ghcr.io/sitepod-dev/sitepod:latest
     container_name: sitepod
     restart: unless-stopped
     ports:
@@ -49,7 +49,7 @@ version: "3.8"
 
 services:
   sitepod:
-    image: ghcr.io/sitepod/sitepod:latest
+    image: ghcr.io/sitepod-dev/sitepod:latest
     container_name: sitepod
     restart: unless-stopped
     ports:
@@ -91,7 +91,7 @@ version: "3.8"
 
 services:
   sitepod:
-    image: ghcr.io/sitepod/sitepod:latest
+    image: ghcr.io/sitepod-dev/sitepod:latest
     container_name: sitepod
     restart: unless-stopped
     ports:

@@ -1,4 +1,4 @@
-.PHONY: all build build-server build-cli run dev test clean docker npm-prepare npm-link npm-publish bump-patch bump-minor bump-major
+.PHONY: all build build-server build-cli run dev test clean docker docker-push npm-prepare npm-link npm-publish bump-patch bump-minor bump-major release
 
 # Default target
 all: build
@@ -62,6 +62,10 @@ docker-stop:
 
 docker-logs:
 	docker logs -f sitepod
+
+# Build and push to ghcr.io (for linux/amd64)
+docker-push:
+	docker buildx build --platform linux/amd64 -t ghcr.io/sitepod-dev/sitepod:latest --push .
 
 # Install dependencies
 deps:
@@ -157,3 +161,11 @@ bump-major:
 	MAJOR=$$(echo $$VERSION | cut -d. -f1); \
 	NEW_VERSION="$$((MAJOR + 1)).0.0"; \
 	./scripts/sync-versions.sh $$NEW_VERSION
+
+# Create release tag and push (triggers GitHub Actions)
+release:
+	@VERSION=$$(grep '^version = ' cli/Cargo.toml | head -1 | sed 's/version = "\(.*\)"/\1/'); \
+	echo "Creating release v$$VERSION..."; \
+	git tag -a "v$$VERSION" -m "Release v$$VERSION"; \
+	git push origin "v$$VERSION"; \
+	echo "✓ Release v$$VERSION pushed. GitHub Actions will build and publish."

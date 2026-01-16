@@ -41,7 +41,7 @@ chmod +x sitepod
 version: '3.8'
 services:
   sitepod:
-    image: ghcr.io/user/sitepod:latest
+    image: ghcr.io/sitepod-dev/sitepod:latest
     ports:
       - "80:80"
       - "443:443"
@@ -50,6 +50,7 @@ services:
     environment:
       - SITEPOD_DOMAIN=example.com
       - SITEPOD_ADMIN_EMAIL=admin@example.com
+      - SITEPOD_ADMIN_PASSWORD=YourSecurePassword123
     restart: unless-stopped
 
 volumes:
@@ -66,12 +67,15 @@ docker-compose up -d
 |------|------|--------|
 | `SITEPOD_DOMAIN` | 主域名 | 必填 |
 | `SITEPOD_DATA_DIR` | 数据目录 | `/data` |
-| `SITEPOD_ADMIN_EMAIL` | Let's Encrypt 邮箱 | 必填 |
+| `SITEPOD_ADMIN_EMAIL` | 管理员邮箱 | `admin@sitepod.local` |
+| `SITEPOD_ADMIN_PASSWORD` | 管理员密码（首次启动若未设置） | `sitepod123` |
 | `SITEPOD_STORAGE_TYPE` | 存储类型 (local/s3/oss/r2) | `local` |
 | `SITEPOD_S3_BUCKET` | S3 桶名 | - |
 | `SITEPOD_S3_REGION` | S3 区域 | - |
 | `SITEPOD_S3_ACCESS_KEY` | S3 Access Key | - |
 | `SITEPOD_S3_SECRET_KEY` | S3 Secret Key | - |
+
+> **安全提示**: 生产环境请设置 `SITEPOD_ADMIN_EMAIL` 和 `SITEPOD_ADMIN_PASSWORD`！
 
 ---
 

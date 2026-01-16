@@ -22,7 +22,7 @@ docker run -d \
   -p 80:80 -p 443:443 \
   -v sitepod-data:/data \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 Caddy handles automatic HTTPS via Let's Encrypt.
@@ -101,7 +101,7 @@ docker run -d \
   -p 80:80 -p 443:443 \
   -v sitepod-data:/data \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ### Cloudflare R2
@@ -116,7 +116,7 @@ docker run -d \
   -e SITEPOD_S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com \
   -e AWS_ACCESS_KEY_ID=xxx \
   -e AWS_SECRET_ACCESS_KEY=xxx \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ### AWS S3
@@ -128,7 +128,7 @@ docker run -d \
   -e SITEPOD_STORAGE_TYPE=s3 \
   -e SITEPOD_S3_BUCKET=sitepod-data \
   -e SITEPOD_S3_REGION=us-east-1 \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ---
@@ -144,7 +144,7 @@ docker run -d \
   -p 80:80 -p 443:443 \
   -v sitepod-data:/data \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 Requirements:
@@ -165,7 +165,7 @@ docker run -d \
   -v sitepod-data:/data \
   -v ./Caddyfile.cloudflare:/etc/caddy/Caddyfile \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 See `server/examples/Caddyfile.cloudflare` for the full config.
@@ -188,7 +188,7 @@ docker run -d \
   -v sitepod-data:/data \
   -v ./Caddyfile.proxy:/etc/caddy/Caddyfile \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 See `server/examples/Caddyfile.proxy` for the full config.
@@ -212,7 +212,7 @@ docker run -d \
   -v ./Caddyfile.wildcard:/etc/caddy/Caddyfile \
   -e SITEPOD_DOMAIN=sitepod.example.com \
   -e CF_API_TOKEN=your-cloudflare-token \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 See `server/examples/Caddyfile.wildcard` for the full config.
@@ -232,7 +232,7 @@ docker run -d \
   -p 80:80 -p 443:443 \
   -v sitepod-data:/data \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ### Coolify
@@ -242,7 +242,7 @@ Coolify uses Traefik for SSL. Choose one approach:
 #### Approach A: Coolify Manages SSL (Simple)
 
 1. Add new resource → Docker Image
-2. Image: `ghcr.io/sitepod/sitepod:latest`
+2. Image: `ghcr.io/sitepod-dev/sitepod:latest`
 3. **Port**: `8080` (internal only, not 80/443)
 4. Environment variables:
    - `SITEPOD_DOMAIN=pods.example.com`
@@ -260,7 +260,7 @@ In Coolify domains, add:
 For full control, bypass Coolify's proxy:
 
 1. Add new resource → Docker Image
-2. Image: `ghcr.io/sitepod/sitepod:latest`
+2. Image: `ghcr.io/sitepod-dev/sitepod:latest`
 3. **Network Mode**: `host`
 4. Environment variables:
    - `SITEPOD_DOMAIN=pods.example.com`
@@ -297,7 +297,7 @@ spec:
     spec:
       containers:
       - name: sitepod
-        image: ghcr.io/sitepod/sitepod:latest
+        image: ghcr.io/sitepod-dev/sitepod:latest
         ports:
         - containerPort: 8080
         env:
@@ -389,7 +389,7 @@ version: "3.8"
 
 services:
   sitepod:
-    image: ghcr.io/sitepod/sitepod:latest
+    image: ghcr.io/sitepod-dev/sitepod:latest
     restart: unless-stopped
     ports:
       - "80:80"

@@ -44,7 +44,7 @@ docker run -d \
   -v /opt/sitepod/data:/data \
   -v /opt/sitepod/Caddyfile:/etc/caddy/Caddyfile \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 Note: `-p 127.0.0.1:8080:8080` binds only to localhost.
@@ -117,7 +117,7 @@ sudo systemctl reload caddy
 ```yaml
 services:
   sitepod:
-    image: ghcr.io/sitepod/sitepod:latest
+    image: ghcr.io/sitepod-dev/sitepod:latest
     volumes:
       - ./data:/data
       - ./Caddyfile:/etc/caddy/Caddyfile
@@ -180,7 +180,7 @@ Coolify uses Traefik. You have two options:
 
 ### Option A: Coolify manages SSL
 
-1. Add Docker resource with image `ghcr.io/sitepod/sitepod:latest`
+1. Add Docker resource with image `ghcr.io/sitepod-dev/sitepod:latest`
 2. Set port to `8080`
 3. Mount custom Caddyfile
 4. Add domains in Coolify:

@@ -94,7 +94,7 @@ to pods. Switch versions in milliseconds, not minutes.
 | **下载** | `get.sitepod.dev` | 下载页/安装脚本 |
 | **GitHub Repo** | `sitepod/sitepod` | 主仓库 |
 | **CLI 命令** | `sitepod` | 唯一 CLI 命令名 |
-| **Docker 镜像** | `ghcr.io/sitepod/sitepod` | 官方镜像 |
+| **Docker 镜像** | `ghcr.io/sitepod-dev/sitepod` | 官方镜像 |
 | **配置文件** | `sitepod.toml` | 项目配置 |
 | **环境变量前缀** | `SITEPOD_` | 如 `SITEPOD_TOKEN` |
 
@@ -119,15 +119,15 @@ sitepod history
 
 ```bash
 # 官方镜像
-docker pull ghcr.io/sitepod/sitepod:latest
-docker pull ghcr.io/sitepod/sitepod:v1.0.0
+docker pull ghcr.io/sitepod-dev/sitepod:latest
+docker pull ghcr.io/sitepod-dev/sitepod:v1.0.0
 
 # 运行
 docker run -d \
   -p 80:80 -p 443:443 \
   -v sitepod-data:/data \
   -e SITEPOD_DOMAIN=example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ---

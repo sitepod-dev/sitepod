@@ -76,7 +76,7 @@ docker run -d \
   -p 80:8080 -p 443:8443 -p 8090:8090 \
   -v sitepod-data:/data \
   -e SITEPOD_DOMAIN=example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ### Binary

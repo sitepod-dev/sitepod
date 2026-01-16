@@ -1,2 +1,2 @@
 // Auto-synced by scripts/sync-versions.sh
-export const VERSION = "0.1.0";
+export const VERSION = "0.2.0";

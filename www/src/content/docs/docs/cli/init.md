@@ -83,11 +83,11 @@ routing_mode = "path"
 directory = "./dist"
 
 [deploy.routing]
-domain = "h5.company.com"
+domain = "h5.example.com"
 slug = "/blog-admin"
 ```
 
-Your site will be at `https://h5.company.com/blog-admin/`
+Your site will be at `https://h5.example.com/blog-admin/`
 
 ## Subdomain conflicts
 

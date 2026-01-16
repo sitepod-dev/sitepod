@@ -205,4 +205,4 @@ sitepod domain remove  # Remove domain
 - CLI command: `sitepod` (not `pod`)
 - Config file: `sitepod.toml`
 - Environment variables: `SITEPOD_` prefix
-- Docker image: `ghcr.io/sitepod/sitepod`
+- Docker image: `ghcr.io/sitepod-dev/sitepod`

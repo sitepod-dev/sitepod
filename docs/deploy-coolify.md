@@ -27,7 +27,7 @@
 
 1. 登录 Coolify 控制台
 2. 选择 **New Resource** → **Docker Compose**
-3. 连接到 SitePod 的 Git 仓库：`https://github.com/cosformula/sitepod.dev`
+3. 连接到 SitePod 的 Git 仓库：`https://github.com/sitepod-dev/sitepod`
 4. 配置文件选择：
    - **Docker Compose**: `docker-compose.coolify.yml`
    - **Dockerfile**: `Dockerfile.coolify`

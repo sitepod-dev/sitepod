@@ -12,7 +12,7 @@
 
 services:
   sitepod:
-    image: ghcr.io/sitepod/sitepod:latest
+    image: ghcr.io/sitepod-dev/sitepod:latest
     # Or build from source:
     # build:
     #   context: .
@@ -44,7 +44,7 @@ services:
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-}
 
-      # Admin account (optional, auto-generated if not set)
+      # Admin account (optional; defaults to admin@sitepod.local / sitepod123)
       - SITEPOD_ADMIN_EMAIL=${SITEPOD_ADMIN_EMAIL:-}
       - SITEPOD_ADMIN_PASSWORD=${SITEPOD_ADMIN_PASSWORD:-}
 

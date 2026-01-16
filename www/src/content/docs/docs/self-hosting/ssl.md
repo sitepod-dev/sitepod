@@ -15,7 +15,7 @@ docker run -d \
   -p 80:80 -p 443:443 \
   -v sitepod-data:/data \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 **Requirements:**
@@ -42,7 +42,7 @@ docker run -d \
   -v sitepod-data:/data \
   -v ./Caddyfile.cloudflare:/etc/caddy/Caddyfile \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 **Cloudflare settings:**
@@ -71,7 +71,7 @@ docker run -d \
   -v ./Caddyfile.wildcard:/etc/caddy/Caddyfile \
   -e SITEPOD_DOMAIN=sitepod.example.com \
   -e CF_API_TOKEN=your-cloudflare-token \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 **DNS providers supported:**
@@ -94,7 +94,7 @@ docker run -d \
   -v sitepod-data:/data \
   -v ./Caddyfile.proxy:/etc/caddy/Caddyfile \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 Your reverse proxy handles SSL. See [Reverse Proxy guide](/docs/self-hosting/reverse-proxy/).

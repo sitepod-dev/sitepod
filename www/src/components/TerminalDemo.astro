@@ -48,11 +48,15 @@
         const container = document.getElementById('terminal-output');
         if (!container) return;
         
-        container.innerHTML = '';
         let timer = 0;
+        let cleared = false;
 
         steps.forEach(step => {
             setTimeout(() => {
+                if (!cleared) {
+                    container.innerHTML = '';
+                    cleared = true;
+                }
                 const line = document.createElement('div');
                 
                 if (step.type === 'input') {

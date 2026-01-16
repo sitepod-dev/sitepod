@@ -14,7 +14,7 @@ docker run -d \
   --name sitepod \
   -v /opt/sitepod:/data \
   -e SITEPOD_STORAGE_TYPE=local \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 **Data layout:**
@@ -51,7 +51,7 @@ docker run -d \
   -e SITEPOD_S3_ENDPOINT=https://ACCOUNT_ID.r2.cloudflarestorage.com \
   -e AWS_ACCESS_KEY_ID=your-access-key \
   -e AWS_SECRET_ACCESS_KEY=your-secret-key \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ### Setting up R2
@@ -82,7 +82,7 @@ docker run -d \
   -e SITEPOD_STORAGE_TYPE=s3 \
   -e SITEPOD_S3_BUCKET=sitepod-data \
   -e SITEPOD_S3_REGION=us-east-1 \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 For EC2 instances, IAM roles are recommended. Otherwise, set credentials:
@@ -130,7 +130,7 @@ docker run -d \
   -e SITEPOD_S3_ENDPOINT=https://s3.your-provider.com \
   -e AWS_ACCESS_KEY_ID=your-access-key \
   -e AWS_SECRET_ACCESS_KEY=your-secret-key \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ## Environment variables reference

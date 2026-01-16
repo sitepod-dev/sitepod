@@ -79,7 +79,7 @@ docker run -d \
   -e SITEPOD_DOMAIN=sitepod.example.com \
   -e SITEPOD_ADMIN_EMAIL=admin@example.com \
   -e SITEPOD_ADMIN_PASSWORD=YourSecurePassword123 \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 :::caution
@@ -122,7 +122,7 @@ sitepod deploy
 
 ```bash
 # Pull latest image
-docker pull ghcr.io/sitepod/sitepod:latest
+docker pull ghcr.io/sitepod-dev/sitepod:latest
 
 # Restart container
 docker stop sitepod
@@ -137,7 +137,7 @@ docker run -d \
   -e SITEPOD_DOMAIN=sitepod.example.com \
   -e SITEPOD_ADMIN_EMAIL=admin@example.com \
   -e SITEPOD_ADMIN_PASSWORD=YourSecurePassword123 \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ## Backup

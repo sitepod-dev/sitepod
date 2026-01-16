@@ -17,7 +17,7 @@ Mount the appropriate Caddyfile when running:
 docker run -d \
   -v ./Caddyfile.proxy:/etc/caddy/Caddyfile \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 ## Environment Variables

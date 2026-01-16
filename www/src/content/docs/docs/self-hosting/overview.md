@@ -54,7 +54,7 @@ docker run -d \
   -p 80:80 -p 443:443 \
   -v sitepod-data:/data \
   -e SITEPOD_DOMAIN=sitepod.example.com \
-  ghcr.io/sitepod/sitepod:latest
+  ghcr.io/sitepod-dev/sitepod:latest
 ```
 
 Then point your DNS to the server:

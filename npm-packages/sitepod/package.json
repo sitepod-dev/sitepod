@@ -1,6 +1,6 @@
 {
   "name": "sitepod",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Self-hosted static site deployments - deploy once, rollback in seconds",
   "license": "MIT",
   "repository": {
@@ -26,10 +26,10 @@
     "node": ">=16"
   },
   "optionalDependencies": {
-    "@sitepod/darwin-arm64": "0.1.0",
-    "@sitepod/darwin-x64": "0.1.0",
-    "@sitepod/linux-x64": "0.1.0",
-    "@sitepod/linux-arm64": "0.1.0",
-    "@sitepod/win32-x64": "0.1.0"
+    "@sitepod/darwin-arm64": "0.2.0",
+    "@sitepod/darwin-x64": "0.2.0",
+    "@sitepod/linux-x64": "0.2.0",
+    "@sitepod/linux-arm64": "0.2.0",
+    "@sitepod/win32-x64": "0.2.0"
   }
 }
