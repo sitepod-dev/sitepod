@@ -8,7 +8,6 @@
   let message = $state('')
   let loading = $state(false)
   let isDemo = $state(false)
-  let isAdminLogin = $state(false)
   let configLoaded = $state(false)
 
   onMount(async () => {
@@ -27,13 +26,6 @@
   function fillDemoCredentials() {
     email = 'demo@sitepod.dev'
     password = 'demo123'
-    isAdminLogin = false
-  }
-
-  function fillAdminCredentials() {
-    email = 'admin@sitepod.local'
-    password = 'sitepod123'
-    isAdminLogin = true
   }
 
   async function handleEmailLogin(e: Event) {
@@ -43,16 +35,9 @@
     loading = true
     error = ''
     try {
-      if (isAdminLogin) {
-        const result = await auth.loginAdmin(email, password)
-        if (result.success) {
-          message = result.message || 'Admin logged in'
-        }
-      } else {
-        const result = await auth.login(email, password)
-        if (result.success) {
-          message = result.message || 'Logged in'
-        }
+      const result = await auth.login(email, password)
+      if (result.success) {
+        message = result.message || 'Logged in'
       }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Login failed'
@@ -87,25 +72,15 @@
     {#if configLoaded && isDemo}
       <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <p class="text-sm font-medium text-amber-800 mb-2">Demo Mode</p>
-        <div class="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onclick={fillDemoCredentials}
-            class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded hover:bg-amber-200 transition"
-          >
-            Fill Demo User
-          </button>
-          <button
-            type="button"
-            onclick={fillAdminCredentials}
-            class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition"
-          >
-            Fill Admin
-          </button>
-        </div>
+        <button
+          type="button"
+          onclick={fillDemoCredentials}
+          class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded hover:bg-amber-200 transition"
+        >
+          Fill Demo Credentials
+        </button>
         <p class="text-xs text-amber-600 mt-2">
-          Demo: demo@sitepod.dev / demo123<br>
-          Admin: admin@sitepod.local / sitepod123
+          demo@sitepod.dev / demo123
         </p>
       </div>
     {/if}
@@ -135,24 +110,10 @@
         />
       </div>
 
-      <!-- Admin login checkbox -->
-      <div class="flex items-center gap-2">
-        <input
-          type="checkbox"
-          id="adminLogin"
-          bind:checked={isAdminLogin}
-          class="w-4 h-4 text-cyan-600 border-slate-300 rounded focus:ring-cyan-500"
-          disabled={loading}
-        />
-        <label for="adminLogin" class="text-sm text-slate-600">
-          Admin login (PocketBase superuser)
-        </label>
-      </div>
-
       <button
         type="submit"
         disabled={loading || !email || !password}
-        class="w-full py-2 px-4 font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition {isAdminLogin ? 'bg-orange-600 text-white hover:bg-orange-700' : 'bg-cyan-600 text-white hover:bg-cyan-700'}"
+        class="w-full py-2 px-4 font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition bg-cyan-600 text-white hover:bg-cyan-700"
       >
         {loading ? 'Signing in...' : 'Continue'}
       </button>
