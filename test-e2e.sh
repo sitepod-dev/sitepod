@@ -49,11 +49,15 @@ if [ ! -f "$SCRIPT_DIR/bin/sitepod-server" ] || [ ! -f "$SCRIPT_DIR/bin/sitepod"
 fi
 
 # Start server with IS_DEMO=1 for demo mode tests
+# Also set SITEPOD_CONSOLE_ADMIN_* for console admin user tests
 info "Starting server..."
 rm -rf "$DATA_DIR"
 mkdir -p "$DATA_DIR"
 cd "$SCRIPT_DIR"
-IS_DEMO=1 SITEPOD_ADMIN_TOKEN="$ADMIN_TOKEN" "$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
+IS_DEMO=1 SITEPOD_ADMIN_TOKEN="$ADMIN_TOKEN" \
+  SITEPOD_CONSOLE_ADMIN_EMAIL="console-admin@test.local" \
+  SITEPOD_CONSOLE_ADMIN_PASSWORD="consoleadmin123" \
+  "$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
 SERVER_PID=$!
 sleep 8
 
@@ -105,18 +109,18 @@ else
     fail "Demo auth info failed: $DEMO_INFO"
 fi
 
-# Test PocketBase admin login
-info "Testing PocketBase admin login..."
-ADMIN_RESP=$(curl -s -X POST -H "Content-Type: application/json" -d '{"identity":"admin@sitepod.local","password":"sitepod123"}' "$ENDPOINT/api/admins/auth-with-password")
-PB_ADMIN_TOKEN=$(echo "$ADMIN_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
-if [ -z "$PB_ADMIN_TOKEN" ]; then
-    fail "PocketBase admin login failed: $ADMIN_RESP"
+# Test console admin login (users.is_admin=true)
+info "Testing console admin login..."
+ADMIN_RESP=$(curl -s -X POST -H "Content-Type: application/json" -d '{"email":"console-admin@test.local","password":"consoleadmin123"}' "$ENDPOINT/api/v1/auth/login")
+CONSOLE_ADMIN_TOKEN=$(echo "$ADMIN_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+if [ -z "$CONSOLE_ADMIN_TOKEN" ]; then
+    fail "Console admin login failed: $ADMIN_RESP"
 fi
-pass "PocketBase admin login successful"
+pass "Console admin login successful"
 
 # Test admin auth info
 info "Testing admin auth info..."
-ADMIN_INFO=$(curl -s -H "Authorization: Bearer $PB_ADMIN_TOKEN" "$ENDPOINT/api/v1/auth/info")
+ADMIN_INFO=$(curl -s -H "Authorization: Bearer $CONSOLE_ADMIN_TOKEN" "$ENDPOINT/api/v1/auth/info")
 if echo "$ADMIN_INFO" | grep -q '"is_admin":true'; then
     pass "Admin auth info shows is_admin=true"
 else
@@ -125,7 +129,7 @@ fi
 
 # Test admin can see all projects (including system ones)
 info "Testing admin projects view..."
-ADMIN_PROJECTS=$(curl -s -H "Authorization: Bearer $PB_ADMIN_TOKEN" "$ENDPOINT/api/v1/projects")
+ADMIN_PROJECTS=$(curl -s -H "Authorization: Bearer $CONSOLE_ADMIN_TOKEN" "$ENDPOINT/api/v1/projects")
 if echo "$ADMIN_PROJECTS" | grep -q '"owner_email"'; then
     pass "Admin can see owner_email in projects"
 else
