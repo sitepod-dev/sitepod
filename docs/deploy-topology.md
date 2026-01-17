@@ -329,6 +329,8 @@ SITEPOD_CF_API_TOKEN=your_api_token
 | `IS_DEMO` | 演示模式 (创建 demo 用户) | `1` (演示) | 不设置 (生产) |
 | `SITEPOD_ADMIN_EMAIL` | PocketBase 管理员邮箱 | 自定义 | 自定义 |
 | `SITEPOD_ADMIN_PASSWORD` | PocketBase 管理员密码 | 自定义 | 自定义 |
+| `SITEPOD_CONSOLE_ADMIN_EMAIL` | Console 管理员邮箱（users.is_admin） | 可选 | 建议设置 |
+| `SITEPOD_CONSOLE_ADMIN_PASSWORD` | Console 管理员密码（users.is_admin） | 可选 | 建议设置 |
 
 > ⚠️ **安全提示**：`IS_DEMO=1` 仅建议在演示环境使用。生产环境应禁用。
 

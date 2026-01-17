@@ -736,14 +736,21 @@ docker run -d \
 
 ### Q: 如何修改管理员密码
 
-**方法 1**: 通过环境变量（推荐）
+**PocketBase 管理员（PB 管理后台）**
+
+方法 1：通过环境变量（推荐）
 - 修改 `SITEPOD_ADMIN_PASSWORD` 环境变量
 - 删除数据库重新初始化（会丢失数据）
 
-**方法 2**: 通过管理后台
+方法 2：通过管理后台
 1. 访问 `https://sitepod.example.com/_/`
 2. 使用当前密码登录
 3. 在设置中修改密码
+
+**Console 管理员（users.is_admin）**
+
+- 推荐：设置 `SITEPOD_CONSOLE_ADMIN_EMAIL` / `SITEPOD_CONSOLE_ADMIN_PASSWORD`
+- 或在 PB 管理后台 Users 表中设置 `is_admin=true`
 
 ---
 

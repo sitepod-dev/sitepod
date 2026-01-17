@@ -1,11 +1,11 @@
-.PHONY: all build build-server build-cli run dev test lint lint-server lint-cli clean docker docker-push npm-prepare npm-link npm-publish bump-patch bump-minor bump-major release
+.PHONY: all build build-server build-cli build-console run dev test lint lint-server lint-cli clean docker docker-push npm-prepare npm-link npm-publish bump-patch bump-minor bump-major release
 
 # Default target
 all: build
 
-# Build everything (server + CLI)
-build: build-server build-cli
-	@echo "✓ Server and CLI built successfully"
+# Build everything (server + CLI + console)
+build: build-server build-cli build-console
+	@echo "✓ Server, CLI, and Console built successfully"
 
 # Build Caddy with embedded SitePod API
 build-server:
@@ -16,6 +16,11 @@ build-cli:
 	cd cli && cargo build --release
 	mkdir -p bin
 	cp cli/target/release/sitepod bin/sitepod
+
+# Build Console UI
+build-console:
+	@[ -d console/node_modules ] || (cd console && npm install)
+	cd console && npm run build
 
 # Alias for build-server
 build-caddy: build-server
@@ -54,6 +59,7 @@ clean:
 	rm -rf bin/
 	rm -rf server/data/
 	rm -rf data/
+	rm -rf console/dist/
 
 # Docker commands
 docker-build:
