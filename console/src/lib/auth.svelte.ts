@@ -68,7 +68,10 @@ function createAuth() {
         const response = await fetch('/api/v1/auth/anonymous', {
           method: 'POST'
         })
-        if (!response.ok) throw new Error('Anonymous login failed')
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}))
+          throw new Error(error.message || 'Anonymous login failed')
+        }
         const data = await response.json()
         state.token = data.token
         state.user = {
