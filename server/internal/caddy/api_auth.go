@@ -5,8 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/tokens"
+	"github.com/pocketbase/pocketbase/core"
 	"go.uber.org/zap"
 )
 
@@ -36,11 +35,11 @@ func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Try to find existing user
-	user, err := h.app.Dao().FindAuthRecordByEmail("users", email)
+	user, err := h.app.FindAuthRecordByEmail("users", email)
 
 	if err != nil {
 		// User doesn't exist - create new account
-		usersCollection, err := h.app.Dao().FindCollectionByNameOrId("users")
+		usersCollection, err := h.app.FindCollectionByNameOrId("users")
 		if err != nil {
 			return h.jsonError(w, http.StatusInternalServerError, "users collection not found")
 		}
@@ -59,27 +58,16 @@ func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Reque
 			username = "user" + username
 		}
 
-		user = models.NewRecord(usersCollection)
-		if err := user.SetEmail(email); err != nil {
-			return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
-		}
-		if err := user.SetUsername(username); err != nil {
-			return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
-		}
-		if err := user.SetVerified(true); err != nil {
-			return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
-		}
-		if err := user.SetPassword(password); err != nil {
-			return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
-		}
+		user = core.NewRecord(usersCollection)
+		user.SetEmail(email)
+		user.Set("username", username)
+		user.SetVerified(true)
+		user.SetPassword(password)
 
-		if err := h.app.Dao().SaveRecord(user); err != nil {
+		if err := h.app.Save(user); err != nil {
 			// Check if username conflict, try with suffix
-			if err := user.SetUsername(username + user.Id[:4]); err != nil {
-				h.logger.Error("failed to set username", zap.Error(err))
-				return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
-			}
-			if err := h.app.Dao().SaveRecord(user); err != nil {
+			user.Set("username", username+user.Id[:4])
+			if err := h.app.Save(user); err != nil {
 				h.logger.Error("failed to create user", zap.Error(err))
 				return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
 			}
@@ -87,7 +75,7 @@ func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Reque
 
 		h.logger.Info("New user registered", zap.String("email", email))
 
-		token, err := tokens.NewRecordAuthToken(h.app, user)
+		token, err := user.NewAuthToken()
 		if err != nil {
 			return h.jsonError(w, http.StatusInternalServerError, "failed to generate token")
 		}
@@ -106,7 +94,7 @@ func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Reque
 		return h.jsonError(w, http.StatusUnauthorized, "invalid password")
 	}
 
-	token, err := tokens.NewRecordAuthToken(h.app, user)
+	token, err := user.NewAuthToken()
 	if err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, "failed to generate token")
 	}
@@ -121,7 +109,7 @@ func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Reque
 }
 
 // API: Delete Account - cascade deletes all user data
-func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	// Prevent deletion of system user
 	if user.GetString("email") == "system@sitepod.local" {
 		return h.jsonError(w, http.StatusForbidden, "cannot delete system user")
@@ -132,13 +120,13 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 		zap.String("email", user.GetString("email")))
 
 	// Find all projects owned by this user
-	projects, err := h.app.Dao().FindRecordsByFilter(
+	projects, err := h.app.FindRecordsByFilter(
 		"projects", "owner_id = {:owner_id}", "", 1000, 0,
 		map[string]any{"owner_id": user.Id},
 	)
 	if err != nil {
 		h.logger.Debug("No projects found for user", zap.String("user_id", user.Id))
-		projects = []*models.Record{}
+		projects = []*core.Record{}
 	}
 
 	// For each project, delete related data
@@ -149,45 +137,45 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 		h.logger.Info("Deleting project", zap.String("project", projectName))
 
 		// Delete domains
-		domains, _ := h.app.Dao().FindRecordsByFilter(
+		domains, _ := h.app.FindRecordsByFilter(
 			"domains", "project_id = {:project_id}", "", 1000, 0,
 			map[string]any{"project_id": projectID},
 		)
 		for _, domain := range domains {
-			if err := h.app.Dao().DeleteRecord(domain); err != nil {
+			if err := h.app.Delete(domain); err != nil {
 				h.logger.Warn("Failed to delete domain", zap.String("domain_id", domain.Id), zap.Error(err))
 			}
 		}
 
 		// Delete images
-		images, _ := h.app.Dao().FindRecordsByFilter(
+		images, _ := h.app.FindRecordsByFilter(
 			"images", "project_id = {:project_id}", "", 1000, 0,
 			map[string]any{"project_id": projectID},
 		)
 		for _, image := range images {
-			if err := h.app.Dao().DeleteRecord(image); err != nil {
+			if err := h.app.Delete(image); err != nil {
 				h.logger.Warn("Failed to delete image", zap.String("image_id", image.Id), zap.Error(err))
 			}
 		}
 
 		// Delete deploy_events
-		events, _ := h.app.Dao().FindRecordsByFilter(
+		events, _ := h.app.FindRecordsByFilter(
 			"deploy_events", "project_id = {:project_id}", "", 1000, 0,
 			map[string]any{"project_id": projectID},
 		)
 		for _, event := range events {
-			if err := h.app.Dao().DeleteRecord(event); err != nil {
+			if err := h.app.Delete(event); err != nil {
 				h.logger.Warn("Failed to delete deploy event", zap.String("event_id", event.Id), zap.Error(err))
 			}
 		}
 
 		// Delete plans
-		plans, _ := h.app.Dao().FindRecordsByFilter(
+		plans, _ := h.app.FindRecordsByFilter(
 			"plans", "project_id = {:project_id}", "", 1000, 0,
 			map[string]any{"project_id": projectID},
 		)
 		for _, plan := range plans {
-			if err := h.app.Dao().DeleteRecord(plan); err != nil {
+			if err := h.app.Delete(plan); err != nil {
 				h.logger.Warn("Failed to delete plan", zap.String("plan_id", plan.Id), zap.Error(err))
 			}
 		}
@@ -201,13 +189,13 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 		}
 
 		// Delete the project record
-		if err := h.app.Dao().DeleteRecord(project); err != nil {
+		if err := h.app.Delete(project); err != nil {
 			h.logger.Warn("Failed to delete project", zap.String("project", projectName), zap.Error(err))
 		}
 	}
 
 	// Delete the user record
-	if err := h.app.Dao().DeleteRecord(user); err != nil {
+	if err := h.app.Delete(user); err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, "failed to delete account")
 	}
 
@@ -228,8 +216,8 @@ func (h *SitePodHandler) apiAuthInfo(w http.ResponseWriter, r *http.Request) err
 
 	if authCtx.IsAdmin() {
 		return h.jsonResponse(w, http.StatusOK, map[string]any{
-			"id":           authCtx.Admin.Id,
-			"email":        authCtx.Admin.Email,
+			"id":           authCtx.Superuser.Id,
+			"email":        authCtx.Superuser.GetString("email"),
 			"is_admin":     true,
 			"is_anonymous": false,
 		})

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 // QuotaConfig holds quota limits for deployments
@@ -104,12 +104,12 @@ func (h *SitePodHandler) checkDeployQuotas(files []FileEntry) error {
 
 // checkProjectCountQuota validates user hasn't exceeded project limit
 func (h *SitePodHandler) checkProjectCountQuota(userID string) error {
-	projects, err := h.app.Dao().FindRecordsByFilter(
+	projects, err := h.app.FindRecordsByFilter(
 		"projects", "owner_id = {:owner_id}", "", 1000, 0,
 		map[string]any{"owner_id": userID},
 	)
 	if err != nil {
-		projects = []*models.Record{}
+		projects = []*core.Record{}
 	}
 
 	if len(projects) >= quotaConfig.MaxProjectsPerUser {

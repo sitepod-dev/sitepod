@@ -1,33 +1,31 @@
 package migrations
 
 import (
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		domains, err := dao.FindCollectionByNameOrId("domains")
+	m.Register(func(app core.App) error {
+		domains, err := app.FindCollectionByNameOrId("domains")
 		if err != nil {
 			return err
 		}
 
-		field := domains.Schema.GetFieldByName("status")
+		// Update status field values - in v0.36, we need to modify the field
+		field := domains.Fields.GetByName("status")
 		if field != nil {
-			if opts, ok := field.Options.(*schema.SelectOptions); ok {
-				opts.Values = []string{"pending", "active"}
+			if selectField, ok := field.(*core.SelectField); ok {
+				selectField.Values = []string{"pending", "active"}
 			}
 		}
 
-		if err := dao.SaveCollection(domains); err != nil {
+		if err := app.Save(domains); err != nil {
 			return err
 		}
 
-		records, err := dao.FindRecordsByFilter(
+		// Update existing records
+		records, err := app.FindRecordsByFilter(
 			"domains",
 			"status = 'verified'",
 			"",
@@ -36,32 +34,30 @@ func init() {
 			nil,
 		)
 		if err != nil {
-			return nil
+			return nil // No records found is fine
 		}
 
 		for _, record := range records {
 			record.Set("status", "active")
-			if err := dao.SaveRecord(record); err != nil {
+			if err := app.Save(record); err != nil {
 				return err
 			}
 		}
 
 		return nil
-	}, func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		domains, err := dao.FindCollectionByNameOrId("domains")
+	}, func(app core.App) error {
+		domains, err := app.FindCollectionByNameOrId("domains")
 		if err != nil {
 			return err
 		}
 
-		field := domains.Schema.GetFieldByName("status")
+		field := domains.Fields.GetByName("status")
 		if field != nil {
-			if opts, ok := field.Options.(*schema.SelectOptions); ok {
-				opts.Values = []string{"pending", "verified", "active"}
+			if selectField, ok := field.(*core.SelectField); ok {
+				selectField.Values = []string{"pending", "verified", "active"}
 			}
 		}
 
-		return dao.SaveCollection(domains)
+		return app.Save(domains)
 	})
 }

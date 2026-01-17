@@ -10,35 +10,31 @@ import (
 
 	"github.com/caddyserver/caddy/v2"
 	"github.com/caddyserver/caddy/v2/modules/caddyhttp"
-	"github.com/labstack/echo/v5"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/apis"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/tools/security"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/sitepod/sitepod/internal/gc"
 	"github.com/sitepod/sitepod/internal/storage"
-	"github.com/spf13/cast"
 	"go.uber.org/zap"
 
 	// Import migrations to register them
 	_ "github.com/sitepod/sitepod/migrations"
 )
 
-// AuthContext represents an authenticated entity - either an admin or a regular user
+// AuthContext represents an authenticated entity - either a superuser or a regular user
 type AuthContext struct {
-	Admin *models.Admin  // PocketBase admin (superuser)
-	User  *models.Record // Regular user
+	Superuser *core.Record // PocketBase superuser (from _superusers collection)
+	User      *core.Record // Regular user
 }
 
-// IsAdmin returns true if the auth context is for a PocketBase admin
+// IsAdmin returns true if the auth context is for a PocketBase superuser
 func (a *AuthContext) IsAdmin() bool {
-	return a.Admin != nil
+	return a.Superuser != nil
 }
 
 // GetID returns the ID of the authenticated entity
 func (a *AuthContext) GetID() string {
-	if a.Admin != nil {
-		return a.Admin.Id
+	if a.Superuser != nil {
+		return a.Superuser.Id
 	}
 	if a.User != nil {
 		return a.User.Id
@@ -48,8 +44,8 @@ func (a *AuthContext) GetID() string {
 
 // GetEmail returns the email of the authenticated entity
 func (a *AuthContext) GetEmail() string {
-	if a.Admin != nil {
-		return a.Admin.Email
+	if a.Superuser != nil {
+		return a.Superuser.GetString("email")
 	}
 	if a.User != nil {
 		return a.User.GetString("email")
@@ -69,7 +65,6 @@ type SitePodHandler struct {
 	// Runtime
 	storage      storage.Backend
 	app          *pocketbase.PocketBase
-	pbRouter     *echo.Echo
 	cache        *refCache
 	routingCache *routingCache
 	cacheTTL     time.Duration
@@ -148,14 +143,15 @@ func (h *SitePodHandler) Provision(ctx caddy.Context) error {
 	}
 
 	// Disable PocketBase internal request logging (we use Caddy's logging)
-	h.app.Settings().Logs.MaxDays = 0
+	settings := h.app.Settings()
+	settings.Logs.MaxDays = 0
 
 	// Initialize database schema
 	if err := h.initDatabaseSchema(); err != nil {
 		return err
 	}
 
-	// Create default admin if none exists
+	// Create default superuser if none exists
 	if err := h.ensureDefaultAdmin(); err != nil {
 		h.logger.Warn("failed to create default admin", zap.Error(err))
 	}
@@ -183,13 +179,6 @@ func (h *SitePodHandler) Provision(ctx caddy.Context) error {
 	h.gc = gc.New(h.app, h.storage, gc.DefaultConfig())
 	go h.gc.Start(ctx.Context)
 
-	// Get PocketBase router for forwarding requests
-	pbRouter, err := apis.InitApi(h.app)
-	if err != nil {
-		return err
-	}
-	h.pbRouter = pbRouter
-
 	// Print startup banner
 	h.printStartupBanner()
 
@@ -214,10 +203,12 @@ func (h *SitePodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 		return h.handleAPI(w, r)
 	}
 
-	// PocketBase admin UI and API routes - forward to PocketBase router
+	// PocketBase admin UI routes - in embedded mode, these are typically not exposed
+	// The PocketBase admin UI can be accessed separately if needed
 	if strings.HasPrefix(path, "/_/") || strings.HasPrefix(path, "/api/") {
-		h.pbRouter.ServeHTTP(w, r)
-		return nil
+		// Return 404 for PocketBase internal routes in embedded mode
+		// Our API is served via /api/v1/ prefix
+		return caddyhttp.Error(http.StatusNotFound, nil)
 	}
 
 	// Static file serving with logging
@@ -364,7 +355,7 @@ func (h *SitePodHandler) handleAPI(w http.ResponseWriter, r *http.Request) error
 }
 
 // authenticate extracts and validates the auth token
-func (h *SitePodHandler) authenticate(r *http.Request) (*models.Record, error) {
+func (h *SitePodHandler) authenticate(r *http.Request) (*core.Record, error) {
 	auth := r.Header.Get("Authorization")
 	if auth == "" {
 		return nil, errors.New("no authorization header")
@@ -375,7 +366,7 @@ func (h *SitePodHandler) authenticate(r *http.Request) (*models.Record, error) {
 		return nil, errors.New("invalid authorization format")
 	}
 
-	record, err := h.app.Dao().FindAuthRecordByToken(token, h.app.Settings().RecordAuthToken.Secret)
+	record, err := h.app.FindAuthRecordByToken(token, core.TokenTypeAuth)
 	if err != nil {
 		return nil, err
 	}
@@ -384,7 +375,7 @@ func (h *SitePodHandler) authenticate(r *http.Request) (*models.Record, error) {
 }
 
 // authenticateAny validates the auth token and returns an AuthContext
-// that can represent either a PocketBase admin or a regular user
+// that can represent either a PocketBase superuser or a regular user
 func (h *SitePodHandler) authenticateAny(r *http.Request) (*AuthContext, error) {
 	authHeader := r.Header.Get("Authorization")
 	if authHeader == "" {
@@ -396,31 +387,18 @@ func (h *SitePodHandler) authenticateAny(r *http.Request) (*AuthContext, error) 
 		return nil, errors.New("invalid authorization format")
 	}
 
-	// Parse the JWT to determine the token type
-	unverifiedClaims, _ := security.ParseUnverifiedJWT(tokenStr)
-	tokenType := cast.ToString(unverifiedClaims["type"])
-
-	switch tokenType {
-	case "admin":
-		// Try to validate as admin token
-		admin, err := h.app.Dao().FindAdminByToken(tokenStr, h.app.Settings().AdminAuthToken.Secret)
-		if err != nil {
-			return nil, err
-		}
-		return &AuthContext{Admin: admin}, nil
-
-	case "authRecord":
-		// Try to validate as user token
-		record, err := h.app.Dao().FindAuthRecordByToken(tokenStr, h.app.Settings().RecordAuthToken.Secret)
-		if err != nil {
-			return nil, err
-		}
-
-		return &AuthContext{User: record}, nil
-
-	default:
-		return nil, errors.New("unknown token type")
+	// Try to find the auth record by token - this validates and determines the token type
+	record, err := h.app.FindAuthRecordByToken(tokenStr, core.TokenTypeAuth)
+	if err != nil {
+		return nil, err
 	}
+
+	// Check if it's from the _superusers collection
+	if record.Collection().Name == core.CollectionNameSuperusers {
+		return &AuthContext{Superuser: record}, nil
+	}
+
+	return &AuthContext{User: record}, nil
 }
 
 // jsonResponse writes a JSON response

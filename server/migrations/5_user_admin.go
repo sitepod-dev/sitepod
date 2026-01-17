@@ -1,37 +1,30 @@
 package migrations
 
 import (
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models/schema"
 )
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		users, err := dao.FindCollectionByNameOrId("users")
+	m.Register(func(app core.App) error {
+		users, err := app.FindCollectionByNameOrId("users")
 		if err != nil {
 			return err
 		}
 
-		users.Schema.AddField(&schema.SchemaField{
+		users.Fields.Add(&core.BoolField{
 			Name:     "is_admin",
-			Type:     schema.FieldTypeBool,
 			Required: false,
 		})
 
-		return dao.SaveCollection(users)
-	}, func(db dbx.Builder) error {
-		dao := daos.New(db)
-
-		users, err := dao.FindCollectionByNameOrId("users")
+		return app.Save(users)
+	}, func(app core.App) error {
+		users, err := app.FindCollectionByNameOrId("users")
 		if err != nil {
 			return err
 		}
 
-		users.Schema.RemoveField("is_admin")
-		return dao.SaveCollection(users)
+		users.Fields.RemoveByName("is_admin")
+		return app.Save(users)
 	})
 }

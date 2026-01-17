@@ -1,32 +1,28 @@
 package migrations
 
 import (
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
+	m.Register(func(app core.App) error {
 		authRule := "@request.auth.id != ''"
 		projectRule := authRule + " && owner_id = @request.auth.id"
 		projectRelRule := authRule + " && project_id.owner_id = @request.auth.id"
 		previewRule := authRule + " && image_id.project_id.owner_id = @request.auth.id"
 
 		updateRules := func(name string, rule string) error {
-			collection, err := dao.FindCollectionByNameOrId(name)
+			collection, err := app.FindCollectionByNameOrId(name)
 			if err != nil {
 				return err
 			}
-			collection.ListRule = types.Pointer(rule)
-			collection.ViewRule = types.Pointer(rule)
-			collection.CreateRule = types.Pointer(rule)
-			collection.UpdateRule = types.Pointer(rule)
-			collection.DeleteRule = types.Pointer(rule)
-			return dao.SaveCollection(collection)
+			collection.ListRule = ptrStr(rule)
+			collection.ViewRule = ptrStr(rule)
+			collection.CreateRule = ptrStr(rule)
+			collection.UpdateRule = ptrStr(rule)
+			collection.DeleteRule = ptrStr(rule)
+			return app.Save(collection)
 		}
 
 		if err := updateRules("projects", projectRule); err != nil {
@@ -49,22 +45,20 @@ func init() {
 		}
 
 		return nil
-	}, func(db dbx.Builder) error {
-		dao := daos.New(db)
-
+	}, func(app core.App) error {
 		authRule := "@request.auth.id != ''"
 
 		resetRules := func(name string) error {
-			collection, err := dao.FindCollectionByNameOrId(name)
+			collection, err := app.FindCollectionByNameOrId(name)
 			if err != nil {
 				return err
 			}
-			collection.ListRule = types.Pointer(authRule)
-			collection.ViewRule = types.Pointer(authRule)
-			collection.CreateRule = types.Pointer(authRule)
-			collection.UpdateRule = types.Pointer(authRule)
-			collection.DeleteRule = types.Pointer(authRule)
-			return dao.SaveCollection(collection)
+			collection.ListRule = ptrStr(authRule)
+			collection.ViewRule = ptrStr(authRule)
+			collection.CreateRule = ptrStr(authRule)
+			collection.UpdateRule = ptrStr(authRule)
+			collection.DeleteRule = ptrStr(authRule)
+			return app.Save(collection)
 		}
 
 		for _, name := range []string{"projects", "images", "plans", "deploy_events", "domains", "previews"} {

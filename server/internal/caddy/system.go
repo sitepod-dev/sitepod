@@ -8,44 +8,35 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	pbmigrations "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/tools/migrate"
+	"github.com/pocketbase/pocketbase/core"
 	"go.uber.org/zap"
 )
 
 // initDatabaseSchema runs all database migrations to create/update schema
 // This is needed when running PocketBase in headless/embedded mode
 func (h *SitePodHandler) initDatabaseSchema() error {
-	// Run all registered migrations (PocketBase core + SitePod app migrations)
-	// Our migrations are registered via the import of github.com/sitepod/sitepod/migrations
-	runner, err := migrate.NewRunner(h.app.DB(), pbmigrations.AppMigrations)
-	if err != nil {
-		return fmt.Errorf("failed to create migration runner: %w", err)
-	}
+	// In PocketBase 0.36+, migrations are handled automatically by Bootstrap
+	// Our custom migrations are registered via the import of github.com/sitepod/sitepod/migrations
+	// and will be run during Bootstrap()
 
-	applied, err := runner.Up()
-	if err != nil {
+	// Run pending migrations
+	if err := h.app.RunAllMigrations(); err != nil {
 		h.logger.Warn("migration error (may be expected if already applied)", zap.Error(err))
-	}
-
-	if len(applied) > 0 {
-		h.logger.Info("Applied migrations", zap.Int("count", len(applied)))
 	}
 
 	return nil
 }
 
-// ensureDefaultAdmin creates a default admin account if none exists
+// ensureDefaultAdmin creates a default superuser account if none exists
 func (h *SitePodHandler) ensureDefaultAdmin() error {
-	// Check if any admin exists
-	total, err := h.app.Dao().TotalAdmins()
+	// Check if any superuser exists
+	superusers, err := h.app.FindAllRecords(core.CollectionNameSuperusers)
 	if err != nil {
 		return err
 	}
 
-	if total > 0 {
-		return nil // Admin already exists
+	if len(superusers) > 0 {
+		return nil // Superuser already exists
 	}
 
 	// Get credentials from environment or use defaults
@@ -60,14 +51,17 @@ func (h *SitePodHandler) ensureDefaultAdmin() error {
 		h.logger.Warn("SITEPOD_ADMIN_PASSWORD not set; default admin password in use")
 	}
 
-	// Create admin
-	admin := &models.Admin{}
-	admin.Email = email
-	if err := admin.SetPassword(password); err != nil {
+	// Create superuser
+	superusersCollection, err := h.app.FindCollectionByNameOrId(core.CollectionNameSuperusers)
+	if err != nil {
 		return err
 	}
 
-	if err := h.app.Dao().SaveAdmin(admin); err != nil {
+	superuser := core.NewRecord(superusersCollection)
+	superuser.SetEmail(email)
+	superuser.SetPassword(password)
+
+	if err := h.app.Save(superuser); err != nil {
 		return err
 	}
 
@@ -102,48 +96,34 @@ func (h *SitePodHandler) ensureConsoleAdmin() error {
 		}
 	}
 
-	usersCollection, err := h.app.Dao().FindCollectionByNameOrId("users")
+	usersCollection, err := h.app.FindCollectionByNameOrId("users")
 	if err != nil {
 		return err
 	}
 
-	user, err := h.app.Dao().FindAuthRecordByEmail("users", email)
+	user, err := h.app.FindAuthRecordByEmail("users", email)
 	if err == nil {
-		if err := user.SetPassword(password); err != nil {
-			return err
-		}
-		if err := user.SetVerified(true); err != nil {
-			return err
-		}
+		user.SetPassword(password)
+		user.SetVerified(true)
 		user.Set("is_admin", true)
-		if err := h.app.Dao().SaveRecord(user); err != nil {
+		if err := h.app.Save(user); err != nil {
 			return err
 		}
 		h.logger.Info("Console admin updated", zap.String("email", email))
 		return nil
 	}
 
-	user = models.NewRecord(usersCollection)
-	if err := user.SetEmail(email); err != nil {
-		return err
-	}
-	if err := user.SetUsername(normalizeUsername(email)); err != nil {
-		return err
-	}
-	if err := user.SetVerified(true); err != nil {
-		return err
-	}
-	if err := user.SetPassword(password); err != nil {
-		return err
-	}
+	user = core.NewRecord(usersCollection)
+	user.SetEmail(email)
+	user.Set("username", normalizeUsername(email))
+	user.SetVerified(true)
+	user.SetPassword(password)
 	user.Set("is_admin", true)
 
-	if err := h.app.Dao().SaveRecord(user); err != nil {
+	if err := h.app.Save(user); err != nil {
 		// Retry with a random suffix if username conflict
-		if err := user.SetUsername(fmt.Sprintf("admin-%s", uuid.New().String()[:6])); err != nil {
-			return err
-		}
-		if err := h.app.Dao().SaveRecord(user); err != nil {
+		user.Set("username", fmt.Sprintf("admin-%s", uuid.New().String()[:6]))
+		if err := h.app.Save(user); err != nil {
 			return err
 		}
 	}
@@ -169,40 +149,32 @@ func normalizeUsername(email string) string {
 }
 
 // ensureSystemUser creates the system user for internal projects
-func (h *SitePodHandler) ensureSystemUser() (*models.Record, error) {
+func (h *SitePodHandler) ensureSystemUser() (*core.Record, error) {
 	systemEmail := os.Getenv("SITEPOD_SYSTEM_EMAIL")
 	if systemEmail == "" {
 		systemEmail = "system@sitepod.local"
 	}
 
 	// Check if system user already exists
-	user, err := h.app.Dao().FindAuthRecordByEmail("users", systemEmail)
+	user, err := h.app.FindAuthRecordByEmail("users", systemEmail)
 	if err == nil {
 		return user, nil // Already exists
 	}
 
 	// Create system user
-	usersCollection, err := h.app.Dao().FindCollectionByNameOrId("users")
+	usersCollection, err := h.app.FindCollectionByNameOrId("users")
 	if err != nil {
 		return nil, err
 	}
 
-	user = models.NewRecord(usersCollection)
-	if err := user.SetEmail(systemEmail); err != nil {
-		return nil, err
-	}
-	if err := user.SetUsername("system"); err != nil {
-		return nil, err
-	}
-	if err := user.SetVerified(true); err != nil {
-		return nil, err
-	}
+	user = core.NewRecord(usersCollection)
+	user.SetEmail(systemEmail)
+	user.Set("username", "system")
+	user.SetVerified(true)
 	// System user doesn't need a real password since it can't be logged into
-	if err := user.SetPassword("__system_user_no_login__" + uuid.New().String()); err != nil {
-		return nil, err
-	}
+	user.SetPassword("__system_user_no_login__" + uuid.New().String())
 
-	if err := h.app.Dao().SaveRecord(user); err != nil {
+	if err := h.app.Save(user); err != nil {
 		return nil, err
 	}
 
@@ -225,16 +197,12 @@ func (h *SitePodHandler) ensureDemoUser() error {
 	demoPassword := "demo123"
 
 	// Check if demo user already exists
-	user, err := h.app.Dao().FindAuthRecordByEmail("users", demoEmail)
+	user, err := h.app.FindAuthRecordByEmail("users", demoEmail)
 	if err == nil {
 		// User exists, update password if needed
-		if err := user.SetPassword(demoPassword); err != nil {
-			return err
-		}
-		if err := user.SetVerified(true); err != nil {
-			return err
-		}
-		if err := h.app.Dao().SaveRecord(user); err != nil {
+		user.SetPassword(demoPassword)
+		user.SetVerified(true)
+		if err := h.app.Save(user); err != nil {
 			return err
 		}
 		h.logger.Info("Demo user updated", zap.String("email", demoEmail))
@@ -242,26 +210,18 @@ func (h *SitePodHandler) ensureDemoUser() error {
 	}
 
 	// Create demo user
-	usersCollection, err := h.app.Dao().FindCollectionByNameOrId("users")
+	usersCollection, err := h.app.FindCollectionByNameOrId("users")
 	if err != nil {
 		return err
 	}
 
-	user = models.NewRecord(usersCollection)
-	if err := user.SetEmail(demoEmail); err != nil {
-		return err
-	}
-	if err := user.SetUsername("demo"); err != nil {
-		return err
-	}
-	if err := user.SetVerified(true); err != nil {
-		return err
-	}
-	if err := user.SetPassword(demoPassword); err != nil {
-		return err
-	}
+	user = core.NewRecord(usersCollection)
+	user.SetEmail(demoEmail)
+	user.Set("username", "demo")
+	user.SetVerified(true)
+	user.SetPassword(demoPassword)
 
-	if err := h.app.Dao().SaveRecord(user); err != nil {
+	if err := h.app.Save(user); err != nil {
 		return err
 	}
 
@@ -275,16 +235,16 @@ func (h *SitePodHandler) ensureDemoUser() error {
 }
 
 // getSystemUser returns the system user record
-func (h *SitePodHandler) getSystemUser() (*models.Record, error) {
+func (h *SitePodHandler) getSystemUser() (*core.Record, error) {
 	systemEmail := os.Getenv("SITEPOD_SYSTEM_EMAIL")
 	if systemEmail == "" {
 		systemEmail = "system@sitepod.local"
 	}
-	return h.app.Dao().FindAuthRecordByEmail("users", systemEmail)
+	return h.app.FindAuthRecordByEmail("users", systemEmail)
 }
 
-func (h *SitePodHandler) getOrCreateProjectWithOwner(name string, ownerID string) (*models.Record, error) {
-	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", name)
+func (h *SitePodHandler) getOrCreateProjectWithOwner(name string, ownerID string) (*core.Record, error) {
+	project, err := h.app.FindFirstRecordByData("projects", "name", name)
 	if err == nil {
 		if ownerID != "" {
 			currentOwner := project.GetString("owner_id")
@@ -292,7 +252,7 @@ func (h *SitePodHandler) getOrCreateProjectWithOwner(name string, ownerID string
 				systemUser, sysErr := h.getSystemUser()
 				if sysErr == nil && systemUser != nil && systemUser.Id == ownerID {
 					project.Set("owner_id", ownerID)
-					if err := h.app.Dao().SaveRecord(project); err != nil {
+					if err := h.app.Save(project); err != nil {
 						return nil, err
 					}
 					return project, nil
@@ -306,14 +266,14 @@ func (h *SitePodHandler) getOrCreateProjectWithOwner(name string, ownerID string
 		return project, nil
 	}
 
-	projectsCollection, err := h.app.Dao().FindCollectionByNameOrId("projects")
+	projectsCollection, err := h.app.FindCollectionByNameOrId("projects")
 	if err != nil {
 		return nil, err
 	}
 
 	subdomain := h.normalizeSubdomain(name)
 
-	project = models.NewRecord(projectsCollection)
+	project = core.NewRecord(projectsCollection)
 	project.Set("name", name)
 	project.Set("subdomain", subdomain)
 	project.Set("routing_mode", "subdomain")
@@ -321,7 +281,7 @@ func (h *SitePodHandler) getOrCreateProjectWithOwner(name string, ownerID string
 		project.Set("owner_id", ownerID)
 	}
 
-	if err := h.app.Dao().SaveRecord(project); err != nil {
+	if err := h.app.Save(project); err != nil {
 		return nil, err
 	}
 
@@ -331,15 +291,15 @@ func (h *SitePodHandler) getOrCreateProjectWithOwner(name string, ownerID string
 	return project, nil
 }
 
-func (h *SitePodHandler) createSystemDomain(project *models.Record, subdomain string) {
-	domainsCollection, err := h.app.Dao().FindCollectionByNameOrId("domains")
+func (h *SitePodHandler) createSystemDomain(project *core.Record, subdomain string) {
+	domainsCollection, err := h.app.FindCollectionByNameOrId("domains")
 	if err != nil {
 		return
 	}
 
 	fullDomain := subdomain + "." + h.Domain
 
-	domain := models.NewRecord(domainsCollection)
+	domain := core.NewRecord(domainsCollection)
 	domain.Set("domain", fullDomain)
 	domain.Set("slug", "/")
 	domain.Set("project_id", project.Id)
@@ -347,7 +307,7 @@ func (h *SitePodHandler) createSystemDomain(project *models.Record, subdomain st
 	domain.Set("status", "active")
 	domain.Set("is_primary", true)
 
-	if err := h.app.Dao().SaveRecord(domain); err != nil {
+	if err := h.app.Save(domain); err != nil {
 		h.logger.Warn("failed to save system domain", zap.Error(err))
 		return
 	}
@@ -389,7 +349,7 @@ func (h *SitePodHandler) buildPreviewURL(project, slug string) string {
 }
 
 func (h *SitePodHandler) rebuildRoutingIndex() error {
-	domains, err := h.app.Dao().FindRecordsByFilter(
+	domains, err := h.app.FindRecordsByFilter(
 		"domains", "status = 'active'", "-is_primary", 1000, 0, nil,
 	)
 	if err != nil {
@@ -399,7 +359,7 @@ func (h *SitePodHandler) rebuildRoutingIndex() error {
 	entries := make([]RoutingEntry, 0, len(domains))
 	for _, d := range domains {
 		projectID := d.GetString("project_id")
-		project, err := h.app.Dao().FindRecordById("projects", projectID)
+		project, err := h.app.FindRecordById("projects", projectID)
 		if err != nil {
 			continue
 		}

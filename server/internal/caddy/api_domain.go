@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 // API: Add Domain
-func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	var req struct {
 		Project string `json:"project"`
 		Domain  string `json:"domain"`
@@ -44,7 +44,7 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
-	existing, _ := h.app.Dao().FindFirstRecordByFilter(
+	existing, _ := h.app.FindFirstRecordByFilter(
 		"domains", "domain = {:domain} AND slug = {:slug}",
 		map[string]any{"domain": domain, "slug": slug},
 	)
@@ -64,12 +64,12 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 		verificationToken = "sitepod-verify-" + uuid.New().String()[:16]
 	}
 
-	domainsCollection, err := h.app.Dao().FindCollectionByNameOrId("domains")
+	domainsCollection, err := h.app.FindCollectionByNameOrId("domains")
 	if err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, "domains collection not found")
 	}
 
-	domainRecord := models.NewRecord(domainsCollection)
+	domainRecord := core.NewRecord(domainsCollection)
 	domainRecord.Set("domain", domain)
 	domainRecord.Set("slug", slug)
 	domainRecord.Set("project_id", project.Id)
@@ -78,7 +78,7 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 	domainRecord.Set("verification_token", verificationToken)
 	domainRecord.Set("is_primary", false)
 
-	if err := h.app.Dao().SaveRecord(domainRecord); err != nil {
+	if err := h.app.Save(domainRecord); err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, "failed to create domain")
 	}
 
@@ -103,7 +103,7 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 }
 
 // API: List Domains
-func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	projectName := r.URL.Query().Get("project")
 	if projectName == "" {
 		return h.jsonError(w, http.StatusBadRequest, "project required")
@@ -117,7 +117,7 @@ func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, 
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
-	domains, err := h.app.Dao().FindRecordsByFilter(
+	domains, err := h.app.FindRecordsByFilter(
 		"domains", "project_id = {:project_id}", "-is_primary,-created", 100, 0,
 		map[string]any{"project_id": project.Id},
 	)
@@ -133,7 +133,7 @@ func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, 
 			"type":       d.GetString("type"),
 			"status":     d.GetString("status"),
 			"is_primary": d.GetBool("is_primary"),
-			"created_at": d.Created.String(),
+			"created_at": d.GetDateTime("created").String(),
 		}
 	}
 
@@ -141,7 +141,7 @@ func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, 
 }
 
 // API: Verify Domain
-func (h *SitePodHandler) apiVerifyDomain(w http.ResponseWriter, r *http.Request, domain string, user *models.Record) error {
+func (h *SitePodHandler) apiVerifyDomain(w http.ResponseWriter, r *http.Request, domain string, user *core.Record) error {
 	domainRecord, _, err := h.requireDomainOwner(domain, user)
 	if err != nil {
 		if errors.Is(err, errForbidden) {
@@ -178,7 +178,7 @@ func (h *SitePodHandler) apiVerifyDomain(w http.ResponseWriter, r *http.Request,
 
 	if verified {
 		domainRecord.Set("status", "active")
-		if err := h.app.Dao().SaveRecord(domainRecord); err != nil {
+		if err := h.app.Save(domainRecord); err != nil {
 			return h.jsonError(w, http.StatusInternalServerError, "failed to update domain")
 		}
 		if err := h.rebuildRoutingIndex(); err != nil {
@@ -202,7 +202,7 @@ func (h *SitePodHandler) apiVerifyDomain(w http.ResponseWriter, r *http.Request,
 }
 
 // API: Remove Domain
-func (h *SitePodHandler) apiRemoveDomain(w http.ResponseWriter, r *http.Request, domain string, user *models.Record) error {
+func (h *SitePodHandler) apiRemoveDomain(w http.ResponseWriter, r *http.Request, domain string, user *core.Record) error {
 	domainRecord, _, err := h.requireDomainOwner(domain, user)
 	if err != nil {
 		if errors.Is(err, errForbidden) {
@@ -215,7 +215,7 @@ func (h *SitePodHandler) apiRemoveDomain(w http.ResponseWriter, r *http.Request,
 		return h.jsonError(w, http.StatusBadRequest, "cannot remove primary system domain")
 	}
 
-	if err := h.app.Dao().DeleteRecord(domainRecord); err != nil {
+	if err := h.app.Delete(domainRecord); err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, "failed to remove domain")
 	}
 
@@ -228,7 +228,7 @@ func (h *SitePodHandler) apiRemoveDomain(w http.ResponseWriter, r *http.Request,
 }
 
 // API: Rename Domain
-func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	projectName := r.URL.Query().Get("project")
 	if projectName == "" {
 		return h.jsonError(w, http.StatusBadRequest, "project required")
@@ -246,7 +246,7 @@ func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request,
 		return h.jsonError(w, http.StatusBadRequest, "valid subdomain required")
 	}
 
-	existing, _ := h.app.Dao().FindFirstRecordByData("projects", "subdomain", newSubdomain)
+	existing, _ := h.app.FindFirstRecordByData("projects", "subdomain", newSubdomain)
 	if existing != nil {
 		return h.jsonError(w, http.StatusConflict, "subdomain already in use")
 	}
@@ -261,7 +261,7 @@ func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request,
 
 	oldSubdomain := project.GetString("subdomain")
 	project.Set("subdomain", newSubdomain)
-	if err := h.app.Dao().SaveRecord(project); err != nil {
+	if err := h.app.Save(project); err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, "failed to update project")
 	}
 
@@ -269,13 +269,13 @@ func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request,
 	oldFullDomain := oldSubdomain + "." + h.Domain
 	newFullDomain := newSubdomain + "." + h.Domain
 
-	domainRecord, _ := h.app.Dao().FindFirstRecordByFilter(
+	domainRecord, _ := h.app.FindFirstRecordByFilter(
 		"domains", "project_id = {:project_id} AND is_primary = true AND type = 'system'",
 		map[string]any{"project_id": project.Id},
 	)
 	if domainRecord != nil {
 		domainRecord.Set("domain", newFullDomain)
-		if err := h.app.Dao().SaveRecord(domainRecord); err != nil {
+		if err := h.app.Save(domainRecord); err != nil {
 			return h.jsonError(w, http.StatusInternalServerError, "failed to update domain")
 		}
 	}
@@ -300,7 +300,7 @@ func (h *SitePodHandler) apiCheckSubdomain(w http.ResponseWriter, r *http.Reques
 
 	subdomain = strings.ToLower(subdomain)
 
-	existing, _ := h.app.Dao().FindFirstRecordByData("projects", "subdomain", subdomain)
+	existing, _ := h.app.FindFirstRecordByData("projects", "subdomain", subdomain)
 	if existing != nil {
 		suggestion := subdomain + "-" + uuid.New().String()[:4]
 		return h.jsonResponse(w, http.StatusOK, map[string]any{
@@ -322,7 +322,7 @@ func (h *SitePodHandler) apiCheckDomain(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Check if domain exists in domains table
-	existing, _ := h.app.Dao().FindFirstRecordByData("domains", "domain", domain)
+	existing, _ := h.app.FindFirstRecordByData("domains", "domain", domain)
 	if existing != nil && existing.GetString("status") == "active" {
 		w.WriteHeader(http.StatusOK)
 		return nil

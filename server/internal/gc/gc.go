@@ -104,7 +104,7 @@ func (gc *GC) Run(ctx context.Context) {
 
 func (gc *GC) cleanExpiredPlans() (int, error) {
 	// Check if collection exists
-	collection, err := gc.app.Dao().FindCollectionByNameOrId("plans")
+	collection, err := gc.app.FindCollectionByNameOrId("plans")
 	if err != nil || collection == nil {
 		return 0, nil // Collection not ready yet, skip
 	}
@@ -113,7 +113,7 @@ func (gc *GC) cleanExpiredPlans() (int, error) {
 	now := time.Now().UTC().Format("2006-01-02 15:04:05.000Z")
 
 	// Find expired plans
-	plans, err := gc.app.Dao().FindRecordsByFilter(
+	plans, err := gc.app.FindRecordsByFilter(
 		"plans",
 		"status = 'pending' && expires_at < {:now}",
 		"",
@@ -128,7 +128,7 @@ func (gc *GC) cleanExpiredPlans() (int, error) {
 	updated := 0
 	for _, plan := range plans {
 		plan.Set("status", "expired")
-		if err := gc.app.Dao().SaveRecord(plan); err != nil {
+		if err := gc.app.Save(plan); err != nil {
 			return updated, err
 		}
 		updated++
@@ -139,7 +139,7 @@ func (gc *GC) cleanExpiredPlans() (int, error) {
 
 func (gc *GC) cleanExpiredPreviews() (int, error) {
 	// Check if collection exists
-	collection, err := gc.app.Dao().FindCollectionByNameOrId("previews")
+	collection, err := gc.app.FindCollectionByNameOrId("previews")
 	if err != nil || collection == nil {
 		return 0, nil // Collection not ready yet, skip
 	}
@@ -148,7 +148,7 @@ func (gc *GC) cleanExpiredPreviews() (int, error) {
 	now := time.Now().UTC().Format("2006-01-02 15:04:05.000Z")
 
 	// Find expired previews
-	previews, err := gc.app.Dao().FindRecordsByFilter(
+	previews, err := gc.app.FindRecordsByFilter(
 		"previews",
 		"expires_at < {:now}",
 		"",
@@ -171,7 +171,7 @@ func (gc *GC) cleanExpiredPreviews() (int, error) {
 		}
 
 		// Delete record
-		if err := gc.app.Dao().DeleteRecord(preview); err != nil {
+		if err := gc.app.Delete(preview); err != nil {
 			if firstErr == nil {
 				firstErr = err
 			}
@@ -185,7 +185,7 @@ func (gc *GC) cleanExpiredPreviews() (int, error) {
 
 func (gc *GC) cleanUnreferencedBlobs() (int, error) {
 	// Check if collection exists
-	collection, err := gc.app.Dao().FindCollectionByNameOrId("images")
+	collection, err := gc.app.FindCollectionByNameOrId("images")
 	if err != nil || collection == nil {
 		return 0, nil // Collection not ready yet, skip
 	}
@@ -193,7 +193,7 @@ func (gc *GC) cleanUnreferencedBlobs() (int, error) {
 	// 1. Collect all referenced blob hashes from images
 	referencedBlobs := make(map[string]bool)
 
-	images, err := gc.app.Dao().FindRecordsByFilter("images", "1=1", "", 10000, 0, nil)
+	images, err := gc.app.FindRecordsByFilter("images", "1=1", "", 10000, 0, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -248,7 +248,7 @@ func (gc *GC) RunDryRun() (*DryRunResult, error) {
 	now := time.Now().UTC().Format("2006-01-02 15:04:05.000Z")
 
 	// Count expired plans
-	plans, err := gc.app.Dao().FindRecordsByFilter(
+	plans, err := gc.app.FindRecordsByFilter(
 		"plans",
 		"status = 'pending' && expires_at < {:now}",
 		"",
@@ -261,7 +261,7 @@ func (gc *GC) RunDryRun() (*DryRunResult, error) {
 	}
 
 	// Count expired previews
-	previews, err := gc.app.Dao().FindRecordsByFilter(
+	previews, err := gc.app.FindRecordsByFilter(
 		"previews",
 		"expires_at < {:now}",
 		"",
@@ -275,7 +275,7 @@ func (gc *GC) RunDryRun() (*DryRunResult, error) {
 
 	// Count unreferenced blobs
 	referencedBlobs := make(map[string]bool)
-	images, _ := gc.app.Dao().FindRecordsByFilter("images", "1=1", "", 10000, 0, nil)
+	images, _ := gc.app.FindRecordsByFilter("images", "1=1", "", 10000, 0, nil)
 	for _, img := range images {
 		var manifest map[string]storage.FileEntry
 		if err := json.Unmarshal([]byte(img.GetString("manifest")), &manifest); err != nil {

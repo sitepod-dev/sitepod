@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/sitepod/sitepod/internal/storage"
 	"go.uber.org/zap"
 )
@@ -17,7 +17,7 @@ import (
 // API: Health
 func (h *SitePodHandler) apiHealth(w http.ResponseWriter, r *http.Request) error {
 	dbStatus := "ok"
-	if _, err := h.app.Dao().FindCollectionByNameOrId("projects"); err != nil {
+	if _, err := h.app.FindCollectionByNameOrId("projects"); err != nil {
 		dbStatus = "error"
 	}
 
@@ -63,7 +63,7 @@ func (h *SitePodHandler) apiMetrics(w http.ResponseWriter, r *http.Request) erro
 }
 
 // API: Get Current
-func (h *SitePodHandler) apiGetCurrent(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiGetCurrent(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	projectName := r.URL.Query().Get("project")
 	env := r.URL.Query().Get("environment")
 
@@ -91,7 +91,7 @@ func (h *SitePodHandler) apiGetCurrent(w http.ResponseWriter, r *http.Request, u
 
 	var fileCount *int
 	if ref.ImageID != "" {
-		if image, err := h.app.Dao().FindFirstRecordByData("images", "image_id", ref.ImageID); err == nil {
+		if image, err := h.app.FindFirstRecordByData("images", "image_id", ref.ImageID); err == nil {
 			if image.GetString("project_id") == project.Id {
 				count := image.GetInt("file_count")
 				fileCount = &count
@@ -112,7 +112,7 @@ func (h *SitePodHandler) apiGetCurrent(w http.ResponseWriter, r *http.Request, u
 }
 
 // API: Get History
-func (h *SitePodHandler) apiGetHistory(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiGetHistory(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	projectName := r.URL.Query().Get("project")
 
 	project, err := h.requireProjectOwnerByName(projectName, user)
@@ -133,7 +133,7 @@ func (h *SitePodHandler) apiGetHistory(w http.ResponseWriter, r *http.Request, u
 		}
 	}
 
-	images, err := h.app.Dao().FindRecordsByFilter(
+	images, err := h.app.FindRecordsByFilter(
 		"images", "project_id = {:project_id}", "-created", limit, 0,
 		map[string]any{"project_id": project.Id},
 	)
@@ -146,7 +146,7 @@ func (h *SitePodHandler) apiGetHistory(w http.ResponseWriter, r *http.Request, u
 		items[i] = map[string]any{
 			"image_id":     img.GetString("image_id"),
 			"content_hash": img.GetString("content_hash"),
-			"created_at":   img.Created.Time(),
+			"created_at":   img.GetDateTime("created").Time(),
 			"git_commit":   img.GetString("git_commit"),
 		}
 	}
@@ -155,11 +155,11 @@ func (h *SitePodHandler) apiGetHistory(w http.ResponseWriter, r *http.Request, u
 }
 
 // API: List Images
-func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	projectID := r.URL.Query().Get("project_id")
 	projectName := r.URL.Query().Get("project")
 
-	var project *models.Record
+	var project *core.Record
 	var err error
 
 	if projectID != "" {
@@ -215,7 +215,7 @@ func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, u
 	offset := (page - 1) * limit
 
 	total := 0
-	allImages, err := h.app.Dao().FindRecordsByFilter(
+	allImages, err := h.app.FindRecordsByFilter(
 		"images", "project_id = {:project_id}", "", 0, 0,
 		map[string]any{"project_id": project.Id},
 	)
@@ -223,7 +223,7 @@ func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, u
 		total = len(allImages)
 	}
 
-	images, err := h.app.Dao().FindRecordsByFilter(
+	images, err := h.app.FindRecordsByFilter(
 		"images", "project_id = {:project_id}", "-created", limit, offset,
 		map[string]any{"project_id": project.Id},
 	)
@@ -252,7 +252,7 @@ func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, u
 			"git_commit":   img.GetString("git_commit"),
 			"git_branch":   img.GetString("git_branch"),
 			"git_message":  img.GetString("git_message"),
-			"created_at":   img.Created.String(),
+			"created_at":   img.GetDateTime("created").String(),
 			"deployed_to":  deployedTo,
 		}
 	}
@@ -272,11 +272,11 @@ func (h *SitePodHandler) apiListProjectsAny(w http.ResponseWriter, r *http.Reque
 		isAdmin = true
 	}
 
-	var projects []*models.Record
+	var projects []*core.Record
 
 	if isAdmin {
 		// Admin can see all projects
-		projects, err = h.app.Dao().FindRecordsByFilter(
+		projects, err = h.app.FindRecordsByFilter(
 			"projects", "1=1", "-created", 100, 0, nil,
 		)
 		if err != nil {
@@ -284,7 +284,7 @@ func (h *SitePodHandler) apiListProjectsAny(w http.ResponseWriter, r *http.Reque
 		}
 	} else {
 		// Regular user can only see their own projects
-		projects, err = h.app.Dao().FindRecordsByFilter(
+		projects, err = h.app.FindRecordsByFilter(
 			"projects", "owner_id = {:owner_id}", "-created", 100, 0,
 			map[string]any{"owner_id": authCtx.User.Id},
 		)
@@ -300,15 +300,15 @@ func (h *SitePodHandler) apiListProjectsAny(w http.ResponseWriter, r *http.Reque
 			"name":       p.GetString("name"),
 			"subdomain":  p.GetString("subdomain"),
 			"owner_id":   p.GetString("owner_id"),
-			"created_at": p.Created.String(),
-			"updated_at": p.Updated.String(),
+			"created_at": p.GetDateTime("created").String(),
+			"updated_at": p.GetDateTime("updated").String(),
 		}
 
 		// Admin can see owner_email
 		if isAdmin {
 			ownerID := p.GetString("owner_id")
 			if ownerID != "" {
-				owner, err := h.app.Dao().FindRecordById("users", ownerID)
+				owner, err := h.app.FindRecordById("users", ownerID)
 				if err == nil {
 					item["owner_email"] = owner.GetString("email")
 				}
@@ -322,7 +322,7 @@ func (h *SitePodHandler) apiListProjectsAny(w http.ResponseWriter, r *http.Reque
 }
 
 // API: Get Project
-func (h *SitePodHandler) apiGetProject(w http.ResponseWriter, r *http.Request, projectName string, user *models.Record) error {
+func (h *SitePodHandler) apiGetProject(w http.ResponseWriter, r *http.Request, projectName string, user *core.Record) error {
 	project, err := h.requireProjectOwnerByName(projectName, user)
 	if err != nil {
 		if errors.Is(err, errForbidden) {
@@ -336,13 +336,13 @@ func (h *SitePodHandler) apiGetProject(w http.ResponseWriter, r *http.Request, p
 		"name":       project.GetString("name"),
 		"subdomain":  project.GetString("subdomain"),
 		"owner_id":   project.GetString("owner_id"),
-		"created_at": project.Created.String(),
-		"updated_at": project.Updated.String(),
+		"created_at": project.GetDateTime("created").String(),
+		"updated_at": project.GetDateTime("updated").String(),
 	})
 }
 
 // API: Delete Project
-func (h *SitePodHandler) apiDeleteProject(w http.ResponseWriter, r *http.Request, projectName string, user *models.Record) error {
+func (h *SitePodHandler) apiDeleteProject(w http.ResponseWriter, r *http.Request, projectName string, user *core.Record) error {
 	if projectName == "" {
 		return h.jsonError(w, http.StatusBadRequest, "project required")
 	}
@@ -358,51 +358,51 @@ func (h *SitePodHandler) apiDeleteProject(w http.ResponseWriter, r *http.Request
 	projectID := project.Id
 
 	// Delete domains
-	domains, _ := h.app.Dao().FindRecordsByFilter(
+	domains, _ := h.app.FindRecordsByFilter(
 		"domains", "project_id = {:project_id}", "", 1000, 0,
 		map[string]any{"project_id": projectID},
 	)
 	for _, domain := range domains {
-		if err := h.app.Dao().DeleteRecord(domain); err != nil {
+		if err := h.app.Delete(domain); err != nil {
 			h.logger.Warn("Failed to delete domain", zap.String("domain_id", domain.Id), zap.Error(err))
 		}
 	}
 
 	// Delete images
-	images, _ := h.app.Dao().FindRecordsByFilter(
+	images, _ := h.app.FindRecordsByFilter(
 		"images", "project_id = {:project_id}", "", 1000, 0,
 		map[string]any{"project_id": projectID},
 	)
 	for _, image := range images {
-		if err := h.app.Dao().DeleteRecord(image); err != nil {
+		if err := h.app.Delete(image); err != nil {
 			h.logger.Warn("Failed to delete image", zap.String("image_id", image.Id), zap.Error(err))
 		}
 	}
 
 	// Delete deploy events
-	events, _ := h.app.Dao().FindRecordsByFilter(
+	events, _ := h.app.FindRecordsByFilter(
 		"deploy_events", "project_id = {:project_id}", "", 1000, 0,
 		map[string]any{"project_id": projectID},
 	)
 	for _, event := range events {
-		if err := h.app.Dao().DeleteRecord(event); err != nil {
+		if err := h.app.Delete(event); err != nil {
 			h.logger.Warn("Failed to delete deploy event", zap.String("event_id", event.Id), zap.Error(err))
 		}
 	}
 
 	// Delete plans
-	plans, _ := h.app.Dao().FindRecordsByFilter(
+	plans, _ := h.app.FindRecordsByFilter(
 		"plans", "project_id = {:project_id}", "", 1000, 0,
 		map[string]any{"project_id": projectID},
 	)
 	for _, plan := range plans {
-		if err := h.app.Dao().DeleteRecord(plan); err != nil {
+		if err := h.app.Delete(plan); err != nil {
 			h.logger.Warn("Failed to delete plan", zap.String("plan_id", plan.Id), zap.Error(err))
 		}
 	}
 
 	// Delete previews
-	previews, _ := h.app.Dao().FindRecordsByFilter(
+	previews, _ := h.app.FindRecordsByFilter(
 		"previews", "project = {:project}", "", 1000, 0,
 		map[string]any{"project": projectName},
 	)
@@ -413,7 +413,7 @@ func (h *SitePodHandler) apiDeleteProject(w http.ResponseWriter, r *http.Request
 				h.logger.Warn("Failed to delete preview", zap.String("slug", slug), zap.Error(err))
 			}
 		}
-		if err := h.app.Dao().DeleteRecord(preview); err != nil {
+		if err := h.app.Delete(preview); err != nil {
 			h.logger.Warn("Failed to delete preview record", zap.String("preview_id", preview.Id), zap.Error(err))
 		}
 	}
@@ -429,7 +429,7 @@ func (h *SitePodHandler) apiDeleteProject(w http.ResponseWriter, r *http.Request
 	h.cache.Delete(projectName + ":prod")
 	h.cache.Delete(projectName + ":beta")
 
-	if err := h.app.Dao().DeleteRecord(project); err != nil {
+	if err := h.app.Delete(project); err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, "failed to delete project")
 	}
 

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/sitepod/sitepod/internal/storage"
 	"go.uber.org/zap"
 )
@@ -28,10 +28,10 @@ func (h *SitePodHandler) apiCleanup(w http.ResponseWriter, r *http.Request) erro
 		"expired_previews_deleted": 0,
 		"errors":                   []string{},
 	}
-	errors := []string{}
+	errs := []string{}
 
 	// 1. Find and delete expired anonymous users
-	expiredUsers, err := h.app.Dao().FindRecordsByFilter(
+	expiredUsers, err := h.app.FindRecordsByFilter(
 		"users",
 		"is_anonymous = true AND anonymous_expires_at < {:now}",
 		"", 1000, 0,
@@ -39,7 +39,7 @@ func (h *SitePodHandler) apiCleanup(w http.ResponseWriter, r *http.Request) erro
 	)
 	if err != nil {
 		h.logger.Debug("No expired users found or error", zap.Error(err))
-		expiredUsers = []*models.Record{}
+		expiredUsers = []*core.Record{}
 	}
 
 	for _, user := range expiredUsers {
@@ -49,7 +49,7 @@ func (h *SitePodHandler) apiCleanup(w http.ResponseWriter, r *http.Request) erro
 
 		if err := h.deleteUserCascade(user); err != nil {
 			errMsg := fmt.Sprintf("failed to delete user %s: %v", user.Id, err)
-			errors = append(errors, errMsg)
+			errs = append(errs, errMsg)
 			h.logger.Warn(errMsg)
 		} else {
 			result["expired_users_deleted"] = result["expired_users_deleted"].(int) + 1
@@ -58,7 +58,7 @@ func (h *SitePodHandler) apiCleanup(w http.ResponseWriter, r *http.Request) erro
 
 	// 2. Find and delete expired previews
 	previewsDeleted := 0
-	projects, _ := h.app.Dao().FindRecordsByFilter("projects", "1=1", "", 1000, 0, nil)
+	projects, _ := h.app.FindRecordsByFilter("projects", "1=1", "", 1000, 0, nil)
 	for _, project := range projects {
 		projectName := project.GetString("name")
 		// Check previews in storage
@@ -66,7 +66,7 @@ func (h *SitePodHandler) apiCleanup(w http.ResponseWriter, r *http.Request) erro
 	}
 	result["expired_previews_deleted"] = previewsDeleted
 
-	result["errors"] = errors
+	result["errors"] = errs
 
 	h.logger.Info("Cleanup completed",
 		zap.Int("expired_users_deleted", result["expired_users_deleted"].(int)),
@@ -76,7 +76,7 @@ func (h *SitePodHandler) apiCleanup(w http.ResponseWriter, r *http.Request) erro
 }
 
 // deleteUserCascade deletes a user and all their data
-func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
+func (h *SitePodHandler) deleteUserCascade(user *core.Record) error {
 	var firstErr error
 	recordErr := func(err error) {
 		if err != nil && firstErr == nil {
@@ -85,12 +85,12 @@ func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
 	}
 
 	// Find all projects owned by this user
-	projects, err := h.app.Dao().FindRecordsByFilter(
+	projects, err := h.app.FindRecordsByFilter(
 		"projects", "owner_id = {:owner_id}", "", 1000, 0,
 		map[string]any{"owner_id": user.Id},
 	)
 	if err != nil {
-		projects = []*models.Record{}
+		projects = []*core.Record{}
 	}
 
 	// For each project, delete related data
@@ -99,39 +99,39 @@ func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
 		projectName := project.GetString("name")
 
 		// Delete domains
-		domains, _ := h.app.Dao().FindRecordsByFilter(
+		domains, _ := h.app.FindRecordsByFilter(
 			"domains", "project_id = {:project_id}", "", 1000, 0,
 			map[string]any{"project_id": projectID},
 		)
 		for _, domain := range domains {
-			recordErr(h.app.Dao().DeleteRecord(domain))
+			recordErr(h.app.Delete(domain))
 		}
 
 		// Delete images
-		images, _ := h.app.Dao().FindRecordsByFilter(
+		images, _ := h.app.FindRecordsByFilter(
 			"images", "project_id = {:project_id}", "", 1000, 0,
 			map[string]any{"project_id": projectID},
 		)
 		for _, image := range images {
-			recordErr(h.app.Dao().DeleteRecord(image))
+			recordErr(h.app.Delete(image))
 		}
 
 		// Delete deploy_events
-		events, _ := h.app.Dao().FindRecordsByFilter(
+		events, _ := h.app.FindRecordsByFilter(
 			"deploy_events", "project_id = {:project_id}", "", 1000, 0,
 			map[string]any{"project_id": projectID},
 		)
 		for _, event := range events {
-			recordErr(h.app.Dao().DeleteRecord(event))
+			recordErr(h.app.Delete(event))
 		}
 
 		// Delete plans
-		plans, _ := h.app.Dao().FindRecordsByFilter(
+		plans, _ := h.app.FindRecordsByFilter(
 			"plans", "project_id = {:project_id}", "", 1000, 0,
 			map[string]any{"project_id": projectID},
 		)
 		for _, plan := range plans {
-			recordErr(h.app.Dao().DeleteRecord(plan))
+			recordErr(h.app.Delete(plan))
 		}
 
 		// Delete ref files from storage
@@ -139,11 +139,11 @@ func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
 		recordErr(h.storage.DeleteRef(projectName, "prod"))
 
 		// Delete the project record
-		recordErr(h.app.Dao().DeleteRecord(project))
+		recordErr(h.app.Delete(project))
 	}
 
 	// Delete the user record
-	recordErr(h.app.Dao().DeleteRecord(user))
+	recordErr(h.app.Delete(user))
 
 	return firstErr
 }
@@ -151,13 +151,13 @@ func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
 // cleanupExpiredPreviews removes expired preview deployments for a project
 func (h *SitePodHandler) cleanupExpiredPreviews(projectName string) int {
 	deleted := 0
-	collection, err := h.app.Dao().FindCollectionByNameOrId("previews")
+	collection, err := h.app.FindCollectionByNameOrId("previews")
 	if err != nil || collection == nil {
 		return 0
 	}
 
 	now := time.Now().UTC().Format("2006-01-02 15:04:05.000Z")
-	previews, err := h.app.Dao().FindRecordsByFilter(
+	previews, err := h.app.FindRecordsByFilter(
 		"previews",
 		"project = {:project} && expires_at < {:now}",
 		"",
@@ -174,7 +174,7 @@ func (h *SitePodHandler) cleanupExpiredPreviews(projectName string) int {
 		if err := h.storage.DeletePreview(projectName, slug); err == nil {
 			deleted++
 		}
-		_ = h.app.Dao().DeleteRecord(preview)
+		_ = h.app.Delete(preview)
 	}
 
 	return deleted
@@ -195,7 +195,7 @@ func (h *SitePodHandler) apiGarbageCollect(w http.ResponseWriter, r *http.Reques
 	referencedHashes := make(map[string]bool)
 
 	// Scan all projects' refs
-	projects, _ := h.app.Dao().FindRecordsByFilter("projects", "1=1", "", 10000, 0, nil)
+	projects, _ := h.app.FindRecordsByFilter("projects", "1=1", "", 10000, 0, nil)
 	for _, project := range projects {
 		projectName := project.GetString("name")
 
@@ -221,7 +221,7 @@ func (h *SitePodHandler) apiGarbageCollect(w http.ResponseWriter, r *http.Reques
 	}
 
 	// Also check images in database for recently deployed content
-	images, _ := h.app.Dao().FindRecordsByFilter("images", "1=1", "", 10000, 0, nil)
+	images, _ := h.app.FindRecordsByFilter("images", "1=1", "", 10000, 0, nil)
 	for _, image := range images {
 		manifestStr := image.GetString("manifest")
 		var manifest map[string]storage.FileEntry
@@ -245,7 +245,7 @@ func (h *SitePodHandler) apiGarbageCollect(w http.ResponseWriter, r *http.Reques
 	// 3. Find and delete unreferenced blobs
 	var deletedCount int
 	var deletedSize int64
-	var errors []string
+	var errs []string
 
 	for _, hash := range allBlobs {
 		if !referencedHashes[hash] {
@@ -255,7 +255,7 @@ func (h *SitePodHandler) apiGarbageCollect(w http.ResponseWriter, r *http.Reques
 			}
 
 			if err := h.storage.DeleteBlob(hash); err != nil {
-				errors = append(errors, fmt.Sprintf("failed to delete blob %s: %v", hash, err))
+				errs = append(errs, fmt.Sprintf("failed to delete blob %s: %v", hash, err))
 			} else {
 				deletedCount++
 			}
@@ -271,7 +271,7 @@ func (h *SitePodHandler) apiGarbageCollect(w http.ResponseWriter, r *http.Reques
 		"total_blobs":      len(allBlobs),
 		"deleted_blobs":    deletedCount,
 		"freed_bytes":      deletedSize,
-		"errors":           errors,
+		"errors":           errs,
 	})
 }
 

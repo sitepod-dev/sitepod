@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/sitepod/sitepod/internal/storage"
 	"github.com/zeebo/blake3"
 	"go.uber.org/zap"
@@ -33,7 +33,7 @@ func (h *SitePodHandler) ensureSystemSites() {
 // ensureWelcomeSite creates a default welcome site on first startup
 func (h *SitePodHandler) ensureWelcomeSite(ownerID string) {
 	// Check if welcome project already exists
-	if _, err := h.app.Dao().FindFirstRecordByData("projects", "name", "welcome"); err == nil {
+	if _, err := h.app.FindFirstRecordByData("projects", "name", "welcome"); err == nil {
 		return // Already exists
 	}
 
@@ -185,13 +185,13 @@ func (h *SitePodHandler) ensureWelcomeSite(ownerID string) {
 	contentHash := hex.EncodeToString(contentHasher.Sum(nil))
 
 	// Save image record
-	imagesCollection, err := h.app.Dao().FindCollectionByNameOrId("images")
+	imagesCollection, err := h.app.FindCollectionByNameOrId("images")
 	if err != nil {
 		h.logger.Warn("failed to find images collection", zap.Error(err))
 		return
 	}
 
-	image := models.NewRecord(imagesCollection)
+	image := core.NewRecord(imagesCollection)
 	image.Set("image_id", imageID)
 	image.Set("project_id", project.Id)
 	image.Set("content_hash", contentHash)
@@ -199,7 +199,7 @@ func (h *SitePodHandler) ensureWelcomeSite(ownerID string) {
 	image.Set("file_count", 1)
 	image.Set("total_size", len(welcomeHTML))
 
-	if err := h.app.Dao().SaveRecord(image); err != nil {
+	if err := h.app.Save(image); err != nil {
 		h.logger.Warn("failed to save welcome image", zap.Error(err))
 		return
 	}
@@ -224,7 +224,7 @@ func (h *SitePodHandler) ensureWelcomeSite(ownerID string) {
 // ensureConsoleSite deploys the pre-built console UI
 func (h *SitePodHandler) ensureConsoleSite(ownerID string) {
 	// Check if console project already exists
-	if _, err := h.app.Dao().FindFirstRecordByData("projects", "name", "console"); err == nil {
+	if _, err := h.app.FindFirstRecordByData("projects", "name", "console"); err == nil {
 		return // Already exists
 	}
 
@@ -328,13 +328,13 @@ func (h *SitePodHandler) ensureConsoleSite(ownerID string) {
 	}
 	contentHash := hex.EncodeToString(contentHasher.Sum(nil))
 
-	imagesCollection, err := h.app.Dao().FindCollectionByNameOrId("images")
+	imagesCollection, err := h.app.FindCollectionByNameOrId("images")
 	if err != nil {
 		h.logger.Warn("failed to find images collection", zap.Error(err))
 		return
 	}
 
-	image := models.NewRecord(imagesCollection)
+	image := core.NewRecord(imagesCollection)
 	image.Set("image_id", imageID)
 	image.Set("project_id", project.Id)
 	image.Set("content_hash", contentHash)
@@ -342,7 +342,7 @@ func (h *SitePodHandler) ensureConsoleSite(ownerID string) {
 	image.Set("file_count", len(manifest))
 	image.Set("total_size", totalSize)
 
-	if err := h.app.Dao().SaveRecord(image); err != nil {
+	if err := h.app.Save(image); err != nil {
 		h.logger.Warn("failed to save console image", zap.Error(err))
 		return
 	}

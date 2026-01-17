@@ -6,13 +6,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 var errForbidden = errors.New("forbidden")
 var errAdminTokenMissing = errors.New("admin token not configured")
 
-func (h *SitePodHandler) isSystemUser(user *models.Record) bool {
+func (h *SitePodHandler) isSystemUser(user *core.Record) bool {
 	systemEmail := os.Getenv("SITEPOD_SYSTEM_EMAIL")
 	if systemEmail == "" {
 		systemEmail = "system@sitepod.local"
@@ -20,7 +20,7 @@ func (h *SitePodHandler) isSystemUser(user *models.Record) bool {
 	return user.GetString("email") == systemEmail
 }
 
-func (h *SitePodHandler) userOwnsProject(user *models.Record, project *models.Record) bool {
+func (h *SitePodHandler) userOwnsProject(user *core.Record, project *core.Record) bool {
 	ownerID := project.GetString("owner_id")
 	if user.GetBool("is_admin") {
 		return true
@@ -31,8 +31,8 @@ func (h *SitePodHandler) userOwnsProject(user *models.Record, project *models.Re
 	return ownerID == user.Id
 }
 
-func (h *SitePodHandler) requireProjectOwnerByName(projectName string, user *models.Record) (*models.Record, error) {
-	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", projectName)
+func (h *SitePodHandler) requireProjectOwnerByName(projectName string, user *core.Record) (*core.Record, error) {
+	project, err := h.app.FindFirstRecordByData("projects", "name", projectName)
 	if err != nil {
 		return nil, err
 	}
@@ -42,8 +42,8 @@ func (h *SitePodHandler) requireProjectOwnerByName(projectName string, user *mod
 	return project, nil
 }
 
-func (h *SitePodHandler) requireProjectOwnerByID(projectID string, user *models.Record) (*models.Record, error) {
-	project, err := h.app.Dao().FindRecordById("projects", projectID)
+func (h *SitePodHandler) requireProjectOwnerByID(projectID string, user *core.Record) (*core.Record, error) {
+	project, err := h.app.FindRecordById("projects", projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,12 +53,12 @@ func (h *SitePodHandler) requireProjectOwnerByID(projectID string, user *models.
 	return project, nil
 }
 
-func (h *SitePodHandler) requirePlanOwner(planID string, user *models.Record) (*models.Record, *models.Record, error) {
-	plan, err := h.app.Dao().FindFirstRecordByData("plans", "plan_id", planID)
+func (h *SitePodHandler) requirePlanOwner(planID string, user *core.Record) (*core.Record, *core.Record, error) {
+	plan, err := h.app.FindFirstRecordByData("plans", "plan_id", planID)
 	if err != nil {
 		return nil, nil, err
 	}
-	project, err := h.app.Dao().FindRecordById("projects", plan.GetString("project_id"))
+	project, err := h.app.FindRecordById("projects", plan.GetString("project_id"))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -68,12 +68,12 @@ func (h *SitePodHandler) requirePlanOwner(planID string, user *models.Record) (*
 	return plan, project, nil
 }
 
-func (h *SitePodHandler) requireDomainOwner(domain string, user *models.Record) (*models.Record, *models.Record, error) {
-	domainRecord, err := h.app.Dao().FindFirstRecordByData("domains", "domain", domain)
+func (h *SitePodHandler) requireDomainOwner(domain string, user *core.Record) (*core.Record, *core.Record, error) {
+	domainRecord, err := h.app.FindFirstRecordByData("domains", "domain", domain)
 	if err != nil {
 		return nil, nil, err
 	}
-	project, err := h.app.Dao().FindRecordById("projects", domainRecord.GetString("project_id"))
+	project, err := h.app.FindRecordById("projects", domainRecord.GetString("project_id"))
 	if err != nil {
 		return nil, nil, err
 	}

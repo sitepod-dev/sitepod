@@ -1,322 +1,244 @@
 package migrations
 
 import (
-	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
+	"github.com/pocketbase/pocketbase/core"
 	m "github.com/pocketbase/pocketbase/migrations"
-	"github.com/pocketbase/pocketbase/models"
-	"github.com/pocketbase/pocketbase/models/schema"
-	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 func init() {
-	m.Register(func(db dbx.Builder) error {
-		dao := daos.New(db)
-
+	m.Register(func(app core.App) error {
 		// Create projects collection
-		projects := &models.Collection{
-			Name:       "projects",
-			Type:       models.CollectionTypeBase,
-			ListRule:   types.Pointer("@request.auth.id != ''"),
-			ViewRule:   types.Pointer("@request.auth.id != ''"),
-			CreateRule: types.Pointer("@request.auth.id != ''"),
-			UpdateRule: types.Pointer("@request.auth.id != ''"),
-			DeleteRule: types.Pointer("@request.auth.id != ''"),
-			Schema: schema.NewSchema(
-				&schema.SchemaField{
-					Name:     "name",
-					Type:     schema.FieldTypeText,
-					Required: true,
-					Options: &schema.TextOptions{
-						Min: types.Pointer(1),
-						Max: types.Pointer(100),
-					},
-				},
-			),
-			Indexes: types.JsonArray[string]{
-				"CREATE UNIQUE INDEX idx_projects_name ON projects (name)",
-			},
-		}
-		if err := dao.SaveCollection(projects); err != nil {
+		projects := core.NewBaseCollection("projects")
+		projects.ListRule = ptrStr("@request.auth.id != ''")
+		projects.ViewRule = ptrStr("@request.auth.id != ''")
+		projects.CreateRule = ptrStr("@request.auth.id != ''")
+		projects.UpdateRule = ptrStr("@request.auth.id != ''")
+		projects.DeleteRule = ptrStr("@request.auth.id != ''")
+
+		projects.Fields.Add(&core.TextField{
+			Name:     "name",
+			Required: true,
+			Min:      1,
+			Max:      100,
+		})
+
+		projects.AddIndex("idx_projects_name", true, "name", "")
+
+		if err := app.Save(projects); err != nil {
 			return err
 		}
 
 		// Create images collection
-		images := &models.Collection{
-			Name:       "images",
-			Type:       models.CollectionTypeBase,
-			ListRule:   types.Pointer("@request.auth.id != ''"),
-			ViewRule:   types.Pointer("@request.auth.id != ''"),
-			CreateRule: types.Pointer("@request.auth.id != ''"),
-			UpdateRule: nil,
-			DeleteRule: types.Pointer("@request.auth.id != ''"),
-			Schema: schema.NewSchema(
-				&schema.SchemaField{
-					Name:     "image_id",
-					Type:     schema.FieldTypeText,
-					Required: true,
-				},
-				&schema.SchemaField{
-					Name:     "project_id",
-					Type:     schema.FieldTypeRelation,
-					Required: true,
-					Options: &schema.RelationOptions{
-						CollectionId:  projects.Id,
-						MaxSelect:     types.Pointer(1),
-						CascadeDelete: false,
-					},
-				},
-				&schema.SchemaField{
-					Name:     "content_hash",
-					Type:     schema.FieldTypeText,
-					Required: true,
-				},
-				&schema.SchemaField{
-					Name:     "manifest",
-					Type:     schema.FieldTypeJson,
-					Required: true,
-				},
-				&schema.SchemaField{
-					Name:     "file_count",
-					Type:     schema.FieldTypeNumber,
-					Required: false,
-				},
-				&schema.SchemaField{
-					Name:     "total_size",
-					Type:     schema.FieldTypeNumber,
-					Required: false,
-				},
-				&schema.SchemaField{
-					Name:     "git_commit",
-					Type:     schema.FieldTypeText,
-					Required: false,
-				},
-				&schema.SchemaField{
-					Name:     "git_branch",
-					Type:     schema.FieldTypeText,
-					Required: false,
-				},
-				&schema.SchemaField{
-					Name:     "git_message",
-					Type:     schema.FieldTypeText,
-					Required: false,
-				},
-			),
-			Indexes: types.JsonArray[string]{
-				"CREATE INDEX idx_images_project ON images (project_id)",
-				"CREATE INDEX idx_images_image_id ON images (image_id)",
-				"CREATE INDEX idx_images_hash ON images (project_id, content_hash)",
-			},
-		}
-		if err := dao.SaveCollection(images); err != nil {
+		images := core.NewBaseCollection("images")
+		images.ListRule = ptrStr("@request.auth.id != ''")
+		images.ViewRule = ptrStr("@request.auth.id != ''")
+		images.CreateRule = ptrStr("@request.auth.id != ''")
+		images.UpdateRule = nil
+		images.DeleteRule = ptrStr("@request.auth.id != ''")
+
+		images.Fields.Add(&core.TextField{
+			Name:     "image_id",
+			Required: true,
+		})
+		images.Fields.Add(&core.RelationField{
+			Name:          "project_id",
+			Required:      true,
+			CollectionId:  projects.Id,
+			MaxSelect:     1,
+			CascadeDelete: false,
+		})
+		images.Fields.Add(&core.TextField{
+			Name:     "content_hash",
+			Required: true,
+		})
+		images.Fields.Add(&core.JSONField{
+			Name:     "manifest",
+			Required: true,
+		})
+		images.Fields.Add(&core.NumberField{
+			Name:     "file_count",
+			Required: false,
+		})
+		images.Fields.Add(&core.NumberField{
+			Name:     "total_size",
+			Required: false,
+		})
+		images.Fields.Add(&core.TextField{
+			Name:     "git_commit",
+			Required: false,
+		})
+		images.Fields.Add(&core.TextField{
+			Name:     "git_branch",
+			Required: false,
+		})
+		images.Fields.Add(&core.TextField{
+			Name:     "git_message",
+			Required: false,
+		})
+
+		images.AddIndex("idx_images_project", false, "project_id", "")
+		images.AddIndex("idx_images_image_id", false, "image_id", "")
+		images.AddIndex("idx_images_hash", false, "project_id, content_hash", "")
+
+		if err := app.Save(images); err != nil {
 			return err
 		}
 
 		// Create plans collection
-		plans := &models.Collection{
-			Name:       "plans",
-			Type:       models.CollectionTypeBase,
-			ListRule:   types.Pointer("@request.auth.id != ''"),
-			ViewRule:   types.Pointer("@request.auth.id != ''"),
-			CreateRule: types.Pointer("@request.auth.id != ''"),
-			UpdateRule: types.Pointer("@request.auth.id != ''"),
-			DeleteRule: types.Pointer("@request.auth.id != ''"),
-			Schema: schema.NewSchema(
-				&schema.SchemaField{
-					Name:     "plan_id",
-					Type:     schema.FieldTypeText,
-					Required: true,
-				},
-				&schema.SchemaField{
-					Name:     "project_id",
-					Type:     schema.FieldTypeRelation,
-					Required: true,
-					Options: &schema.RelationOptions{
-						CollectionId:  projects.Id,
-						MaxSelect:     types.Pointer(1),
-						CascadeDelete: false,
-					},
-				},
-				&schema.SchemaField{
-					Name:     "content_hash",
-					Type:     schema.FieldTypeText,
-					Required: true,
-				},
-				&schema.SchemaField{
-					Name:     "manifest",
-					Type:     schema.FieldTypeJson,
-					Required: true,
-				},
-				&schema.SchemaField{
-					Name:     "missing_blobs",
-					Type:     schema.FieldTypeJson,
-					Required: false,
-				},
-				&schema.SchemaField{
-					Name:     "upload_mode",
-					Type:     schema.FieldTypeSelect,
-					Required: true,
-					Options: &schema.SelectOptions{
-						Values:    []string{"presigned", "direct"},
-						MaxSelect: 1,
-					},
-				},
-				&schema.SchemaField{
-					Name:     "status",
-					Type:     schema.FieldTypeSelect,
-					Required: true,
-					Options: &schema.SelectOptions{
-						Values:    []string{"pending", "committed", "expired"},
-						MaxSelect: 1,
-					},
-				},
-				&schema.SchemaField{
-					Name:     "expires_at",
-					Type:     schema.FieldTypeDate,
-					Required: true,
-				},
-				&schema.SchemaField{
-					Name:     "git_commit",
-					Type:     schema.FieldTypeText,
-					Required: false,
-				},
-				&schema.SchemaField{
-					Name:     "git_branch",
-					Type:     schema.FieldTypeText,
-					Required: false,
-				},
-				&schema.SchemaField{
-					Name:     "git_message",
-					Type:     schema.FieldTypeText,
-					Required: false,
-				},
-			),
-			Indexes: types.JsonArray[string]{
-				"CREATE INDEX idx_plans_plan_id ON plans (plan_id)",
-				"CREATE INDEX idx_plans_status ON plans (status, expires_at)",
-			},
-		}
-		if err := dao.SaveCollection(plans); err != nil {
+		plans := core.NewBaseCollection("plans")
+		plans.ListRule = ptrStr("@request.auth.id != ''")
+		plans.ViewRule = ptrStr("@request.auth.id != ''")
+		plans.CreateRule = ptrStr("@request.auth.id != ''")
+		plans.UpdateRule = ptrStr("@request.auth.id != ''")
+		plans.DeleteRule = ptrStr("@request.auth.id != ''")
+
+		plans.Fields.Add(&core.TextField{
+			Name:     "plan_id",
+			Required: true,
+		})
+		plans.Fields.Add(&core.RelationField{
+			Name:          "project_id",
+			Required:      true,
+			CollectionId:  projects.Id,
+			MaxSelect:     1,
+			CascadeDelete: false,
+		})
+		plans.Fields.Add(&core.TextField{
+			Name:     "content_hash",
+			Required: true,
+		})
+		plans.Fields.Add(&core.JSONField{
+			Name:     "manifest",
+			Required: true,
+		})
+		plans.Fields.Add(&core.JSONField{
+			Name:     "missing_blobs",
+			Required: false,
+		})
+		plans.Fields.Add(&core.SelectField{
+			Name:      "upload_mode",
+			Required:  true,
+			Values:    []string{"presigned", "direct"},
+			MaxSelect: 1,
+		})
+		plans.Fields.Add(&core.SelectField{
+			Name:      "status",
+			Required:  true,
+			Values:    []string{"pending", "committed", "expired"},
+			MaxSelect: 1,
+		})
+		plans.Fields.Add(&core.DateField{
+			Name:     "expires_at",
+			Required: true,
+		})
+		plans.Fields.Add(&core.TextField{
+			Name:     "git_commit",
+			Required: false,
+		})
+		plans.Fields.Add(&core.TextField{
+			Name:     "git_branch",
+			Required: false,
+		})
+		plans.Fields.Add(&core.TextField{
+			Name:     "git_message",
+			Required: false,
+		})
+
+		plans.AddIndex("idx_plans_plan_id", false, "plan_id", "")
+		plans.AddIndex("idx_plans_status", false, "status, expires_at", "")
+
+		if err := app.Save(plans); err != nil {
 			return err
 		}
 
 		// Create deploy_events collection
-		deployEvents := &models.Collection{
-			Name:       "deploy_events",
-			Type:       models.CollectionTypeBase,
-			ListRule:   types.Pointer("@request.auth.id != ''"),
-			ViewRule:   types.Pointer("@request.auth.id != ''"),
-			CreateRule: nil,
-			UpdateRule: nil,
-			DeleteRule: nil,
-			Schema: schema.NewSchema(
-				&schema.SchemaField{
-					Name:     "project_id",
-					Type:     schema.FieldTypeRelation,
-					Required: true,
-					Options: &schema.RelationOptions{
-						CollectionId:  projects.Id,
-						MaxSelect:     types.Pointer(1),
-						CascadeDelete: false,
-					},
-				},
-				&schema.SchemaField{
-					Name:     "image_id",
-					Type:     schema.FieldTypeRelation,
-					Required: true,
-					Options: &schema.RelationOptions{
-						CollectionId:  images.Id,
-						MaxSelect:     types.Pointer(1),
-						CascadeDelete: false,
-					},
-				},
-				&schema.SchemaField{
-					Name:     "environment",
-					Type:     schema.FieldTypeSelect,
-					Required: true,
-					Options: &schema.SelectOptions{
-						Values:    []string{"prod", "beta"},
-						MaxSelect: 1,
-					},
-				},
-				&schema.SchemaField{
-					Name:     "action",
-					Type:     schema.FieldTypeSelect,
-					Required: true,
-					Options: &schema.SelectOptions{
-						Values:    []string{"deploy", "rollback"},
-						MaxSelect: 1,
-					},
-				},
-				&schema.SchemaField{
-					Name:     "previous_image_id",
-					Type:     schema.FieldTypeText,
-					Required: false,
-				},
-			),
-			Indexes: types.JsonArray[string]{
-				"CREATE INDEX idx_deploy_events_lookup ON deploy_events (project_id, environment)",
-			},
-		}
-		if err := dao.SaveCollection(deployEvents); err != nil {
+		deployEvents := core.NewBaseCollection("deploy_events")
+		deployEvents.ListRule = ptrStr("@request.auth.id != ''")
+		deployEvents.ViewRule = ptrStr("@request.auth.id != ''")
+		deployEvents.CreateRule = nil
+		deployEvents.UpdateRule = nil
+		deployEvents.DeleteRule = nil
+
+		deployEvents.Fields.Add(&core.RelationField{
+			Name:          "project_id",
+			Required:      true,
+			CollectionId:  projects.Id,
+			MaxSelect:     1,
+			CascadeDelete: false,
+		})
+		deployEvents.Fields.Add(&core.RelationField{
+			Name:          "image_id",
+			Required:      true,
+			CollectionId:  images.Id,
+			MaxSelect:     1,
+			CascadeDelete: false,
+		})
+		deployEvents.Fields.Add(&core.SelectField{
+			Name:      "environment",
+			Required:  true,
+			Values:    []string{"prod", "beta"},
+			MaxSelect: 1,
+		})
+		deployEvents.Fields.Add(&core.SelectField{
+			Name:      "action",
+			Required:  true,
+			Values:    []string{"deploy", "rollback"},
+			MaxSelect: 1,
+		})
+		deployEvents.Fields.Add(&core.TextField{
+			Name:     "previous_image_id",
+			Required: false,
+		})
+
+		deployEvents.AddIndex("idx_deploy_events_lookup", false, "project_id, environment", "")
+
+		if err := app.Save(deployEvents); err != nil {
 			return err
 		}
 
 		// Create previews collection
-		previews := &models.Collection{
-			Name:       "previews",
-			Type:       models.CollectionTypeBase,
-			ListRule:   types.Pointer("@request.auth.id != ''"),
-			ViewRule:   types.Pointer("@request.auth.id != ''"),
-			CreateRule: types.Pointer("@request.auth.id != ''"),
-			UpdateRule: nil,
-			DeleteRule: types.Pointer("@request.auth.id != ''"),
-			Schema: schema.NewSchema(
-				&schema.SchemaField{
-					Name:     "project",
-					Type:     schema.FieldTypeText,
-					Required: true,
-				},
-				&schema.SchemaField{
-					Name:     "image_id",
-					Type:     schema.FieldTypeRelation,
-					Required: true,
-					Options: &schema.RelationOptions{
-						CollectionId:  images.Id,
-						MaxSelect:     types.Pointer(1),
-						CascadeDelete: false,
-					},
-				},
-				&schema.SchemaField{
-					Name:     "slug",
-					Type:     schema.FieldTypeText,
-					Required: true,
-				},
-				&schema.SchemaField{
-					Name:     "expires_at",
-					Type:     schema.FieldTypeDate,
-					Required: true,
-				},
-			),
-			Indexes: types.JsonArray[string]{
-				"CREATE UNIQUE INDEX idx_previews_slug ON previews (project, slug)",
-				"CREATE INDEX idx_previews_expires ON previews (expires_at)",
-			},
-		}
-		if err := dao.SaveCollection(previews); err != nil {
+		previews := core.NewBaseCollection("previews")
+		previews.ListRule = ptrStr("@request.auth.id != ''")
+		previews.ViewRule = ptrStr("@request.auth.id != ''")
+		previews.CreateRule = ptrStr("@request.auth.id != ''")
+		previews.UpdateRule = nil
+		previews.DeleteRule = ptrStr("@request.auth.id != ''")
+
+		previews.Fields.Add(&core.TextField{
+			Name:     "project",
+			Required: true,
+		})
+		previews.Fields.Add(&core.RelationField{
+			Name:          "image_id",
+			Required:      true,
+			CollectionId:  images.Id,
+			MaxSelect:     1,
+			CascadeDelete: false,
+		})
+		previews.Fields.Add(&core.TextField{
+			Name:     "slug",
+			Required: true,
+		})
+		previews.Fields.Add(&core.DateField{
+			Name:     "expires_at",
+			Required: true,
+		})
+
+		previews.AddIndex("idx_previews_slug", true, "project, slug", "")
+		previews.AddIndex("idx_previews_expires", false, "expires_at", "")
+
+		if err := app.Save(previews); err != nil {
 			return err
 		}
 
 		return nil
-	}, func(db dbx.Builder) error {
+	}, func(app core.App) error {
 		// Rollback: drop all collections
-		dao := daos.New(db)
-
 		collections := []string{"previews", "deploy_events", "plans", "images", "projects"}
 		for _, name := range collections {
-			collection, err := dao.FindCollectionByNameOrId(name)
+			collection, err := app.FindCollectionByNameOrId(name)
 			if err == nil {
-				if err := dao.DeleteCollection(collection); err != nil {
+				if err := app.Delete(collection); err != nil {
 					return err
 				}
 			}
@@ -324,4 +246,8 @@ func init() {
 
 		return nil
 	})
+}
+
+func ptrStr(s string) *string {
+	return &s
 }

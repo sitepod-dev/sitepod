@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/sitepod/sitepod/internal/storage"
 	"github.com/zeebo/blake3"
 	"go.uber.org/zap"
@@ -35,7 +35,7 @@ var reservedProjectNames = map[string]bool{
 }
 
 // API: Plan
-func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	var req struct {
 		Project string      `json:"project"`
 		Files   []FileEntry `json:"files"`
@@ -64,7 +64,7 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *m
 	}
 
 	// Check project count quota (only for new projects)
-	existingProject, _ := h.app.Dao().FindFirstRecordByData("projects", "name", req.Project)
+	existingProject, _ := h.app.FindFirstRecordByData("projects", "name", req.Project)
 	if existingProject == nil {
 		if err := h.checkProjectCountQuota(user.Id); err != nil {
 			return h.jsonError(w, http.StatusBadRequest, err.Error())
@@ -143,12 +143,12 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *m
 	manifestJSON, _ := json.Marshal(manifest)
 	missingJSON, _ := json.Marshal(missing)
 
-	plansCollection, _ := h.app.Dao().FindCollectionByNameOrId("plans")
+	plansCollection, _ := h.app.FindCollectionByNameOrId("plans")
 	if plansCollection == nil {
 		return h.jsonError(w, http.StatusInternalServerError, "plans collection not found")
 	}
 
-	planRecord := models.NewRecord(plansCollection)
+	planRecord := core.NewRecord(plansCollection)
 	planRecord.Set("plan_id", planID)
 	planRecord.Set("project_id", project.Id)
 	planRecord.Set("content_hash", contentHash)
@@ -164,7 +164,7 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *m
 		planRecord.Set("git_message", req.Git.Message)
 	}
 
-	if err := h.app.Dao().SaveRecord(planRecord); err != nil {
+	if err := h.app.Save(planRecord); err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, err.Error())
 	}
 
@@ -185,7 +185,7 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *m
 }
 
 // API: Upload
-func (h *SitePodHandler) apiUpload(w http.ResponseWriter, r *http.Request, path string, user *models.Record) error {
+func (h *SitePodHandler) apiUpload(w http.ResponseWriter, r *http.Request, path string, user *core.Record) error {
 	// Parse: /upload/{plan_id}/{hash}
 	parts := strings.Split(strings.TrimPrefix(path, "/upload/"), "/")
 	if len(parts) != 2 {
@@ -207,7 +207,7 @@ func (h *SitePodHandler) apiUpload(w http.ResponseWriter, r *http.Request, path 
 	}
 	if planExpired(plan) {
 		plan.Set("status", "expired")
-		if err := h.app.Dao().SaveRecord(plan); err != nil {
+		if err := h.app.Save(plan); err != nil {
 			return h.jsonError(w, http.StatusInternalServerError, "failed to update plan")
 		}
 		return h.jsonError(w, http.StatusBadRequest, "plan expired")
@@ -256,7 +256,7 @@ func (h *SitePodHandler) apiUpload(w http.ResponseWriter, r *http.Request, path 
 }
 
 // API: Commit
-func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	var req struct {
 		PlanID string `json:"plan_id"`
 	}
@@ -277,7 +277,7 @@ func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request, user 
 	}
 	if planExpired(plan) {
 		plan.Set("status", "expired")
-		if err := h.app.Dao().SaveRecord(plan); err != nil {
+		if err := h.app.Save(plan); err != nil {
 			return h.jsonError(w, http.StatusInternalServerError, "failed to update plan")
 		}
 		return h.jsonError(w, http.StatusBadRequest, "plan expired")
@@ -307,12 +307,12 @@ func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request, user 
 	imageID := "img_" + uuid.New().String()[:8]
 	contentHash := plan.GetString("content_hash")
 
-	imagesCollection, _ := h.app.Dao().FindCollectionByNameOrId("images")
+	imagesCollection, _ := h.app.FindCollectionByNameOrId("images")
 	if imagesCollection == nil {
 		return h.jsonError(w, http.StatusInternalServerError, "images collection not found")
 	}
 
-	imageRecord := models.NewRecord(imagesCollection)
+	imageRecord := core.NewRecord(imagesCollection)
 	imageRecord.Set("image_id", imageID)
 	imageRecord.Set("project_id", plan.GetString("project_id"))
 	imageRecord.Set("content_hash", contentHash)
@@ -328,12 +328,12 @@ func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request, user 
 	}
 	imageRecord.Set("total_size", totalSize)
 
-	if err := h.app.Dao().SaveRecord(imageRecord); err != nil {
+	if err := h.app.Save(imageRecord); err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, err.Error())
 	}
 
 	plan.Set("status", "committed")
-	if err := h.app.Dao().SaveRecord(plan); err != nil {
+	if err := h.app.Save(plan); err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, "failed to update plan")
 	}
 
@@ -344,7 +344,7 @@ func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request, user 
 }
 
 // API: Release
-func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	var req struct {
 		Project     string `json:"project"`
 		ProjectID   string `json:"project_id"`
@@ -359,12 +359,12 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user
 		return h.jsonError(w, http.StatusBadRequest, "environment must be 'prod' or 'beta'")
 	}
 
-	var project *models.Record
+	var project *core.Record
 	var err error
 	if req.ProjectID != "" {
-		project, err = h.app.Dao().FindRecordById("projects", req.ProjectID)
+		project, err = h.app.FindRecordById("projects", req.ProjectID)
 	} else if req.Project != "" {
-		project, err = h.app.Dao().FindFirstRecordByData("projects", "name", req.Project)
+		project, err = h.app.FindFirstRecordByData("projects", "name", req.Project)
 	} else {
 		return h.jsonError(w, http.StatusBadRequest, "project or project_id required")
 	}
@@ -377,11 +377,11 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user
 	projectName := project.GetString("name")
 
 	// Find image
-	var image *models.Record
+	var image *core.Record
 	if req.ImageID != "" {
-		image, err = h.app.Dao().FindFirstRecordByData("images", "image_id", req.ImageID)
+		image, err = h.app.FindFirstRecordByData("images", "image_id", req.ImageID)
 	} else {
-		images, err := h.app.Dao().FindRecordsByFilter(
+		images, err := h.app.FindRecordsByFilter(
 			"images", "project_id = {:project_id}", "-created", 1, 0,
 			map[string]any{"project_id": project.Id},
 		)
@@ -428,15 +428,15 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user
 	h.cache.Delete(projectName + ":" + req.Environment)
 
 	// Record deploy event
-	eventsCollection, _ := h.app.Dao().FindCollectionByNameOrId("deploy_events")
+	eventsCollection, _ := h.app.FindCollectionByNameOrId("deploy_events")
 	if eventsCollection != nil {
-		eventRecord := models.NewRecord(eventsCollection)
+		eventRecord := core.NewRecord(eventsCollection)
 		eventRecord.Set("project_id", project.Id)
 		eventRecord.Set("image_id", image.Id)
 		eventRecord.Set("environment", req.Environment)
 		eventRecord.Set("action", "deploy")
 		eventRecord.Set("previous_image_id", previousImageID)
-		if err := h.app.Dao().SaveRecord(eventRecord); err != nil {
+		if err := h.app.Save(eventRecord); err != nil {
 			h.logger.Warn("failed to save deploy event", zap.Error(err))
 		}
 	}
@@ -447,7 +447,7 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user
 }
 
 // API: Rollback
-func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	var req struct {
 		Project     string `json:"project"`
 		Environment string `json:"environment"`
@@ -460,7 +460,7 @@ func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request, use
 		return h.jsonError(w, http.StatusBadRequest, "environment must be 'prod' or 'beta'")
 	}
 
-	project, err := h.app.Dao().FindFirstRecordByData("projects", "name", req.Project)
+	project, err := h.app.FindFirstRecordByData("projects", "name", req.Project)
 	if err != nil {
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
@@ -468,7 +468,7 @@ func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request, use
 		return h.jsonError(w, http.StatusForbidden, "forbidden")
 	}
 
-	image, err := h.app.Dao().FindFirstRecordByData("images", "image_id", req.ImageID)
+	image, err := h.app.FindFirstRecordByData("images", "image_id", req.ImageID)
 	if err != nil {
 		return h.jsonError(w, http.StatusNotFound, "image not found")
 	}
@@ -507,15 +507,15 @@ func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request, use
 	h.cache.Delete(req.Project + ":" + req.Environment)
 
 	// Record rollback event
-	eventsCollection, _ := h.app.Dao().FindCollectionByNameOrId("deploy_events")
+	eventsCollection, _ := h.app.FindCollectionByNameOrId("deploy_events")
 	if eventsCollection != nil {
-		eventRecord := models.NewRecord(eventsCollection)
+		eventRecord := core.NewRecord(eventsCollection)
 		eventRecord.Set("project_id", project.Id)
 		eventRecord.Set("image_id", image.Id)
 		eventRecord.Set("environment", req.Environment)
 		eventRecord.Set("action", "rollback")
 		eventRecord.Set("previous_image_id", previousImageID)
-		if err := h.app.Dao().SaveRecord(eventRecord); err != nil {
+		if err := h.app.Save(eventRecord); err != nil {
 			h.logger.Warn("failed to save rollback event", zap.Error(err))
 		}
 	}
@@ -528,7 +528,7 @@ func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request, use
 	})
 }
 
-func planExpired(plan *models.Record) bool {
+func planExpired(plan *core.Record) bool {
 	expiresAt := plan.GetDateTime("expires_at")
 	if expiresAt.IsZero() {
 		return false
@@ -537,7 +537,7 @@ func planExpired(plan *models.Record) bool {
 }
 
 // API: Create Preview
-func (h *SitePodHandler) apiCreatePreview(w http.ResponseWriter, r *http.Request, user *models.Record) error {
+func (h *SitePodHandler) apiCreatePreview(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	var req struct {
 		Project   string `json:"project"`
 		ImageID   string `json:"image_id"`
@@ -556,7 +556,7 @@ func (h *SitePodHandler) apiCreatePreview(w http.ResponseWriter, r *http.Request
 		return h.jsonError(w, http.StatusNotFound, "project not found")
 	}
 
-	image, err := h.app.Dao().FindFirstRecordByData("images", "image_id", req.ImageID)
+	image, err := h.app.FindFirstRecordByData("images", "image_id", req.ImageID)
 	if err != nil {
 		return h.jsonError(w, http.StatusNotFound, "image not found")
 	}
@@ -593,14 +593,14 @@ func (h *SitePodHandler) apiCreatePreview(w http.ResponseWriter, r *http.Request
 		return h.jsonError(w, http.StatusInternalServerError, "failed to create preview")
 	}
 
-	previewsCollection, _ := h.app.Dao().FindCollectionByNameOrId("previews")
+	previewsCollection, _ := h.app.FindCollectionByNameOrId("previews")
 	if previewsCollection != nil {
-		previewRecord := models.NewRecord(previewsCollection)
+		previewRecord := core.NewRecord(previewsCollection)
 		previewRecord.Set("project", req.Project)
 		previewRecord.Set("image_id", image.Id)
 		previewRecord.Set("slug", slug)
 		previewRecord.Set("expires_at", expiresAt)
-		if err := h.app.Dao().SaveRecord(previewRecord); err != nil {
+		if err := h.app.Save(previewRecord); err != nil {
 			h.logger.Warn("failed to save preview record", zap.Error(err))
 		}
 	}
