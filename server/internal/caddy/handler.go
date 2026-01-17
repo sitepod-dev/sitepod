@@ -176,12 +176,23 @@ func (h *SitePodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 	err := h.handleStatic(w, r)
 	duration := time.Since(start)
 
-	// Log static requests (skip noisy assets in debug mode)
-	if duration > 10*time.Millisecond || err != nil {
-		status := 200
-		if err != nil {
-			status = 404
-		}
+	// Log static requests
+	// - Always log errors and slow requests (>10ms) at DEBUG level
+	// - Log all requests at INFO level if SITEPOD_ACCESS_LOG=1
+	accessLog := os.Getenv("SITEPOD_ACCESS_LOG") == "1"
+	status := 200
+	if err != nil {
+		status = 404
+	}
+
+	if accessLog {
+		h.logger.Info("static",
+			zap.String("host", r.Host),
+			zap.String("path", path),
+			zap.Int("status", status),
+			zap.Duration("duration", duration),
+		)
+	} else if duration > 10*time.Millisecond || err != nil {
 		h.logger.Debug("static",
 			zap.String("host", r.Host),
 			zap.String("path", path),
