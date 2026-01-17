@@ -117,32 +117,6 @@ function createAuth() {
       }
     },
 
-    async loginAnonymous() {
-      state.loading = true
-      try {
-        const response = await fetch('/api/v1/auth/anonymous', {
-          method: 'POST'
-        })
-        if (!response.ok) {
-          const error = await response.json().catch(() => ({}))
-          throw new Error(error.message || 'Anonymous login failed')
-        }
-        const data = await response.json()
-        state.token = data.token
-        state.user = {
-          id: data.user_id,
-          email: '',
-          isAnonymous: true,
-          isAdmin: false
-        }
-        state.isAuthenticated = true
-        localStorage.setItem('sitepod_token', data.token)
-        return { success: true }
-      } finally {
-        state.loading = false
-      }
-    },
-
     setToken(token: string, user: User) {
       state.token = token
       state.user = user

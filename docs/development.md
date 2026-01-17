@@ -68,7 +68,7 @@ make run
 ./bin/sitepod login --endpoint http://192.168.1.100:8080
 ```
 
-登录时选择 **Anonymous (quick start, 24h limit)** 可跳过邮箱验证。
+输入邮箱和密码即可登录（新邮箱会自动创建账号，类似 surge.sh）。
 
 ### 部署示例站点
 

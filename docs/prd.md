@@ -128,10 +128,9 @@ SitePod:  sitepod deploy --prod
 
 | 命令 | 说明 |
 |------|------|
-| `sitepod deploy` | 一键部署（自动登录、初始化） |
+| `sitepod login` | 登录或注册（邮箱 + 密码） |
+| `sitepod deploy` | 部署到 beta 环境 |
 | `sitepod deploy --prod` | 部署到生产环境 |
-| `sitepod login` | 登录认证（邮箱验证） |
-| `sitepod bind` | （暂未支持）匿名账户绑定邮箱升级 |
 | `sitepod init` | 初始化项目配置 |
 | `sitepod preview` | 创建预览部署 |
 | `sitepod rollback` | 回滚到历史版本 |
@@ -141,29 +140,37 @@ SitePod:  sitepod deploy --prod
 | `sitepod domain rename` | 修改系统分配的子域名 |
 | `sitepod domain list` | 列出已添加的域名 |
 | `sitepod domain remove` | 移除域名 |
+| `sitepod delete-account` | 删除账户及所有项目 |
+| `sitepod console` | 在浏览器中打开控制台 |
 
-#### 智能部署流程
+#### 登录流程
 
-`sitepod deploy` 命令会自动处理所有前置条件：
+登录采用邮箱 + 密码方式，类似 surge.sh：
+
+- 新用户输入邮箱和密码后自动创建账户
+- 已有用户输入邮箱和密码后登录
+
+```bash
+$ sitepod login
+? 服务器地址: https://app.sitepod.dev
+? 邮箱: alice@example.com
+? 密码: ********
+✓ 账户已创建  # 或 "已登录"
+```
+
+#### 部署流程
+
+`sitepod deploy` 命令会检查登录状态：
 
 ```
 sitepod deploy
     │
-    ├─ 未登录? ──→ 自动创建匿名账户 (24h 有效)
+    ├─ 未登录? ──→ 提示运行 sitepod login
     │
     ├─ 无 sitepod.toml? ──→ 交互式初始化
     │
     └─ 执行部署
 ```
-
-#### 匿名账户机制
-
-| 特性 | 说明 |
-|------|------|
-| 自动创建 | 未登录时执行 deploy/preview 自动创建 |
-| 有效期 | 24 小时后过期，部署一并删除 |
-| 升级方式 | （暂未支持）`sitepod bind` 绑定邮箱升级为正式账户 |
-| 升级后 | 账户永久保留，域名不变 |
 
 #### 系统域名
 

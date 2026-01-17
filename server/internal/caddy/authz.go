@@ -65,21 +65,6 @@ func (h *SitePodHandler) requirePlanOwner(planID string, user *models.Record) (*
 	return plan, project, nil
 }
 
-func (h *SitePodHandler) requireImageOwner(imageID string, user *models.Record) (*models.Record, *models.Record, error) {
-	image, err := h.app.Dao().FindFirstRecordByData("images", "image_id", imageID)
-	if err != nil {
-		return nil, nil, err
-	}
-	project, err := h.app.Dao().FindRecordById("projects", image.GetString("project_id"))
-	if err != nil {
-		return nil, nil, err
-	}
-	if !h.userOwnsProject(user, project) {
-		return nil, nil, errForbidden
-	}
-	return image, project, nil
-}
-
 func (h *SitePodHandler) requireDomainOwner(domain string, user *models.Record) (*models.Record, *models.Record, error) {
 	domainRecord, err := h.app.Dao().FindFirstRecordByData("domains", "domain", domain)
 	if err != nil {

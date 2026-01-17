@@ -316,7 +316,9 @@ func init() {
 		for _, name := range collections {
 			collection, err := dao.FindCollectionByNameOrId(name)
 			if err == nil {
-				dao.DeleteCollection(collection)
+				if err := dao.DeleteCollection(collection); err != nil {
+					return err
+				}
 			}
 		}
 

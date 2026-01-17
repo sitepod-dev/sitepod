@@ -9,7 +9,7 @@ mod scanner;
 mod ui;
 mod update;
 
-use commands::{bind, console, deploy, domain, history, init, login, preview, rollback};
+use commands::{console, deploy, domain, history, init, login, preview, rollback};
 
 /// SitePod — Self-hosted static deployments
 #[derive(Parser)]
@@ -118,13 +118,6 @@ enum Commands {
         /// Maximum number of entries
         #[arg(short, long, default_value = "20")]
         limit: usize,
-    },
-
-    /// Bind email to upgrade anonymous account
-    Bind {
-        /// Email address to bind
-        #[arg(short, long)]
-        email: Option<String>,
     },
 
     /// Open SitePod console in browser
@@ -249,9 +242,6 @@ async fn main() -> Result<()> {
         Commands::History { name, limit } => {
             let project = name.or(cfg.project.name.clone());
             history::run(&cfg, project.as_deref(), limit).await?;
-        }
-        Commands::Bind { email } => {
-            bind::run(&cfg, email).await?;
         }
         Commands::Console => {
             console::run(&cfg)?;

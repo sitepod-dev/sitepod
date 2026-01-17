@@ -51,7 +51,7 @@
 
   function getEnvUrl(env: string): string {
     if (env === 'prod') return `https://${projectId}.sitepod.dev`
-    return `https://${projectId}.beta.sitepod.dev`
+    return `https://${projectId}-beta.sitepod.dev`
   }
 </script>
 

@@ -147,6 +147,9 @@ func (h *SitePodHandler) Provision(ctx caddy.Context) error {
 		return err
 	}
 
+	// Disable PocketBase internal request logging (we use Caddy's logging)
+	h.app.Settings().Logs.MaxDays = 0
+
 	// Initialize database schema
 	if err := h.initDatabaseSchema(); err != nil {
 		return err
@@ -262,9 +265,9 @@ func (h *SitePodHandler) handleAPI(w http.ResponseWriter, r *http.Request) error
 	case path == "/gc" && r.Method == "POST":
 		return h.apiGarbageCollect(w, r)
 
-	// Auth
-	case path == "/auth/anonymous" && r.Method == "POST":
-		return h.apiAnonymousAuth(w, r)
+	// Auth - register or login (creates account if not exists)
+	case path == "/auth/login" && r.Method == "POST":
+		return h.apiRegisterOrLogin(w, r)
 
 	// Domain check (called by Caddy for on-demand TLS)
 	case path == "/domains/check" && r.Method == "GET":
@@ -286,10 +289,6 @@ func (h *SitePodHandler) handleAPI(w http.ResponseWriter, r *http.Request) error
 	}
 
 	switch {
-	// Auth
-	case path == "/auth/bind" && r.Method == "POST":
-		return h.apiBindEmail(w, r, user)
-
 	// Account management
 	case path == "/account" && r.Method == "DELETE":
 		return h.apiDeleteAccount(w, r, user)
@@ -371,13 +370,6 @@ func (h *SitePodHandler) authenticate(r *http.Request) (*models.Record, error) {
 		return nil, err
 	}
 
-	if record.GetBool("is_anonymous") {
-		expiresAt := record.GetDateTime("anonymous_expires_at")
-		if !expiresAt.IsZero() && time.Now().After(expiresAt.Time()) {
-			return nil, errors.New("anonymous session expired")
-		}
-	}
-
 	return record, nil
 }
 
@@ -412,14 +404,6 @@ func (h *SitePodHandler) authenticateAny(r *http.Request) (*AuthContext, error) 
 		record, err := h.app.Dao().FindAuthRecordByToken(tokenStr, h.app.Settings().RecordAuthToken.Secret)
 		if err != nil {
 			return nil, err
-		}
-
-		// Check anonymous expiry
-		if record.GetBool("is_anonymous") {
-			expiresAt := record.GetDateTime("anonymous_expires_at")
-			if !expiresAt.IsZero() && time.Now().After(expiresAt.Time()) {
-				return nil, errors.New("anonymous session expired")
-			}
 		}
 
 		return &AuthContext{User: record}, nil

@@ -1,12 +1,11 @@
 use anyhow::{Context, Result};
 use console::style;
-use dialoguer::{Confirm, Input, Select};
+use dialoguer::{Confirm, Input};
 use futures::stream::{self, StreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use qrcode::QrCode;
 use rand::Rng;
 use std::collections::HashMap;
-use std::io::IsTerminal;
 use std::path::Path;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
@@ -16,10 +15,8 @@ use crate::config::{Config, ProjectToml};
 use crate::scanner::{get_source_dir, Scanner};
 use crate::ui;
 
-const DEFAULT_ENDPOINT: &str = "https://app.sitepod.dev";
-
 /// Run the deploy command with smart flow
-/// 1. Auto-login with anonymous account if not logged in
+/// 1. Check if logged in, prompt to login if not
 /// 2. Auto-init if sitepod.toml doesn't exist
 /// 3. Deploy to the specified environment
 pub async fn run(
@@ -32,9 +29,7 @@ pub async fn run(
 ) -> Result<()> {
     // Step 1: Ensure we have authentication
     if !config.has_token() {
-        ui::step("Creating anonymous session");
-        auto_anonymous_login(config).await?;
-        println!();
+        anyhow::bail!("Not logged in. Run 'sitepod login' first.");
     }
 
     // Step 2: Ensure we have project config
@@ -48,88 +43,22 @@ pub async fn run(
     }
 
     // Now proceed with actual deployment
-    // If auth fails, offer to re-login
+    // If auth fails, tell user to re-login
     match do_deploy(config, source, project, env, concurrent, skip_confirm).await {
         Ok(()) => Ok(()),
         Err(e) => {
             let err_str = e.to_string();
             // Check if it's an auth error (401 or "authentication required")
             if err_str.contains("401") || err_str.contains("authentication required") {
-                handle_auth_failure(config).await
+                println!();
+                ui::warn("Session expired");
+                println!();
+                anyhow::bail!("Session expired. Run 'sitepod login' to authenticate.");
             } else {
                 Err(e)
             }
         }
     }
-}
-
-/// Handle authentication failure by prompting user for options
-async fn handle_auth_failure(config: &mut Config) -> Result<()> {
-    println!();
-    ui::warn("Session expired");
-    println!();
-
-    // Check if we're in a terminal - if not, just exit with error
-    if !std::io::stdin().is_terminal() {
-        anyhow::bail!("Session expired. Run 'sitepod login'.");
-    }
-
-    let options = vec![
-        "New anonymous session (24h)",
-        "Login with existing account",
-        "Cancel",
-    ];
-
-    let selection = Select::new()
-        .with_prompt("Next step")
-        .items(&options)
-        .default(0)
-        .interact()?;
-
-    match selection {
-        0 => {
-            // Create new anonymous account
-            auto_anonymous_login(config).await?;
-            println!();
-            ui::ok("Session ready");
-            println!("  {}", ui::cmd("sitepod deploy"));
-            Ok(())
-        }
-        1 => {
-            // Re-login
-            println!();
-            println!("  {}", ui::cmd("sitepod login"));
-            Ok(())
-        }
-        _ => {
-            ui::info("Cancelled");
-            Ok(())
-        }
-    }
-}
-
-/// Create anonymous account and save token
-async fn auto_anonymous_login(config: &mut Config) -> Result<()> {
-    // Get endpoint from config or use default
-    let endpoint = config
-        .server
-        .endpoint
-        .clone()
-        .unwrap_or_else(|| DEFAULT_ENDPOINT.to_string());
-
-    let client = ApiClient::unauthenticated(&endpoint);
-    let auth_response = client.anonymous_login().await?;
-
-    // Save token to config
-    Config::save_token(&endpoint, &auth_response.token)?;
-    config.server.endpoint = Some(endpoint);
-    config.auth.token = Some(auth_response.token);
-
-    ui::ok("Anonymous session");
-    ui::kv("expires", ui::dim("24h"));
-    ui::kv("next", ui::cmd("sitepod bind"));
-
-    Ok(())
 }
 
 /// Auto-initialize project with minimal interaction
@@ -430,7 +359,7 @@ async fn commit_and_release(
     plan_id: &str,
     project_name: &str,
     env: &str,
-    config: &Config,
+    _config: &Config,
 ) -> Result<()> {
     // Commit
     ui::step("Committing");
@@ -457,25 +386,7 @@ async fn commit_and_release(
     // Show QR code
     print_qr_code(&release.url);
 
-    // Show anonymous account warning if applicable
-    if is_anonymous_session(config) {
-        println!();
-        ui::warn("Anonymous session - expires in 24h");
-        ui::kv("next", ui::cmd("sitepod bind"));
-    }
-
     Ok(())
-}
-
-/// Check if current session is an anonymous account
-fn is_anonymous_session(config: &Config) -> bool {
-    // Heuristic: anonymous tokens typically contain "anon" or similar marker
-    // This is a placeholder - actual implementation depends on token format
-    config
-        .auth
-        .token
-        .as_ref()
-        .is_some_and(|t| t.contains("anon"))
 }
 
 /// Print QR code for the URL in terminal

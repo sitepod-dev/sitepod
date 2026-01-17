@@ -7,7 +7,6 @@
   let error = $state('')
   let message = $state('')
   let loading = $state(false)
-  let allowAnonymous = $state(false)
   let isDemo = $state(false)
   let isAdminLogin = $state(false)
   let configLoaded = $state(false)
@@ -17,11 +16,10 @@
       const res = await fetch('/api/v1/health')
       if (res.ok) {
         const data = await res.json()
-        allowAnonymous = data.allow_anonymous === true
         isDemo = data.is_demo === true
       }
     } catch {
-      // Ignore errors, just hide anonymous option
+      // Ignore errors
     }
     configLoaded = true
   })
@@ -58,18 +56,6 @@
       }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Login failed'
-    } finally {
-      loading = false
-    }
-  }
-
-  async function handleAnonymousLogin() {
-    loading = true
-    error = ''
-    try {
-      await auth.loginAnonymous()
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Anonymous login failed'
     } finally {
       loading = false
     }
@@ -168,33 +154,12 @@
         disabled={loading || !email || !password}
         class="w-full py-2 px-4 font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition {isAdminLogin ? 'bg-orange-600 text-white hover:bg-orange-700' : 'bg-cyan-600 text-white hover:bg-cyan-700'}"
       >
-        {loading ? 'Signing in...' : isAdminLogin ? 'Continue as Admin' : 'Continue with Email & Password'}
+        {loading ? 'Signing in...' : isAdminLogin ? 'Continue as Admin' : 'Continue with Email'}
       </button>
     </form>
 
-    {#if configLoaded && allowAnonymous}
-      <div class="relative my-6">
-        <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-slate-200"></div>
-        </div>
-        <div class="relative flex justify-center text-sm">
-          <span class="px-2 bg-white text-slate-500">or</span>
-        </div>
-      </div>
-
-      <!-- Anonymous login -->
-      <button
-        onclick={handleAnonymousLogin}
-        disabled={loading}
-        class="w-full py-2 px-4 bg-white text-slate-700 font-medium rounded-md border border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
-      >
-        Continue as Anonymous (24h limit)
-      </button>
-
-      <p class="mt-6 text-center text-xs text-slate-500">
-        Anonymous sessions are limited to 24 hours.<br>
-        Sign in with email to keep your deployments.
-      </p>
-    {/if}
+    <p class="mt-6 text-center text-xs text-slate-500">
+      New here? Just enter your email and password to create an account.
+    </p>
   </div>
 </div>

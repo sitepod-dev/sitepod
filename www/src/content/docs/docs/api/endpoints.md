@@ -45,27 +45,45 @@ sitepod_uptime_seconds 3600
 
 ## Authentication
 
-### POST /auth/anonymous
+### POST /auth/login
 
-Create an anonymous session (24h expiry).
+Login or register with email and password. Creates account if email doesn't exist.
 
 ```http
-POST /api/v1/auth/anonymous
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "you@example.com",
+  "password": "your-password"
+}
 ```
 
 **Response:**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
-  "user_id": "abc123",
-  "expires_at": "2024-01-16T10:30:00Z",
-  "message": "Anonymous session created. Verify your email within 24 hours to keep your deployments."
+  "user_id": "abc123"
 }
 ```
 
-### POST /auth/bind
+### GET /auth/info
 
-Not supported yet. This endpoint returns `501 Not Implemented`.
+Get current user information.
+
+```http
+GET /api/v1/auth/info
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "id": "abc123",
+  "email": "you@example.com",
+  "is_admin": false
+}
+```
 
 ### DELETE /account
 
@@ -482,7 +500,7 @@ These endpoints are intended for cron jobs or admin scripts. Protect with firewa
 
 ### POST /cleanup
 
-Clean up expired anonymous accounts and preview deployments.
+Clean up expired preview deployments.
 
 ```http
 POST /api/v1/cleanup
@@ -491,7 +509,6 @@ POST /api/v1/cleanup
 **Response:**
 ```json
 {
-  "expired_users_deleted": 5,
   "expired_previews_deleted": 12,
   "errors": []
 }

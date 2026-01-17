@@ -21,7 +21,7 @@ No install required. If you install the CLI, you can drop `npx` from all command
 
 That's it! On first run, SitePod will:
 
-1. Create an anonymous session (24h)
+1. Prompt for email & password (creates account if new)
 2. Auto-detect your build directory
 3. Generate a subdomain
 4. Deploy to beta environment
@@ -29,10 +29,9 @@ That's it! On first run, SitePod will:
 ```
 $ npx sitepod deploy
 
-◐ Creating anonymous session
-✓ Anonymous session
-  expires: 24h
-  note: anonymous sessions expire in 24h
+? Email: you@example.com
+? Password: ********
+✓ Logged in
 
 ? Project name: my-site
 ? Build directory (detected dist/): dist
@@ -58,14 +57,7 @@ $ npx sitepod deploy
 ✓ Released to beta
 
   url: https://my-site-beta.sitepod.dev
-
-⚠ Anonymous session - expires in 24h
-  note: anonymous sessions expire in 24h
 ```
-
-## Keep your account
-
-Email binding is not supported yet. Anonymous sessions expire after 24 hours.
 
 ## Install the CLI (optional)
 

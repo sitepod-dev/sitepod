@@ -524,9 +524,8 @@ sitepod --version
 ```bash
 sitepod login --endpoint https://sitepod.example.com
 
-# 选择登录方式：
-# - Email: 输入邮箱，收到验证码后输入
-# - Anonymous: 快速测试，24小时后过期
+# 输入邮箱和密码
+# 新邮箱会自动创建账号（类似 surge.sh）
 ```
 
 ### 2. 初始化项目

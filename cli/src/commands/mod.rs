@@ -1,4 +1,3 @@
-pub mod bind;
 pub mod console;
 pub mod delete_account;
 pub mod deploy;

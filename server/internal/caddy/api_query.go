@@ -29,16 +29,14 @@ func (h *SitePodHandler) apiHealth(w http.ResponseWriter, r *http.Request) error
 		status = "degraded"
 	}
 
-	allowAnonymous := os.Getenv("SITEPOD_ALLOW_ANONYMOUS") == "1" || os.Getenv("SITEPOD_ALLOW_ANONYMOUS") == "true"
 	isDemo := os.Getenv("IS_DEMO") == "1" || os.Getenv("IS_DEMO") == "true"
 
 	return h.jsonResponse(w, http.StatusOK, map[string]any{
-		"status":          status,
-		"database":        dbStatus,
-		"storage":         storageStatus,
-		"uptime":          time.Since(h.startTime).String(),
-		"allow_anonymous": allowAnonymous,
-		"is_demo":         isDemo,
+		"status":   status,
+		"database": dbStatus,
+		"storage":  storageStatus,
+		"uptime":   time.Since(h.startTime).String(),
+		"is_demo":  isDemo,
 	})
 }
 
@@ -197,33 +195,6 @@ func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, u
 	}
 
 	return h.jsonResponse(w, http.StatusOK, map[string]any{"images": result, "total": len(result)})
-}
-
-// API: List Projects (legacy - for regular users only)
-func (h *SitePodHandler) apiListProjects(w http.ResponseWriter, r *http.Request, user *models.Record) error {
-	// Get all projects owned by the user
-	projects, err := h.app.Dao().FindRecordsByFilter(
-		"projects", "owner_id = {:owner_id}", "-created", 100, 0,
-		map[string]any{"owner_id": user.Id},
-	)
-	if err != nil {
-		// If no projects found, return empty array
-		return h.jsonResponse(w, http.StatusOK, []any{})
-	}
-
-	result := make([]map[string]any, len(projects))
-	for i, p := range projects {
-		result[i] = map[string]any{
-			"id":         p.Id,
-			"name":       p.GetString("name"),
-			"subdomain":  p.GetString("subdomain"),
-			"owner_id":   p.GetString("owner_id"),
-			"created_at": p.Created.String(),
-			"updated_at": p.Updated.String(),
-		}
-	}
-
-	return h.jsonResponse(w, http.StatusOK, result)
 }
 
 // API: List Projects (supports both admin and user tokens)

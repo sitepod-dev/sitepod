@@ -63,7 +63,9 @@ func (h *SitePodHandler) ensureDefaultAdmin() error {
 	// Create admin
 	admin := &models.Admin{}
 	admin.Email = email
-	admin.SetPassword(password)
+	if err := admin.SetPassword(password); err != nil {
+		return err
+	}
 
 	if err := h.app.Dao().SaveAdmin(admin); err != nil {
 		return err
@@ -97,11 +99,19 @@ func (h *SitePodHandler) ensureSystemUser() (*models.Record, error) {
 	}
 
 	user = models.NewRecord(usersCollection)
-	user.SetEmail(systemEmail)
-	user.SetUsername("system")
-	user.SetVerified(true)
+	if err := user.SetEmail(systemEmail); err != nil {
+		return nil, err
+	}
+	if err := user.SetUsername("system"); err != nil {
+		return nil, err
+	}
+	if err := user.SetVerified(true); err != nil {
+		return nil, err
+	}
 	// System user doesn't need a real password since it can't be logged into
-	user.SetPassword("__system_user_no_login__" + uuid.New().String())
+	if err := user.SetPassword("__system_user_no_login__" + uuid.New().String()); err != nil {
+		return nil, err
+	}
 
 	if err := h.app.Dao().SaveRecord(user); err != nil {
 		return nil, err
@@ -129,8 +139,12 @@ func (h *SitePodHandler) ensureDemoUser() error {
 	user, err := h.app.Dao().FindAuthRecordByEmail("users", demoEmail)
 	if err == nil {
 		// User exists, update password if needed
-		user.SetPassword(demoPassword)
-		user.SetVerified(true)
+		if err := user.SetPassword(demoPassword); err != nil {
+			return err
+		}
+		if err := user.SetVerified(true); err != nil {
+			return err
+		}
 		if err := h.app.Dao().SaveRecord(user); err != nil {
 			return err
 		}
@@ -145,10 +159,18 @@ func (h *SitePodHandler) ensureDemoUser() error {
 	}
 
 	user = models.NewRecord(usersCollection)
-	user.SetEmail(demoEmail)
-	user.SetUsername("demo")
-	user.SetVerified(true)
-	user.SetPassword(demoPassword)
+	if err := user.SetEmail(demoEmail); err != nil {
+		return err
+	}
+	if err := user.SetUsername("demo"); err != nil {
+		return err
+	}
+	if err := user.SetVerified(true); err != nil {
+		return err
+	}
+	if err := user.SetPassword(demoPassword); err != nil {
+		return err
+	}
 
 	if err := h.app.Dao().SaveRecord(user); err != nil {
 		return err
@@ -170,10 +192,6 @@ func (h *SitePodHandler) getSystemUser() (*models.Record, error) {
 		systemEmail = "system@sitepod.local"
 	}
 	return h.app.Dao().FindAuthRecordByEmail("users", systemEmail)
-}
-
-func (h *SitePodHandler) getOrCreateProject(name string) (*models.Record, error) {
-	return h.getOrCreateProjectWithOwner(name, "")
 }
 
 func (h *SitePodHandler) getOrCreateProjectWithOwner(name string, ownerID string) (*models.Record, error) {
@@ -240,8 +258,13 @@ func (h *SitePodHandler) createSystemDomain(project *models.Record, subdomain st
 	domain.Set("status", "active")
 	domain.Set("is_primary", true)
 
-	h.app.Dao().SaveRecord(domain)
-	h.rebuildRoutingIndex()
+	if err := h.app.Dao().SaveRecord(domain); err != nil {
+		h.logger.Warn("failed to save system domain", zap.Error(err))
+		return
+	}
+	if err := h.rebuildRoutingIndex(); err != nil {
+		h.logger.Warn("failed to rebuild routing index", zap.Error(err))
+	}
 }
 
 func (h *SitePodHandler) normalizeSubdomain(name string) string {

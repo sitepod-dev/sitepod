@@ -21,15 +21,13 @@ make run
 
 # In another terminal, login and deploy
 ./bin/sitepod login --endpoint http://localhost:8080
-# Select "Anonymous (quick start, 24h limit)"
+# Enter your email and password (creates account if new)
 
 cd examples/simple-site
 ../../bin/sitepod deploy
 
 # Visit http://demo-site-beta.localhost:8080 (beta uses -beta suffix)
 ```
-
-> Anonymous sessions require `SITEPOD_ALLOW_ANONYMOUS=1` (set by `make run` for development). Deployments expire in 24h.
 
 ### Clean Start (Reset Everything)
 
@@ -182,7 +180,8 @@ data/
 
 | Endpoint | Purpose |
 |----------|---------|
-| `POST /api/v1/auth/anonymous` | Create anonymous session (no auth, 24h expiry) |
+| `POST /api/v1/auth/login` | Register or login with email/password |
+| `GET /api/v1/auth/info` | Get current user info |
 | `POST /api/v1/plan` | Submit file manifest, get missing blob upload URLs |
 | `POST /api/v1/upload/{plan_id}/{hash}` | Upload blob (direct mode for local storage) |
 | `POST /api/v1/commit` | Confirm upload completion, create image |
@@ -200,10 +199,9 @@ data/
 ## CLI Commands
 
 ```
-sitepod deploy         # One-command deploy (auto login + init if needed)
+sitepod login          # Authenticate with email/password (creates account if new)
+sitepod deploy         # Deploy to beta environment
 sitepod deploy --prod  # Deploy to production
-sitepod login          # Authenticate with email
-sitepod bind           # Upgrade anonymous account by binding email
 sitepod init           # Initialize project config (creates sitepod.toml)
 sitepod preview        # Create preview deployment
 sitepod rollback       # Rollback to previous version (interactive)
@@ -213,6 +211,8 @@ sitepod domain verify  # Verify domain ownership
 sitepod domain rename  # Rename system-assigned subdomain
 sitepod domain list    # List domains
 sitepod domain remove  # Remove domain
+sitepod delete-account # Delete your account and all projects
+sitepod console        # Open SitePod console in browser
 ```
 
 ## Naming Conventions
@@ -229,7 +229,6 @@ sitepod domain remove  # Remove domain
 | `SITEPOD_DOMAIN` | Base domain for sites | `localhost` |
 | `SITEPOD_PROXY_MODE` | Run behind reverse proxy (no TLS) | Not set |
 | `SITEPOD_STORAGE_TYPE` | Storage backend: `local`, `s3`, `oss`, `r2` | `local` |
-| `SITEPOD_ALLOW_ANONYMOUS` | Allow anonymous 24h sessions | Not set (disabled) |
 | `SITEPOD_ACCESS_LOG` | Log all static file requests | Not set |
 | `SITEPOD_ADMIN_EMAIL` | PocketBase admin email | `admin@sitepod.local` |
 | `SITEPOD_ADMIN_PASSWORD` | PocketBase admin password | `sitepod123` |

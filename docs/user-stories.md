@@ -4,17 +4,22 @@
 
 ---
 
-## 0. 极速体验：一条命令部署
+## 0. 极速体验：登录 + 部署
 
-**新用户第一次使用 SitePod，无需任何准备。**
+**新用户第一次使用 SitePod。**
 
 ```bash
 $ cd my-project
-$ npx sitepod deploy
 
-# 检测到未登录，自动创建匿名账户
-✓ 已创建匿名账户 (24小时有效)
-  提示: 绑定邮箱暂未支持，匿名账户 24h 后过期
+# 1. 登录（类似 surge.sh，新邮箱自动注册）
+$ npx sitepod login
+? 服务器地址: https://app.sitepod.dev
+? 邮箱: alice@example.com
+? 密码: ********
+✓ 账户已创建
+
+# 2. 部署
+$ npx sitepod deploy
 
 # 检测到没有 sitepod.toml，自动初始化
 ? 项目名称: my-project
@@ -29,9 +34,6 @@ $ npx sitepod deploy
 ✓ 已部署到 beta
 
   https://my-project-beta.sitepod.dev
-
-  ⚠ 匿名账户将在 24 小时后过期
-  绑定邮箱暂未支持，匿名部署 24h 后过期
 ```
 
 **子域名冲突时：**
@@ -50,38 +52,20 @@ $ npx sitepod deploy
 ✓ 使用随机子域名: my-blog-7x3k.sitepod.dev
 ```
 
-### 绑定邮箱升级账户
-
-```bash
-$ # bind 暂未支持
-? 邮箱: alice@example.com
-✓ 验证邮件已发送，请查收
-
-# 点击邮件中的链接后
-✓ 账户已升级为正式账户
-
-  邮箱: alice@example.com
-  域名: https://my-project.sitepod.dev (保持不变)
-
-  账户和部署已永久保留
-```
-
 ---
 
 ## 1. 子域名模式：个人开发者快速部署
 
 **Alice 是一个前端开发者，想快速部署她的个人博客。**
 
-### 首次部署（已有账户）
+### 首次部署
 
 ```bash
-# 1. 登录（可选，已登录则跳过）
+# 1. 登录（新邮箱自动注册）
 $ sitepod login
 ? 邮箱: alice@example.com
-✓ 验证邮件已发送
-
-# 点击邮件链接后自动登录
-✓ 已登录为 alice
+? 密码: ********
+✓ 已登录
 
 # 2. 直接部署（自动初始化）
 $ cd my-blog
@@ -420,13 +404,11 @@ $ git clone https://github.com/sitepod-dev/sitepod.git
 $ cd sitepod
 $ make quick-start
 
-# 2. 另一个终端，匿名登录
+# 2. 另一个终端，登录（新邮箱自动注册）
 $ ./bin/sitepod login --endpoint http://localhost:8080
-? 选择登录方式:
-  > Anonymous (快速体验，24小时有效)
-    Email
-
-✓ 已登录为 anonymous-abc123
+? 邮箱: test@example.com
+? 密码: ********
+✓ 账户已创建
 
 # 3. 部署示例站点
 $ cd examples/simple-site
@@ -434,7 +416,7 @@ $ ../../bin/sitepod deploy
 
 ✓ 已部署到 beta
 
-  http://demo-site.localhost:8080
+  http://demo-site-beta.localhost:8080
 ```
 
 ---

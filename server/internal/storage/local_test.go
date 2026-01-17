@@ -190,6 +190,8 @@ func TestLocalBackend(t *testing.T) {
 
 func computeHash(content []byte) string {
 	hasher := blake3.New()
-	hasher.Write(content)
+	if _, err := hasher.Write(content); err != nil {
+		panic(err)
+	}
 	return hex.EncodeToString(hasher.Sum(nil))
 }

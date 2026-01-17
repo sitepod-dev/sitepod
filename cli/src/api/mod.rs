@@ -4,7 +4,7 @@
 //! The functionality is organized into submodules:
 //!
 //! - `types`: Request and response type definitions
-//! - `auth`: Authentication methods (anonymous_login, bind_email, delete_account)
+//! - `auth`: Authentication methods (delete_account)
 //! - `deploy`: Deployment methods (plan, upload, commit, release, rollback, preview)
 //! - `domain`: Domain management methods (add, list, verify, remove, rename)
 //! - `query`: Query methods (history, current)
@@ -23,10 +23,10 @@ use crate::config::Config;
 // Re-export commonly used types for convenience
 #[allow(unused_imports)]
 pub use types::{
-    AddDomainResponse, AnonymousAuthResponse, BindEmailResponse, CheckSubdomainResponse,
-    CommitResponse, CurrentResponse, DeleteAccountResponse, DomainInfo, HistoryItem,
-    HistoryResponse, ListDomainsResponse, MissingBlob, PlanResponse, PreviewResponse,
-    ReleaseResponse, RollbackResponse, VerifyDomainResponse,
+    AddDomainResponse, CheckSubdomainResponse, CommitResponse, CurrentResponse,
+    DeleteAccountResponse, DomainInfo, HistoryItem, HistoryResponse, ListDomainsResponse,
+    MissingBlob, PlanResponse, PreviewResponse, ReleaseResponse, RollbackResponse,
+    VerifyDomainResponse,
 };
 
 /// API client for SitePod server
@@ -56,15 +56,6 @@ impl ApiClient {
             client: Client::new(),
             endpoint: endpoint.to_string(),
             token: token.to_string(),
-        }
-    }
-
-    /// Create an unauthenticated client for login/auth operations
-    pub fn unauthenticated(endpoint: &str) -> Self {
-        Self {
-            client: Client::new(),
-            endpoint: endpoint.to_string(),
-            token: String::new(),
         }
     }
 

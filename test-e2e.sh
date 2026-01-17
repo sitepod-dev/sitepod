@@ -53,7 +53,7 @@ info "Starting server..."
 rm -rf "$DATA_DIR"
 mkdir -p "$DATA_DIR"
 cd "$SCRIPT_DIR"
-SITEPOD_ADMIN_TOKEN="$ADMIN_TOKEN" SITEPOD_ALLOW_ANONYMOUS=1 "$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
+SITEPOD_ADMIN_TOKEN="$ADMIN_TOKEN" "$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
 SERVER_PID=$!
 sleep 8
 
@@ -73,14 +73,19 @@ else
     fail "Health check failed: $HEALTH"
 fi
 
-# Test anonymous login
-info "Testing anonymous login..."
-AUTH_RESP=$(curl -s -X POST "$ENDPOINT/api/v1/auth/anonymous")
+# Test email/password login (register or login)
+info "Testing email/password login..."
+AUTH_RESP=$(curl -s -X POST -H "Content-Type: application/json" -d '{"email":"test@example.com","password":"test123456"}' "$ENDPOINT/api/v1/auth/login")
 TOKEN=$(echo "$AUTH_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
 if [ -z "$TOKEN" ]; then
-    fail "Anonymous login failed: $AUTH_RESP"
+    fail "Email login failed: $AUTH_RESP"
 fi
-pass "Anonymous login successful"
+CREATED=$(echo "$AUTH_RESP" | grep -o '"created":true' || true)
+if [ -n "$CREATED" ]; then
+    pass "Account created and logged in"
+else
+    pass "Login successful"
+fi
 
 # Test welcome site
 info "Testing welcome site..."

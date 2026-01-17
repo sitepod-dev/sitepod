@@ -41,7 +41,9 @@ func init() {
 
 		for _, record := range records {
 			record.Set("status", "active")
-			dao.SaveRecord(record)
+			if err := dao.SaveRecord(record); err != nil {
+				return err
+			}
 		}
 
 		return nil

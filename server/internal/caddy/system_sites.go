@@ -137,7 +137,6 @@ func (h *SitePodHandler) ensureWelcomeSite(ownerID string) {
         </div>
 
         <p style="margin-top: 2rem; opacity: 0.8;">
-            <a href="/_/">Admin UI</a> |
             <a href="https://github.com/sitepod/sitepod">Documentation</a>
         </p>
     </div>
@@ -153,7 +152,10 @@ func (h *SitePodHandler) ensureWelcomeSite(ownerID string) {
 
 	// Calculate hash and store blob
 	hasher := blake3.New()
-	hasher.Write([]byte(welcomeHTML))
+	if _, err := hasher.Write([]byte(welcomeHTML)); err != nil {
+		h.logger.Warn("failed to hash welcome page", zap.Error(err))
+		return
+	}
 	hash := hex.EncodeToString(hasher.Sum(nil))
 
 	htmlBytes := []byte(welcomeHTML)
@@ -176,7 +178,10 @@ func (h *SitePodHandler) ensureWelcomeSite(ownerID string) {
 	// Calculate content hash
 	manifestBytes, _ := json.Marshal(manifest)
 	contentHasher := blake3.New()
-	contentHasher.Write(manifestBytes)
+	if _, err := contentHasher.Write(manifestBytes); err != nil {
+		h.logger.Warn("failed to hash welcome manifest", zap.Error(err))
+		return
+	}
 	contentHash := hex.EncodeToString(contentHasher.Sum(nil))
 
 	// Save image record
@@ -225,10 +230,10 @@ func (h *SitePodHandler) ensureConsoleSite(ownerID string) {
 
 	// Look for console dist in common locations
 	consolePaths := []string{
-		"../console/dist",                    // Development (run from server/)
-		"./console/dist",                     // Development (run from root)
-		"/app/console/dist",                  // Docker
-		filepath.Join(h.DataDir, "console"),  // Bundled with data
+		"../console/dist",                   // Development (run from server/)
+		"./console/dist",                    // Development (run from root)
+		"/app/console/dist",                 // Docker
+		filepath.Join(h.DataDir, "console"), // Bundled with data
 	}
 
 	var distPath string
@@ -277,7 +282,9 @@ func (h *SitePodHandler) ensureConsoleSite(ownerID string) {
 
 		// Calculate hash
 		hasher := blake3.New()
-		hasher.Write(content)
+		if _, err := hasher.Write(content); err != nil {
+			return err
+		}
 		hash := hex.EncodeToString(hasher.Sum(nil))
 
 		// Store blob
@@ -315,7 +322,10 @@ func (h *SitePodHandler) ensureConsoleSite(ownerID string) {
 	// Calculate content hash from manifest
 	manifestBytes, _ := json.Marshal(manifest)
 	contentHasher := blake3.New()
-	contentHasher.Write(manifestBytes)
+	if _, err := contentHasher.Write(manifestBytes); err != nil {
+		h.logger.Warn("failed to hash console manifest", zap.Error(err))
+		return
+	}
 	contentHash := hex.EncodeToString(contentHasher.Sum(nil))
 
 	imagesCollection, err := h.app.Dao().FindCollectionByNameOrId("images")

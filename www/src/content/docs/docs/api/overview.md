@@ -19,10 +19,24 @@ All API requests require a token in the `Authorization` header:
 Authorization: Bearer sitepod_xxxxxxxxxxxx
 ```
 
-### Create a token
+### Get a token
+
+Login with email and password to get a token:
 
 ```bash
-sitepod token create --name "my-integration"
+sitepod login
+```
+
+Or use the API directly:
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "you@example.com",
+  "password": "your-password"
+}
 ```
 
 ## Endpoints
@@ -31,9 +45,9 @@ sitepod token create --name "my-integration"
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/auth/anonymous` | POST | Create anonymous session |
-| `/auth/email/request` | POST | Request email verification |
-| `/auth/email/verify` | POST | Verify email code |
+| `/auth/login` | POST | Login or register with email/password |
+| `/auth/info` | GET | Get current user info |
+| `/account` | DELETE | Delete account |
 
 ### Deployments
 

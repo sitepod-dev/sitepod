@@ -125,12 +125,16 @@ func (gc *GC) cleanExpiredPlans() (int, error) {
 		return 0, err
 	}
 
+	updated := 0
 	for _, plan := range plans {
 		plan.Set("status", "expired")
-		gc.app.Dao().SaveRecord(plan)
+		if err := gc.app.Dao().SaveRecord(plan); err != nil {
+			return updated, err
+		}
+		updated++
 	}
 
-	return len(plans), nil
+	return updated, nil
 }
 
 func (gc *GC) cleanExpiredPreviews() (int, error) {
@@ -156,17 +160,27 @@ func (gc *GC) cleanExpiredPreviews() (int, error) {
 		return 0, err
 	}
 
+	deleted := 0
+	var firstErr error
 	for _, preview := range previews {
 		// Delete preview file from storage
 		project := preview.GetString("project")
 		slug := preview.GetString("slug")
-		gc.storage.DeletePreview(project, slug)
+		if err := gc.storage.DeletePreview(project, slug); err != nil && firstErr == nil {
+			firstErr = err
+		}
 
 		// Delete record
-		gc.app.Dao().DeleteRecord(preview)
+		if err := gc.app.Dao().DeleteRecord(preview); err != nil {
+			if firstErr == nil {
+				firstErr = err
+			}
+			continue
+		}
+		deleted++
 	}
 
-	return len(previews), nil
+	return deleted, firstErr
 }
 
 func (gc *GC) cleanUnreferencedBlobs() (int, error) {

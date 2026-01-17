@@ -14,6 +14,7 @@ import (
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/sitepod/sitepod/internal/storage"
 	"github.com/zeebo/blake3"
+	"go.uber.org/zap"
 )
 
 // Reserved project names that cannot be used by users
@@ -58,15 +59,14 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *m
 	}
 
 	// Check quotas
-	isAnonymous := user.GetBool("is_anonymous")
-	if err := h.checkDeployQuotas(req.Files, isAnonymous); err != nil {
+	if err := h.checkDeployQuotas(req.Files); err != nil {
 		return h.jsonError(w, http.StatusBadRequest, err.Error())
 	}
 
 	// Check project count quota (only for new projects)
 	existingProject, _ := h.app.Dao().FindFirstRecordByData("projects", "name", req.Project)
 	if existingProject == nil {
-		if err := h.checkProjectCountQuota(user.Id, isAnonymous); err != nil {
+		if err := h.checkProjectCountQuota(user.Id); err != nil {
 			return h.jsonError(w, http.StatusBadRequest, err.Error())
 		}
 	}
@@ -86,8 +86,12 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *m
 	})
 	hasher := blake3.New()
 	for _, f := range files {
-		hasher.Write([]byte(f.Path))
-		hasher.Write([]byte(f.Blake3))
+		if _, err := hasher.Write([]byte(f.Path)); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to hash content")
+		}
+		if _, err := hasher.Write([]byte(f.Blake3)); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to hash content")
+		}
 	}
 	contentHash := hex.EncodeToString(hasher.Sum(nil))
 
@@ -203,7 +207,9 @@ func (h *SitePodHandler) apiUpload(w http.ResponseWriter, r *http.Request, path 
 	}
 	if planExpired(plan) {
 		plan.Set("status", "expired")
-		h.app.Dao().SaveRecord(plan)
+		if err := h.app.Dao().SaveRecord(plan); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to update plan")
+		}
 		return h.jsonError(w, http.StatusBadRequest, "plan expired")
 	}
 
@@ -271,7 +277,9 @@ func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request, user 
 	}
 	if planExpired(plan) {
 		plan.Set("status", "expired")
-		h.app.Dao().SaveRecord(plan)
+		if err := h.app.Dao().SaveRecord(plan); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to update plan")
+		}
 		return h.jsonError(w, http.StatusBadRequest, "plan expired")
 	}
 
@@ -325,7 +333,9 @@ func (h *SitePodHandler) apiCommit(w http.ResponseWriter, r *http.Request, user 
 	}
 
 	plan.Set("status", "committed")
-	h.app.Dao().SaveRecord(plan)
+	if err := h.app.Dao().SaveRecord(plan); err != nil {
+		return h.jsonError(w, http.StatusInternalServerError, "failed to update plan")
+	}
 
 	return h.jsonResponse(w, http.StatusOK, map[string]string{
 		"image_id":     imageID,
@@ -398,7 +408,9 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user
 
 	// Build and write ref
 	var manifest map[string]storage.FileEntry
-	json.Unmarshal([]byte(image.GetString("manifest")), &manifest)
+	if err := json.Unmarshal([]byte(image.GetString("manifest")), &manifest); err != nil {
+		return h.jsonError(w, http.StatusInternalServerError, "invalid manifest")
+	}
 
 	refData := storage.RefData{
 		ImageID:     image.GetString("image_id"),
@@ -424,7 +436,9 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user
 		eventRecord.Set("environment", req.Environment)
 		eventRecord.Set("action", "deploy")
 		eventRecord.Set("previous_image_id", previousImageID)
-		h.app.Dao().SaveRecord(eventRecord)
+		if err := h.app.Dao().SaveRecord(eventRecord); err != nil {
+			h.logger.Warn("failed to save deploy event", zap.Error(err))
+		}
 	}
 
 	url := h.buildURL(projectName, req.Environment)
@@ -473,7 +487,9 @@ func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request, use
 
 	// Build and write ref
 	var manifest map[string]storage.FileEntry
-	json.Unmarshal([]byte(image.GetString("manifest")), &manifest)
+	if err := json.Unmarshal([]byte(image.GetString("manifest")), &manifest); err != nil {
+		return h.jsonError(w, http.StatusInternalServerError, "invalid manifest")
+	}
 
 	refData := storage.RefData{
 		ImageID:     image.GetString("image_id"),
@@ -499,7 +515,9 @@ func (h *SitePodHandler) apiRollback(w http.ResponseWriter, r *http.Request, use
 		eventRecord.Set("environment", req.Environment)
 		eventRecord.Set("action", "rollback")
 		eventRecord.Set("previous_image_id", previousImageID)
-		h.app.Dao().SaveRecord(eventRecord)
+		if err := h.app.Dao().SaveRecord(eventRecord); err != nil {
+			h.logger.Warn("failed to save rollback event", zap.Error(err))
+		}
 	}
 
 	url := h.buildURL(req.Project, req.Environment)
@@ -558,7 +576,9 @@ func (h *SitePodHandler) apiCreatePreview(w http.ResponseWriter, r *http.Request
 	expiresAt := time.Now().Add(time.Duration(expiresIn) * time.Second)
 
 	var manifest map[string]storage.FileEntry
-	json.Unmarshal([]byte(image.GetString("manifest")), &manifest)
+	if err := json.Unmarshal([]byte(image.GetString("manifest")), &manifest); err != nil {
+		return h.jsonError(w, http.StatusInternalServerError, "invalid manifest")
+	}
 
 	previewRef := storage.PreviewRef{
 		ImageID:   image.GetString("image_id"),
@@ -580,7 +600,9 @@ func (h *SitePodHandler) apiCreatePreview(w http.ResponseWriter, r *http.Request
 		previewRecord.Set("image_id", image.Id)
 		previewRecord.Set("slug", slug)
 		previewRecord.Set("expires_at", expiresAt)
-		h.app.Dao().SaveRecord(previewRecord)
+		if err := h.app.Dao().SaveRecord(previewRecord); err != nil {
+			h.logger.Warn("failed to save preview record", zap.Error(err))
+		}
 	}
 
 	url := h.buildPreviewURL(req.Project, slug)

@@ -83,7 +83,9 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 	}
 
 	if status == "active" {
-		h.rebuildRoutingIndex()
+		if err := h.rebuildRoutingIndex(); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to rebuild routing index")
+		}
 	}
 
 	resp := map[string]any{
@@ -176,8 +178,12 @@ func (h *SitePodHandler) apiVerifyDomain(w http.ResponseWriter, r *http.Request,
 
 	if verified {
 		domainRecord.Set("status", "active")
-		h.app.Dao().SaveRecord(domainRecord)
-		h.rebuildRoutingIndex()
+		if err := h.app.Dao().SaveRecord(domainRecord); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to update domain")
+		}
+		if err := h.rebuildRoutingIndex(); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to rebuild routing index")
+		}
 
 		return h.jsonResponse(w, http.StatusOK, map[string]any{
 			"domain":   domain,
@@ -213,7 +219,9 @@ func (h *SitePodHandler) apiRemoveDomain(w http.ResponseWriter, r *http.Request,
 		return h.jsonError(w, http.StatusInternalServerError, "failed to remove domain")
 	}
 
-	h.rebuildRoutingIndex()
+	if err := h.rebuildRoutingIndex(); err != nil {
+		return h.jsonError(w, http.StatusInternalServerError, "failed to rebuild routing index")
+	}
 
 	w.WriteHeader(http.StatusOK)
 	return nil
@@ -253,7 +261,9 @@ func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request,
 
 	oldSubdomain := project.GetString("subdomain")
 	project.Set("subdomain", newSubdomain)
-	h.app.Dao().SaveRecord(project)
+	if err := h.app.Dao().SaveRecord(project); err != nil {
+		return h.jsonError(w, http.StatusInternalServerError, "failed to update project")
+	}
 
 	// Update system domain
 	oldFullDomain := oldSubdomain + "." + h.Domain
@@ -265,10 +275,14 @@ func (h *SitePodHandler) apiRenameDomain(w http.ResponseWriter, r *http.Request,
 	)
 	if domainRecord != nil {
 		domainRecord.Set("domain", newFullDomain)
-		h.app.Dao().SaveRecord(domainRecord)
+		if err := h.app.Dao().SaveRecord(domainRecord); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to update domain")
+		}
 	}
 
-	h.rebuildRoutingIndex()
+	if err := h.rebuildRoutingIndex(); err != nil {
+		return h.jsonError(w, http.StatusInternalServerError, "failed to rebuild routing index")
+	}
 
 	return h.jsonResponse(w, http.StatusOK, map[string]any{
 		"old_domain": oldFullDomain,

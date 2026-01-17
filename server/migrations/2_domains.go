@@ -162,7 +162,9 @@ func init() {
 		// Remove domains collection
 		domains, err := dao.FindCollectionByNameOrId("domains")
 		if err == nil {
-			dao.DeleteCollection(domains)
+			if err := dao.DeleteCollection(domains); err != nil {
+				return err
+			}
 		}
 
 		// Remove added fields from projects
@@ -171,7 +173,9 @@ func init() {
 			projects.Schema.RemoveField("routing_mode")
 			projects.Schema.RemoveField("subdomain")
 			projects.Schema.RemoveField("owner_id")
-			dao.SaveCollection(projects)
+			if err := dao.SaveCollection(projects); err != nil {
+				return err
+			}
 		}
 
 		// Remove added fields from users
@@ -179,7 +183,9 @@ func init() {
 		if err == nil {
 			users.Schema.RemoveField("is_anonymous")
 			users.Schema.RemoveField("anonymous_expires_at")
-			dao.SaveCollection(users)
+			if err := dao.SaveCollection(users); err != nil {
+				return err
+			}
 		}
 
 		return nil

@@ -1,4 +1,4 @@
-.PHONY: all build build-server build-cli run dev test clean docker docker-push npm-prepare npm-link npm-publish bump-patch bump-minor bump-major release
+.PHONY: all build build-server build-cli run dev test lint lint-server lint-cli clean docker docker-push npm-prepare npm-link npm-publish bump-patch bump-minor bump-major release
 
 # Default target
 all: build
@@ -23,7 +23,7 @@ build-caddy: build-server
 # Run server (single binary - Caddy with embedded API)
 run:
 	mkdir -p data
-	SITEPOD_DATA_DIR=./data SITEPOD_DOMAIN=localhost:8080 SITEPOD_ALLOW_ANONYMOUS=1 \
+	SITEPOD_DATA_DIR=./data SITEPOD_DOMAIN=localhost:8080 \
 	./bin/sitepod-server run --config server/Caddyfile.local
 
 # Run with hot reload (requires air)
@@ -39,12 +39,21 @@ test-server:
 test-cli:
 	cd cli && cargo test
 
-# Clean build artifacts
+# Run linters
+lint: lint-server lint-cli
+
+lint-server:
+	cd server && golangci-lint run --timeout=5m
+
+lint-cli:
+	cd cli && cargo fmt --check
+	cd cli && cargo clippy -- -D warnings
+
+# Clean build artifacts and data
 clean:
 	rm -rf bin/
 	rm -rf server/data/
 	rm -rf data/
-	cd cli && cargo clean
 
 # Docker commands
 docker-build:
@@ -89,9 +98,9 @@ quick-start: init deps build
 	@echo ""
 	@echo "Next steps:"
 	@echo "  1. Start the server:     make run"
-	@echo "  2. Login (anonymous):    ./bin/sitepod login --endpoint http://localhost:8080"
+	@echo "  2. Login:                ./bin/sitepod login --endpoint http://localhost:8080"
 	@echo "  3. Deploy example:       cd examples/simple-site && ../../bin/sitepod deploy"
-	@echo "  4. Visit your site:      http://demo-site.beta.localhost:8080"
+	@echo "  4. Visit your site:      http://demo-site-beta.localhost:8080"
 	@echo ""
 
 # npm packages - prepare for local testing

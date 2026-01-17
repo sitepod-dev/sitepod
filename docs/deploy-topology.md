@@ -325,13 +325,12 @@ SITEPOD_CF_API_TOKEN=your_api_token
 | `SITEPOD_STORAGE_TYPE` | 存储类型 | `local` | `local` / `r2` |
 | `SITEPOD_CF_ZONE_ID` | Cloudflare Zone ID | - | 可选 (等级 2) |
 | `SITEPOD_CF_API_TOKEN` | Cloudflare API Token | - | 可选 (等级 2) |
-| `SITEPOD_ALLOW_ANONYMOUS` | 允许匿名账户 | `1` (开发) | 不设置 (生产) |
 | `SITEPOD_ACCESS_LOG` | 记录所有静态请求 | 不设置 | `1` (调试时) |
 | `IS_DEMO` | 演示模式 (创建 demo 用户) | `1` (演示) | 不设置 (生产) |
 | `SITEPOD_ADMIN_EMAIL` | PocketBase 管理员邮箱 | 自定义 | 自定义 |
 | `SITEPOD_ADMIN_PASSWORD` | PocketBase 管理员密码 | 自定义 | 自定义 |
 
-> ⚠️ **安全提示**：`SITEPOD_ALLOW_ANONYMOUS=1` 和 `IS_DEMO=1` 仅建议在开发/测试/演示环境使用。生产环境应禁用。
+> ⚠️ **安全提示**：`IS_DEMO=1` 仅建议在演示环境使用。生产环境应禁用。
 
 ---
 

@@ -1,42 +1,109 @@
 package caddy
 
 import (
+	"encoding/json"
 	"net/http"
-	"os"
-	"time"
+	"strings"
 
-	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tokens"
 	"go.uber.org/zap"
 )
 
-// API: Anonymous Auth
-func (h *SitePodHandler) apiAnonymousAuth(w http.ResponseWriter, r *http.Request) error {
-	// Check if anonymous auth is enabled (disabled by default for security)
-	if os.Getenv("SITEPOD_ALLOW_ANONYMOUS") != "1" && os.Getenv("SITEPOD_ALLOW_ANONYMOUS") != "true" {
-		return h.jsonError(w, http.StatusForbidden, "anonymous auth is disabled; set SITEPOD_ALLOW_ANONYMOUS=1 to enable")
+// API: Register or Login - creates account if not exists, logs in if exists
+func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Request) error {
+	var req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return h.jsonError(w, http.StatusBadRequest, "invalid request")
 	}
 
-	usersCollection, err := h.app.Dao().FindCollectionByNameOrId("users")
+	email := strings.TrimSpace(strings.ToLower(req.Email))
+	password := req.Password
+
+	if email == "" || password == "" {
+		return h.jsonError(w, http.StatusBadRequest, "email and password required")
+	}
+
+	if !strings.Contains(email, "@") || !strings.Contains(email, ".") {
+		return h.jsonError(w, http.StatusBadRequest, "invalid email format")
+	}
+
+	if len(password) < 6 {
+		return h.jsonError(w, http.StatusBadRequest, "password must be at least 6 characters")
+	}
+
+	// Try to find existing user
+	user, err := h.app.Dao().FindAuthRecordByEmail("users", email)
+
 	if err != nil {
-		return h.jsonError(w, http.StatusInternalServerError, "users collection not found")
+		// User doesn't exist - create new account
+		usersCollection, err := h.app.Dao().FindCollectionByNameOrId("users")
+		if err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "users collection not found")
+		}
+
+		// Generate username from email
+		username := strings.Split(email, "@")[0]
+		// Remove non-alphanumeric characters
+		var cleanUsername strings.Builder
+		for _, c := range username {
+			if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') {
+				cleanUsername.WriteRune(c)
+			}
+		}
+		username = cleanUsername.String()
+		if len(username) < 3 {
+			username = "user" + username
+		}
+
+		user = models.NewRecord(usersCollection)
+		if err := user.SetEmail(email); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
+		}
+		if err := user.SetUsername(username); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
+		}
+		if err := user.SetVerified(true); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
+		}
+		if err := user.SetPassword(password); err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
+		}
+
+		if err := h.app.Dao().SaveRecord(user); err != nil {
+			// Check if username conflict, try with suffix
+			if err := user.SetUsername(username + user.Id[:4]); err != nil {
+				h.logger.Error("failed to set username", zap.Error(err))
+				return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
+			}
+			if err := h.app.Dao().SaveRecord(user); err != nil {
+				h.logger.Error("failed to create user", zap.Error(err))
+				return h.jsonError(w, http.StatusInternalServerError, "failed to create account")
+			}
+		}
+
+		h.logger.Info("New user registered", zap.String("email", email))
+
+		token, err := tokens.NewRecordAuthToken(h.app, user)
+		if err != nil {
+			return h.jsonError(w, http.StatusInternalServerError, "failed to generate token")
+		}
+
+		return h.jsonResponse(w, http.StatusOK, map[string]any{
+			"token":   token,
+			"user_id": user.Id,
+			"email":   email,
+			"created": true,
+			"message": "Account created successfully",
+		})
 	}
 
-	anonID := "anon_" + uuid.New().String()[:8]
-	anonEmail := anonID + "@anonymous.sitepod.local"
-	expiresAt := time.Now().Add(24 * time.Hour)
-
-	user := models.NewRecord(usersCollection)
-	user.Set("email", anonEmail)
-	user.Set("username", anonID)
-	user.Set("verified", false)
-	user.Set("is_anonymous", true)
-	user.Set("anonymous_expires_at", expiresAt)
-	user.SetPassword(uuid.New().String())
-
-	if err := h.app.Dao().SaveRecord(user); err != nil {
-		return h.jsonError(w, http.StatusInternalServerError, "failed to create anonymous user")
+	// User exists - verify password
+	if !user.ValidatePassword(password) {
+		return h.jsonError(w, http.StatusUnauthorized, "invalid password")
 	}
 
 	token, err := tokens.NewRecordAuthToken(h.app, user)
@@ -45,16 +112,12 @@ func (h *SitePodHandler) apiAnonymousAuth(w http.ResponseWriter, r *http.Request
 	}
 
 	return h.jsonResponse(w, http.StatusOK, map[string]any{
-		"token":      token,
-		"user_id":    user.Id,
-		"expires_at": expiresAt,
-		"message":    "Anonymous session created. Verify your email within 24 hours to keep your deployments.",
+		"token":   token,
+		"user_id": user.Id,
+		"email":   email,
+		"created": false,
+		"message": "Logged in successfully",
 	})
-}
-
-// API: Bind Email
-func (h *SitePodHandler) apiBindEmail(w http.ResponseWriter, r *http.Request, user *models.Record) error {
-	return h.jsonError(w, http.StatusNotImplemented, "email binding is not supported; use anonymous or password login")
 }
 
 // API: Delete Account - cascade deletes all user data
@@ -91,7 +154,9 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 			map[string]any{"project_id": projectID},
 		)
 		for _, domain := range domains {
-			h.app.Dao().DeleteRecord(domain)
+			if err := h.app.Dao().DeleteRecord(domain); err != nil {
+				h.logger.Warn("Failed to delete domain", zap.String("domain_id", domain.Id), zap.Error(err))
+			}
 		}
 
 		// Delete images
@@ -100,7 +165,9 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 			map[string]any{"project_id": projectID},
 		)
 		for _, image := range images {
-			h.app.Dao().DeleteRecord(image)
+			if err := h.app.Dao().DeleteRecord(image); err != nil {
+				h.logger.Warn("Failed to delete image", zap.String("image_id", image.Id), zap.Error(err))
+			}
 		}
 
 		// Delete deploy_events
@@ -109,7 +176,9 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 			map[string]any{"project_id": projectID},
 		)
 		for _, event := range events {
-			h.app.Dao().DeleteRecord(event)
+			if err := h.app.Dao().DeleteRecord(event); err != nil {
+				h.logger.Warn("Failed to delete deploy event", zap.String("event_id", event.Id), zap.Error(err))
+			}
 		}
 
 		// Delete plans
@@ -118,12 +187,18 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 			map[string]any{"project_id": projectID},
 		)
 		for _, plan := range plans {
-			h.app.Dao().DeleteRecord(plan)
+			if err := h.app.Dao().DeleteRecord(plan); err != nil {
+				h.logger.Warn("Failed to delete plan", zap.String("plan_id", plan.Id), zap.Error(err))
+			}
 		}
 
 		// Delete ref files from storage
-		h.storage.DeleteRef(projectName, "beta")
-		h.storage.DeleteRef(projectName, "prod")
+		if err := h.storage.DeleteRef(projectName, "beta"); err != nil {
+			h.logger.Warn("Failed to delete beta ref", zap.String("project", projectName), zap.Error(err))
+		}
+		if err := h.storage.DeleteRef(projectName, "prod"); err != nil {
+			h.logger.Warn("Failed to delete prod ref", zap.String("project", projectName), zap.Error(err))
+		}
 
 		// Delete the project record
 		if err := h.app.Dao().DeleteRecord(project); err != nil {

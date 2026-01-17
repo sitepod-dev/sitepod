@@ -8,25 +8,6 @@ use serde::{Deserialize, Serialize};
 // ============================================================================
 
 #[derive(Debug, Deserialize)]
-pub struct AnonymousAuthResponse {
-    pub token: String,
-    #[allow(dead_code)]
-    pub user_id: String,
-    #[allow(dead_code)]
-    pub expires_at: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct BindEmailRequest {
-    pub email: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct BindEmailResponse {
-    pub message: String,
-}
-
-#[derive(Debug, Deserialize)]
 pub struct DeleteAccountResponse {
     #[allow(dead_code)]
     pub message: String,

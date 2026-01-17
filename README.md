@@ -20,9 +20,9 @@ make quick-start
 # Start server (in terminal 1)
 make run
 
-# Login with anonymous session (in terminal 2)
+# Login (in terminal 2) - creates account if new email
 ./bin/sitepod login --endpoint http://localhost:8080
-# Select "Anonymous (quick start, 24h limit)"
+# Enter your email and password
 
 # Deploy example site
 cd examples/simple-site
@@ -31,8 +31,6 @@ cd examples/simple-site
 # Visit your site
 open http://demo-site-beta.localhost:8080
 ```
-
-> 💡 Anonymous sessions let you test without creating an account. Deployments expire in 24h unless you verify your email.
 
 ### Install CLI
 
@@ -171,7 +169,8 @@ concurrent = 20
 
 | Endpoint | Description |
 |----------|-------------|
-| `POST /api/v1/auth/anonymous` | Create anonymous session (no auth required) |
+| `POST /api/v1/auth/login` | Register or login with email/password |
+| `GET /api/v1/auth/info` | Get current user info |
 | `POST /api/v1/plan` | Submit file manifest, get upload URLs |
 | `POST /api/v1/upload/{plan_id}/{hash}` | Upload blob (direct mode) |
 | `POST /api/v1/commit` | Confirm upload, create image |

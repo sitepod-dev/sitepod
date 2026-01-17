@@ -63,16 +63,15 @@ sitepod deploy --prod --yes
 
 ## First-time setup
 
-If you haven't logged in or initialized a project, `deploy` handles it:
+If you haven't logged in, `deploy` will prompt you:
 
 ```bash
 $ sitepod deploy
 
-# No login? Creates anonymous session
-◐ Creating anonymous session
-✓ Anonymous session
-  expires: 24h
-  note: anonymous sessions expire in 24h
+# Not logged in? Prompts for credentials
+? Email: you@example.com
+? Password: ********
+✓ Logged in
 
 # No sitepod.toml? Prompts for project setup
 ? Project name: my-site

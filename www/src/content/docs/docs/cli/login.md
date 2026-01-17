@@ -37,47 +37,19 @@ sitepod login --endpoint https://sitepod.example.com
 sitepod login --endpoint http://localhost:8080
 ```
 
-## Authentication methods
+## Authentication
 
-When you run `login`, you'll be prompted to choose:
-
-```
-? Login method:
-  > Anonymous (quick start, 24h limit)
-    Email & Password
-```
-
-### Email authentication
-
-1. Enter your email address
-2. Enter your password
+When you run `login`, you'll be prompted for email and password:
 
 ```bash
 $ sitepod login
-? Login method: Email & Password
 ? Email: you@example.com
 ? Password: ********
 ◐ Authenticating
 ✓ Logged in
 ```
 
-### Anonymous authentication
-
-For quick testing without email:
-
-```bash
-$ sitepod login
-? Login method: Anonymous (quick start, 24h limit)
-◐ Creating anonymous session
-✓ Anonymous session
-  expires: 24h
-  note: anonymous sessions expire in 24h
-```
-
-Anonymous limitations:
-- Account expires in 24 hours
-- Deployments are deleted when account expires
-- Binding emails is not supported yet
+If the email doesn't exist, an account will be created automatically (like surge.sh).
 
 ## Configuration
 
@@ -107,5 +79,4 @@ sitepod --endpoint https://other-server.com deploy
 
 ## See also
 
-- [sitepod deploy](/docs/cli/deploy/) - Deploy your site
 - [sitepod deploy](/docs/cli/deploy/) - Deploy your site

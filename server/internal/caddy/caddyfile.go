@@ -75,36 +75,9 @@ func (h *SitePodHandler) printStartupBanner() {
 	fmt.Printf("    Data Dir:  %s\n", h.DataDir)
 	fmt.Println("---------------------------------------------------------------")
 	fmt.Println("  Endpoints:                                                   ")
-	fmt.Printf("    Admin UI:  %s\n", baseURL+"/_/")
 	fmt.Printf("    Console:   %s\n", fmt.Sprintf("%s://%s", scheme, h.Domain))
 	fmt.Printf("    Welcome:   %s\n", fmt.Sprintf("%s://welcome.%s", scheme, h.Domain))
 	fmt.Printf("    Health:    %s\n", baseURL+"/api/v1/health")
-	fmt.Println("---------------------------------------------------------------")
-	// Show PocketBase Admin credentials (for /_/ admin UI)
-	adminEmail := os.Getenv("SITEPOD_ADMIN_EMAIL")
-	if adminEmail == "" {
-		adminEmail = "admin@sitepod.local"
-	}
-	adminPassword := os.Getenv("SITEPOD_ADMIN_PASSWORD")
-	logAdminPassword := os.Getenv("SITEPOD_LOG_ADMIN_PASSWORD") == "1"
-	passwordDisplay := "(set via SITEPOD_ADMIN_PASSWORD)"
-	if adminPassword == "" {
-		passwordDisplay = "(default password set; change SITEPOD_ADMIN_PASSWORD)"
-		if logAdminPassword {
-			adminPassword = "sitepod123"
-			passwordDisplay = adminPassword
-		}
-	} else if logAdminPassword {
-		passwordDisplay = adminPassword
-	}
-	fmt.Println("  Admin Login (for /_/ database admin):                        ")
-	fmt.Printf("    Email:     %s\n", adminEmail)
-	fmt.Printf("    Password:  %s\n", passwordDisplay)
-	if adminPassword == "" {
-		fmt.Println("    WARNING:   DEFAULT ADMIN PASSWORD IN USE")
-		fmt.Println("               Set SITEPOD_ADMIN_PASSWORD to change it")
-		fmt.Println("               (set SITEPOD_LOG_ADMIN_PASSWORD=1 to log it here)")
-	}
 	fmt.Println("---------------------------------------------------------------")
 	fmt.Println("  CLI Quick Start:                                             ")
 	fmt.Printf("    sitepod login --endpoint %s\n", baseURL)

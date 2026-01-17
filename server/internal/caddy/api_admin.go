@@ -77,6 +77,13 @@ func (h *SitePodHandler) apiCleanup(w http.ResponseWriter, r *http.Request) erro
 
 // deleteUserCascade deletes a user and all their data
 func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
+	var firstErr error
+	recordErr := func(err error) {
+		if err != nil && firstErr == nil {
+			firstErr = err
+		}
+	}
+
 	// Find all projects owned by this user
 	projects, err := h.app.Dao().FindRecordsByFilter(
 		"projects", "owner_id = {:owner_id}", "", 1000, 0,
@@ -97,7 +104,7 @@ func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
 			map[string]any{"project_id": projectID},
 		)
 		for _, domain := range domains {
-			h.app.Dao().DeleteRecord(domain)
+			recordErr(h.app.Dao().DeleteRecord(domain))
 		}
 
 		// Delete images
@@ -106,7 +113,7 @@ func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
 			map[string]any{"project_id": projectID},
 		)
 		for _, image := range images {
-			h.app.Dao().DeleteRecord(image)
+			recordErr(h.app.Dao().DeleteRecord(image))
 		}
 
 		// Delete deploy_events
@@ -115,7 +122,7 @@ func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
 			map[string]any{"project_id": projectID},
 		)
 		for _, event := range events {
-			h.app.Dao().DeleteRecord(event)
+			recordErr(h.app.Dao().DeleteRecord(event))
 		}
 
 		// Delete plans
@@ -124,19 +131,21 @@ func (h *SitePodHandler) deleteUserCascade(user *models.Record) error {
 			map[string]any{"project_id": projectID},
 		)
 		for _, plan := range plans {
-			h.app.Dao().DeleteRecord(plan)
+			recordErr(h.app.Dao().DeleteRecord(plan))
 		}
 
 		// Delete ref files from storage
-		h.storage.DeleteRef(projectName, "beta")
-		h.storage.DeleteRef(projectName, "prod")
+		recordErr(h.storage.DeleteRef(projectName, "beta"))
+		recordErr(h.storage.DeleteRef(projectName, "prod"))
 
 		// Delete the project record
-		h.app.Dao().DeleteRecord(project)
+		recordErr(h.app.Dao().DeleteRecord(project))
 	}
 
 	// Delete the user record
-	return h.app.Dao().DeleteRecord(user)
+	recordErr(h.app.Dao().DeleteRecord(user))
+
+	return firstErr
 }
 
 // cleanupExpiredPreviews removes expired preview deployments for a project
