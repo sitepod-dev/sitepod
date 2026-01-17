@@ -23,7 +23,7 @@ build-caddy: build-server
 # Run server (single binary - Caddy with embedded API)
 run:
 	mkdir -p data
-	SITEPOD_DATA_DIR=./data SITEPOD_DOMAIN=localhost:8080 \
+	SITEPOD_DATA_DIR=./data SITEPOD_DOMAIN=localhost:8080 SITEPOD_ALLOW_ANONYMOUS=1 \
 	./bin/sitepod-server run --config server/Caddyfile.local
 
 # Run with hot reload (requires air)

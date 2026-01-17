@@ -29,7 +29,7 @@ cd examples/simple-site
 # Visit http://demo-site-beta.localhost:8080 (beta uses -beta suffix)
 ```
 
-> Anonymous sessions skip email verification for testing. Deployments expire in 24h.
+> Anonymous sessions require `SITEPOD_ALLOW_ANONYMOUS=1` (set by `make run` for development). Deployments expire in 24h.
 
 ### Clean Start (Reset Everything)
 

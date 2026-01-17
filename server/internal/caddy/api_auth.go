@@ -2,6 +2,7 @@ package caddy
 
 import (
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,6 +13,11 @@ import (
 
 // API: Anonymous Auth
 func (h *SitePodHandler) apiAnonymousAuth(w http.ResponseWriter, r *http.Request) error {
+	// Check if anonymous auth is enabled (disabled by default for security)
+	if os.Getenv("SITEPOD_ALLOW_ANONYMOUS") != "1" && os.Getenv("SITEPOD_ALLOW_ANONYMOUS") != "true" {
+		return h.jsonError(w, http.StatusForbidden, "anonymous auth is disabled; set SITEPOD_ALLOW_ANONYMOUS=1 to enable")
+	}
+
 	usersCollection, err := h.app.Dao().FindCollectionByNameOrId("users")
 	if err != nil {
 		return h.jsonError(w, http.StatusInternalServerError, "users collection not found")

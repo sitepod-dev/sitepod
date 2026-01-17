@@ -325,6 +325,9 @@ SITEPOD_CF_API_TOKEN=your_api_token
 | `SITEPOD_STORAGE_TYPE` | 存储类型 | `local` | `local` / `r2` |
 | `SITEPOD_CF_ZONE_ID` | Cloudflare Zone ID | - | 可选 (等级 2) |
 | `SITEPOD_CF_API_TOKEN` | Cloudflare API Token | - | 可选 (等级 2) |
+| `SITEPOD_ALLOW_ANONYMOUS` | 允许匿名账户 | `1` (开发) | 不设置 (生产) |
+
+> ⚠️ **安全提示**：`SITEPOD_ALLOW_ANONYMOUS=1` 仅建议在开发/测试环境使用。生产环境应禁用匿名账户。
 
 ---
 
