@@ -16,6 +16,23 @@ import (
 	"github.com/zeebo/blake3"
 )
 
+// Reserved project names that cannot be used by users
+var reservedProjectNames = map[string]bool{
+	"console": true,
+	"welcome": true,
+	"www":     true,
+	"api":     true,
+	"admin":   true,
+	"app":     true,
+	"static":  true,
+	"assets":  true,
+	"cdn":     true,
+	"mail":    true,
+	"email":   true,
+	"ftp":     true,
+	"ssh":     true,
+}
+
 // API: Plan
 func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	var req struct {
@@ -33,6 +50,11 @@ func (h *SitePodHandler) apiPlan(w http.ResponseWriter, r *http.Request, user *m
 	}
 	if req.Project == "" {
 		return h.jsonError(w, http.StatusBadRequest, "project required")
+	}
+
+	// Check reserved names
+	if reservedProjectNames[strings.ToLower(req.Project)] {
+		return h.jsonError(w, http.StatusBadRequest, "project name is reserved")
 	}
 
 	// Check quotas

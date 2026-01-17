@@ -325,3 +325,34 @@ SITEPOD_CF_API_TOKEN=your_api_token
 | `SITEPOD_STORAGE_TYPE` | 存储类型 | `local` | `local` / `r2` |
 | `SITEPOD_CF_ZONE_ID` | Cloudflare Zone ID | - | 可选 (等级 2) |
 | `SITEPOD_CF_API_TOKEN` | Cloudflare API Token | - | 可选 (等级 2) |
+
+---
+
+## 域名结构
+
+### 自托管实例 (如 `x.com`)
+
+| 域名 | 用途 |
+|------|------|
+| `x.com` | Console (管理界面 + API) |
+| `{project}.x.com` | 用户项目 (prod) |
+| `{project}-beta.x.com` | 用户项目 (beta) |
+
+默认行为，无需额外配置。根域名自动指向 console 项目。
+
+### sitepod.dev 官方实例
+
+| 域名 | 用途 | 配置方式 |
+|------|------|----------|
+| `sitepod.dev` | 官网 (Landing page) | 自定义域名 → landing 项目 |
+| `www.sitepod.dev` | 官网 (Landing page) | 自定义域名 → landing 项目 |
+| `console.sitepod.dev` | Console (管理界面 + API) | 默认规则 |
+| `{project}.sitepod.dev` | 用户项目 | 默认规则 |
+
+官方实例通过自定义域名功能将 apex 域名指向独立的 landing 项目，而 console 作为普通子域名访问。
+
+### 保留子域名
+
+以下子域名被系统保留，用户无法创建同名项目：
+
+`console`, `welcome`, `www`, `api`, `admin`, `app`, `static`, `assets`, `cdn`, `mail`, `email`, `ftp`, `ssh`
