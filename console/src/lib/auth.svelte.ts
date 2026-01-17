@@ -96,6 +96,34 @@ function createAuth() {
       }
     },
 
+    async loginAdmin(email: string, password: string) {
+      state.loading = true
+      try {
+        const response = await fetch('/api/admins/auth-with-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identity: email, password })
+        })
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}))
+          throw new Error(err.error || err.message || 'Admin login failed')
+        }
+        const data = await response.json()
+        state.token = data.token
+        state.user = {
+          id: data.admin?.id || '',
+          email: data.admin?.email || email,
+          isAnonymous: false,
+          isAdmin: true
+        }
+        state.isAuthenticated = true
+        localStorage.setItem('sitepod_token', data.token)
+        return { success: true, message: 'Admin logged in' }
+      } finally {
+        state.loading = false
+      }
+    },
+
     setToken(token: string, user: User) {
       state.token = token
       state.user = user
