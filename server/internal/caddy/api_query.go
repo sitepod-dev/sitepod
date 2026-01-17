@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/pocketbase/pocketbase/models"
@@ -28,11 +29,14 @@ func (h *SitePodHandler) apiHealth(w http.ResponseWriter, r *http.Request) error
 		status = "degraded"
 	}
 
-	return h.jsonResponse(w, http.StatusOK, map[string]string{
-		"status":   status,
-		"database": dbStatus,
-		"storage":  storageStatus,
-		"uptime":   time.Since(h.startTime).String(),
+	allowAnonymous := os.Getenv("SITEPOD_ALLOW_ANONYMOUS") == "1" || os.Getenv("SITEPOD_ALLOW_ANONYMOUS") == "true"
+
+	return h.jsonResponse(w, http.StatusOK, map[string]any{
+		"status":          status,
+		"database":        dbStatus,
+		"storage":         storageStatus,
+		"uptime":          time.Since(h.startTime).String(),
+		"allow_anonymous": allowAnonymous,
 	})
 }
 
