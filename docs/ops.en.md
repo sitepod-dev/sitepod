@@ -75,10 +75,12 @@ docker build --target cli -t sitepod-cli .
 | `SITEPOD_STORAGE_TYPE` | No | `local` | `local`, `s3`, `oss`, `r2` |
 | `SITEPOD_DATA_DIR` | No | `/data` | Data directory |
 | `SITEPOD_GC_ENABLED` | No | `true` | Garbage collection |
-| `SITEPOD_ADMIN_EMAIL` | No | `admin@sitepod.local` | Default admin email |
-| `SITEPOD_ADMIN_PASSWORD` | No | `sitepod123` | Default admin password |
+| `SITEPOD_ADMIN_EMAIL` | No | `admin@sitepod.local` | PocketBase admin email (PB admin UI only) |
+| `SITEPOD_ADMIN_PASSWORD` | No | `sitepod123` | PocketBase admin password (PB admin UI only) |
+| `SITEPOD_CONSOLE_ADMIN_EMAIL` | No | - | Console admin email (users.is_admin) |
+| `SITEPOD_CONSOLE_ADMIN_PASSWORD` | No | - | Console admin password (users.is_admin) |
 
-> **Security Note**: Change the default admin credentials in production by setting `SITEPOD_ADMIN_EMAIL` and `SITEPOD_ADMIN_PASSWORD` environment variables. The admin account is only created on first startup if no admin exists.
+> **Security Note**: In production, set `SITEPOD_ADMIN_EMAIL` / `SITEPOD_ADMIN_PASSWORD` for the PocketBase admin UI and `SITEPOD_CONSOLE_ADMIN_EMAIL` / `SITEPOD_CONSOLE_ADMIN_PASSWORD` for Console admin users.
 
 ### For S3/R2/OSS Storage
 

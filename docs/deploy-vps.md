@@ -175,8 +175,10 @@ docker run -d \
 | 变量 | 必填 | 默认值 | 说明 |
 |------|-----|--------|------|
 | `SITEPOD_DOMAIN` | 是 | - | 你的域名 |
-| `SITEPOD_ADMIN_EMAIL` | 否 | `admin@sitepod.local` | 管理员邮箱 |
-| `SITEPOD_ADMIN_PASSWORD` | 否 | `sitepod123` | 管理员密码（首次启动若未设置） |
+| `SITEPOD_ADMIN_EMAIL` | 否 | `admin@sitepod.local` | PocketBase 管理员邮箱（仅 PB 管理后台） |
+| `SITEPOD_ADMIN_PASSWORD` | 否 | `sitepod123` | PocketBase 管理员密码（仅 PB 管理后台） |
+| `SITEPOD_CONSOLE_ADMIN_EMAIL` | 否 | - | Console 管理员邮箱（users.is_admin） |
+| `SITEPOD_CONSOLE_ADMIN_PASSWORD` | 否 | - | Console 管理员密码（users.is_admin） |
 | `SITEPOD_STORAGE_TYPE` | 否 | `local` | 存储类型：local, s3, oss, r2 |
 
 **配额限制（可选）：**
@@ -190,7 +192,7 @@ docker run -d \
 | `SITEPOD_ANON_MAX_PROJECTS` | `5` | 匿名用户最大项目数 |
 | `SITEPOD_ANON_MAX_DEPLOY_SIZE` | `52428800` | 匿名用户部署大小限制（50MB） |
 
-> **安全提示**: 生产环境建议设置 `SITEPOD_ADMIN_EMAIL` 和 `SITEPOD_ADMIN_PASSWORD`！
+> **安全提示**: 生产环境建议设置 `SITEPOD_ADMIN_EMAIL` / `SITEPOD_ADMIN_PASSWORD`（PB 管理后台）以及 `SITEPOD_CONSOLE_ADMIN_EMAIL` / `SITEPOD_CONSOLE_ADMIN_PASSWORD`（Console 管理员）。
 
 ### 方式二：Docker Compose 部署
 

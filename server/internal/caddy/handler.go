@@ -170,6 +170,11 @@ func (h *SitePodHandler) Provision(ctx caddy.Context) error {
 		h.logger.Warn("failed to create demo user", zap.Error(err))
 	}
 
+	// Create console admin user if configured
+	if err := h.ensureConsoleAdmin(); err != nil {
+		h.logger.Warn("failed to create console admin user", zap.Error(err))
+	}
+
 	// Initialize caches
 	h.cache = newRefCache(h.cacheTTL)
 	h.routingCache = newRoutingCache(h.cacheTTL)

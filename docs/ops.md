@@ -67,15 +67,17 @@ docker-compose up -d
 |------|------|--------|
 | `SITEPOD_DOMAIN` | 主域名 | 必填 |
 | `SITEPOD_DATA_DIR` | 数据目录 | `/data` |
-| `SITEPOD_ADMIN_EMAIL` | 管理员邮箱 | `admin@sitepod.local` |
-| `SITEPOD_ADMIN_PASSWORD` | 管理员密码（首次启动若未设置） | `sitepod123` |
+| `SITEPOD_ADMIN_EMAIL` | PocketBase 管理员邮箱（仅 PB 管理后台） | `admin@sitepod.local` |
+| `SITEPOD_ADMIN_PASSWORD` | PocketBase 管理员密码（仅 PB 管理后台） | `sitepod123` |
+| `SITEPOD_CONSOLE_ADMIN_EMAIL` | Console 管理员邮箱（users.is_admin） | - |
+| `SITEPOD_CONSOLE_ADMIN_PASSWORD` | Console 管理员密码（users.is_admin） | - |
 | `SITEPOD_STORAGE_TYPE` | 存储类型 (local/s3/oss/r2) | `local` |
 | `SITEPOD_S3_BUCKET` | S3 桶名 | - |
 | `SITEPOD_S3_REGION` | S3 区域 | - |
 | `SITEPOD_S3_ACCESS_KEY` | S3 Access Key | - |
 | `SITEPOD_S3_SECRET_KEY` | S3 Secret Key | - |
 
-> **安全提示**: 生产环境请设置 `SITEPOD_ADMIN_EMAIL` 和 `SITEPOD_ADMIN_PASSWORD`！
+> **安全提示**: 生产环境请设置 `SITEPOD_ADMIN_EMAIL` / `SITEPOD_ADMIN_PASSWORD`（PB 管理后台）以及 `SITEPOD_CONSOLE_ADMIN_EMAIL` / `SITEPOD_CONSOLE_ADMIN_PASSWORD`（Console 管理员）。
 
 ---
 

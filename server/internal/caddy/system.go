@@ -79,6 +79,80 @@ func (h *SitePodHandler) ensureDefaultAdmin() error {
 	return nil
 }
 
+// ensureConsoleAdmin creates or updates a console admin user based on env vars.
+func (h *SitePodHandler) ensureConsoleAdmin() error {
+	email := os.Getenv("SITEPOD_CONSOLE_ADMIN_EMAIL")
+	password := os.Getenv("SITEPOD_CONSOLE_ADMIN_PASSWORD")
+	if email == "" || password == "" {
+		return nil
+	}
+
+	usersCollection, err := h.app.Dao().FindCollectionByNameOrId("users")
+	if err != nil {
+		return err
+	}
+
+	user, err := h.app.Dao().FindAuthRecordByEmail("users", email)
+	if err == nil {
+		if err := user.SetPassword(password); err != nil {
+			return err
+		}
+		if err := user.SetVerified(true); err != nil {
+			return err
+		}
+		user.Set("is_admin", true)
+		if err := h.app.Dao().SaveRecord(user); err != nil {
+			return err
+		}
+		h.logger.Info("Console admin updated", zap.String("email", email))
+		return nil
+	}
+
+	user = models.NewRecord(usersCollection)
+	if err := user.SetEmail(email); err != nil {
+		return err
+	}
+	if err := user.SetUsername(normalizeUsername(email)); err != nil {
+		return err
+	}
+	if err := user.SetVerified(true); err != nil {
+		return err
+	}
+	if err := user.SetPassword(password); err != nil {
+		return err
+	}
+	user.Set("is_admin", true)
+
+	if err := h.app.Dao().SaveRecord(user); err != nil {
+		// Retry with a random suffix if username conflict
+		if err := user.SetUsername(fmt.Sprintf("admin-%s", uuid.New().String()[:6])); err != nil {
+			return err
+		}
+		if err := h.app.Dao().SaveRecord(user); err != nil {
+			return err
+		}
+	}
+
+	h.logger.Info("Console admin created", zap.String("email", email))
+
+	return nil
+}
+
+func normalizeUsername(email string) string {
+	username := strings.Split(email, "@")[0]
+	var cleanUsername strings.Builder
+	for _, c := range username {
+		if (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') {
+			cleanUsername.WriteRune(c)
+		}
+	}
+	result := cleanUsername.String()
+	if len(result) < 3 {
+		result = "user" + result
+	}
+	return result
+}
+
 // ensureSystemUser creates the system user for internal projects
 func (h *SitePodHandler) ensureSystemUser() (*models.Record, error) {
 	systemEmail := os.Getenv("SITEPOD_SYSTEM_EMAIL")
