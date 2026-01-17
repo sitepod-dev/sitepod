@@ -11,6 +11,7 @@ require (
 	github.com/labstack/echo/v5 v5.0.0-20230722203903-ec5b858dab61
 	github.com/pocketbase/dbx v1.10.1
 	github.com/pocketbase/pocketbase v0.21.1
+	github.com/spf13/cast v1.6.0
 	github.com/zeebo/blake3 v0.2.3
 	go.uber.org/zap v1.26.0
 )
@@ -136,7 +137,6 @@ require (
 	github.com/smallstep/go-attestation v0.4.4-0.20230627102604-cf579e53cbd2 // indirect
 	github.com/smallstep/nosql v0.6.0 // indirect
 	github.com/smallstep/truststore v0.12.1 // indirect
-	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/cobra v1.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect

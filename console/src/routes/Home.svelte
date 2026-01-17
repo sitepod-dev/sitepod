@@ -1,5 +1,6 @@
 <script lang="ts">
   import { api, type Project } from '../api/client'
+  import { auth } from '../lib/auth.svelte'
   import { href } from '../lib/router.svelte'
   import dayjs from 'dayjs'
   import relativeTime from 'dayjs/plugin/relativeTime'
@@ -29,9 +30,12 @@
 
   let filteredProjects = $derived(
     projects.filter(p =>
-      p.name.toLowerCase().includes(search.toLowerCase())
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      (p.owner_email && p.owner_email.toLowerCase().includes(search.toLowerCase()))
     )
   )
+
+  let isAdmin = $derived(auth.user?.isAdmin || false)
 </script>
 
 <div>
@@ -39,13 +43,19 @@
   <div class="flex items-center justify-between mb-8">
     <div>
       <h1 class="text-2xl font-bold text-slate-900">Projects</h1>
-      <p class="text-slate-500 mt-1">Manage your deployed sites</p>
+      <p class="text-slate-500 mt-1">
+        {#if isAdmin}
+          All projects (admin view)
+        {:else}
+          Manage your deployed sites
+        {/if}
+      </p>
     </div>
     <div class="flex items-center gap-4">
       <input
         type="text"
         bind:value={search}
-        placeholder="Search projects..."
+        placeholder={isAdmin ? "Search projects or owners..." : "Search projects..."}
         class="px-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none w-64"
       />
     </div>
@@ -103,6 +113,11 @@
           <div class="mt-4 flex items-center gap-4 text-sm text-slate-500">
             <span>Updated {dayjs(project.updated_at).fromNow()}</span>
           </div>
+          {#if isAdmin && project.owner_email}
+            <div class="mt-2 text-xs text-slate-400">
+              Owner: {project.owner_email}
+            </div>
+          {/if}
         </a>
       {/each}
     </div>

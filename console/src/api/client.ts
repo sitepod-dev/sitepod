@@ -37,6 +37,7 @@ export interface Project {
   id: string
   name: string
   owner_id: string
+  owner_email?: string // Only visible to admin
   created_at: string
   updated_at: string
 }

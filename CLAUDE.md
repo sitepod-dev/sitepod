@@ -221,3 +221,23 @@ sitepod domain remove  # Remove domain
 - Config file: `sitepod.toml`
 - Environment variables: `SITEPOD_` prefix
 - Docker image: `ghcr.io/sitepod-dev/sitepod`
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SITEPOD_DOMAIN` | Base domain for sites | `localhost` |
+| `SITEPOD_PROXY_MODE` | Run behind reverse proxy (no TLS) | Not set |
+| `SITEPOD_STORAGE_TYPE` | Storage backend: `local`, `s3`, `oss`, `r2` | `local` |
+| `SITEPOD_ALLOW_ANONYMOUS` | Allow anonymous 24h sessions | Not set (disabled) |
+| `SITEPOD_ACCESS_LOG` | Log all static file requests | Not set |
+| `SITEPOD_ADMIN_EMAIL` | PocketBase admin email | `admin@sitepod.local` |
+| `SITEPOD_ADMIN_PASSWORD` | PocketBase admin password | `sitepod123` |
+| `IS_DEMO` | Demo mode - creates demo user | Not set |
+
+### Demo Mode
+
+When `IS_DEMO=1`:
+- Creates demo user: `demo@sitepod.dev` / `demo123`
+- Console shows demo credentials on login page
+- Admin can log in with `admin@sitepod.local` / `sitepod123`

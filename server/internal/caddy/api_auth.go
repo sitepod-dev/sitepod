@@ -143,3 +143,29 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 		"deleted_projects": len(projects),
 	})
 }
+
+// API: Auth Info - returns current user/admin info
+func (h *SitePodHandler) apiAuthInfo(w http.ResponseWriter, r *http.Request) error {
+	authCtx, err := h.authenticateAny(r)
+	if err != nil {
+		return h.jsonError(w, http.StatusUnauthorized, "authentication required")
+	}
+
+	if authCtx.IsAdmin() {
+		return h.jsonResponse(w, http.StatusOK, map[string]any{
+			"id":           authCtx.Admin.Id,
+			"email":        authCtx.Admin.Email,
+			"is_admin":     true,
+			"is_anonymous": false,
+		})
+	}
+
+	// Regular user
+	isAnonymous := authCtx.User.GetBool("is_anonymous")
+	return h.jsonResponse(w, http.StatusOK, map[string]any{
+		"id":           authCtx.User.Id,
+		"email":        authCtx.User.GetString("email"),
+		"is_admin":     false,
+		"is_anonymous": isAnonymous,
+	})
+}

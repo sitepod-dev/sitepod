@@ -53,7 +53,7 @@ info "Starting server..."
 rm -rf "$DATA_DIR"
 mkdir -p "$DATA_DIR"
 cd "$SCRIPT_DIR"
-SITEPOD_ADMIN_TOKEN="$ADMIN_TOKEN" "$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
+SITEPOD_ADMIN_TOKEN="$ADMIN_TOKEN" SITEPOD_ALLOW_ANONYMOUS=1 "$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
 SERVER_PID=$!
 sleep 8
 

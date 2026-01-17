@@ -115,6 +115,54 @@ func (h *SitePodHandler) ensureSystemUser() (*models.Record, error) {
 	return user, nil
 }
 
+// ensureDemoUser creates a demo user if IS_DEMO environment variable is set
+func (h *SitePodHandler) ensureDemoUser() error {
+	// Only create demo user if IS_DEMO is set
+	if os.Getenv("IS_DEMO") != "1" && os.Getenv("IS_DEMO") != "true" {
+		return nil
+	}
+
+	demoEmail := "demo@sitepod.dev"
+	demoPassword := "demo123"
+
+	// Check if demo user already exists
+	user, err := h.app.Dao().FindAuthRecordByEmail("users", demoEmail)
+	if err == nil {
+		// User exists, update password if needed
+		user.SetPassword(demoPassword)
+		user.SetVerified(true)
+		if err := h.app.Dao().SaveRecord(user); err != nil {
+			return err
+		}
+		h.logger.Info("Demo user updated", zap.String("email", demoEmail))
+		return nil
+	}
+
+	// Create demo user
+	usersCollection, err := h.app.Dao().FindCollectionByNameOrId("users")
+	if err != nil {
+		return err
+	}
+
+	user = models.NewRecord(usersCollection)
+	user.SetEmail(demoEmail)
+	user.SetUsername("demo")
+	user.SetVerified(true)
+	user.SetPassword(demoPassword)
+
+	if err := h.app.Dao().SaveRecord(user); err != nil {
+		return err
+	}
+
+	h.logger.Info("Demo user created",
+		zap.String("email", demoEmail),
+		zap.String("password", demoPassword),
+		zap.String("purpose", "Demo login for IS_DEMO mode"),
+	)
+
+	return nil
+}
+
 // getSystemUser returns the system user record
 func (h *SitePodHandler) getSystemUser() (*models.Record, error) {
 	systemEmail := os.Getenv("SITEPOD_SYSTEM_EMAIL")

@@ -46,9 +46,12 @@
 
         <!-- User menu -->
         <div class="flex items-center gap-4">
-          {#if auth.user?.isAnonymous}
+          {#if auth.user?.isAdmin}
+            <span class="text-xs text-orange-700 bg-orange-100 px-2 py-1 rounded font-medium">Admin</span>
+          {:else if auth.user?.isAnonymous}
             <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Anonymous</span>
-          {:else if auth.user?.email}
+          {/if}
+          {#if auth.user?.email}
             <span class="text-sm text-slate-600">{auth.user.email}</span>
           {/if}
           <button

@@ -30,6 +30,7 @@ func (h *SitePodHandler) apiHealth(w http.ResponseWriter, r *http.Request) error
 	}
 
 	allowAnonymous := os.Getenv("SITEPOD_ALLOW_ANONYMOUS") == "1" || os.Getenv("SITEPOD_ALLOW_ANONYMOUS") == "true"
+	isDemo := os.Getenv("IS_DEMO") == "1" || os.Getenv("IS_DEMO") == "true"
 
 	return h.jsonResponse(w, http.StatusOK, map[string]any{
 		"status":          status,
@@ -37,6 +38,7 @@ func (h *SitePodHandler) apiHealth(w http.ResponseWriter, r *http.Request) error
 		"storage":         storageStatus,
 		"uptime":          time.Since(h.startTime).String(),
 		"allow_anonymous": allowAnonymous,
+		"is_demo":         isDemo,
 	})
 }
 
@@ -197,7 +199,7 @@ func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, u
 	return h.jsonResponse(w, http.StatusOK, map[string]any{"images": result, "total": len(result)})
 }
 
-// API: List Projects
+// API: List Projects (legacy - for regular users only)
 func (h *SitePodHandler) apiListProjects(w http.ResponseWriter, r *http.Request, user *models.Record) error {
 	// Get all projects owned by the user
 	projects, err := h.app.Dao().FindRecordsByFilter(
@@ -219,6 +221,62 @@ func (h *SitePodHandler) apiListProjects(w http.ResponseWriter, r *http.Request,
 			"created_at": p.Created.String(),
 			"updated_at": p.Updated.String(),
 		}
+	}
+
+	return h.jsonResponse(w, http.StatusOK, result)
+}
+
+// API: List Projects (supports both admin and user tokens)
+func (h *SitePodHandler) apiListProjectsAny(w http.ResponseWriter, r *http.Request) error {
+	authCtx, err := h.authenticateAny(r)
+	if err != nil {
+		return h.jsonError(w, http.StatusUnauthorized, "authentication required")
+	}
+
+	var projects []*models.Record
+
+	if authCtx.IsAdmin() {
+		// Admin can see all projects
+		projects, err = h.app.Dao().FindRecordsByFilter(
+			"projects", "1=1", "-created", 100, 0, nil,
+		)
+		if err != nil {
+			return h.jsonResponse(w, http.StatusOK, []any{})
+		}
+	} else {
+		// Regular user can only see their own projects
+		projects, err = h.app.Dao().FindRecordsByFilter(
+			"projects", "owner_id = {:owner_id}", "-created", 100, 0,
+			map[string]any{"owner_id": authCtx.User.Id},
+		)
+		if err != nil {
+			return h.jsonResponse(w, http.StatusOK, []any{})
+		}
+	}
+
+	result := make([]map[string]any, len(projects))
+	for i, p := range projects {
+		item := map[string]any{
+			"id":         p.Id,
+			"name":       p.GetString("name"),
+			"subdomain":  p.GetString("subdomain"),
+			"owner_id":   p.GetString("owner_id"),
+			"created_at": p.Created.String(),
+			"updated_at": p.Updated.String(),
+		}
+
+		// Admin can see owner_email
+		if authCtx.IsAdmin() {
+			ownerID := p.GetString("owner_id")
+			if ownerID != "" {
+				owner, err := h.app.Dao().FindRecordById("users", ownerID)
+				if err == nil {
+					item["owner_email"] = owner.GetString("email")
+				}
+			}
+		}
+
+		result[i] = item
 	}
 
 	return h.jsonResponse(w, http.StatusOK, result)

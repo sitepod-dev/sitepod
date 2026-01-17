@@ -14,13 +14,48 @@ import (
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/tools/security"
 	"github.com/sitepod/sitepod/internal/gc"
 	"github.com/sitepod/sitepod/internal/storage"
+	"github.com/spf13/cast"
 	"go.uber.org/zap"
 
 	// Import migrations to register them
 	_ "github.com/sitepod/sitepod/migrations"
 )
+
+// AuthContext represents an authenticated entity - either an admin or a regular user
+type AuthContext struct {
+	Admin *models.Admin  // PocketBase admin (superuser)
+	User  *models.Record // Regular user
+}
+
+// IsAdmin returns true if the auth context is for a PocketBase admin
+func (a *AuthContext) IsAdmin() bool {
+	return a.Admin != nil
+}
+
+// GetID returns the ID of the authenticated entity
+func (a *AuthContext) GetID() string {
+	if a.Admin != nil {
+		return a.Admin.Id
+	}
+	if a.User != nil {
+		return a.User.Id
+	}
+	return ""
+}
+
+// GetEmail returns the email of the authenticated entity
+func (a *AuthContext) GetEmail() string {
+	if a.Admin != nil {
+		return a.Admin.Email
+	}
+	if a.User != nil {
+		return a.User.GetString("email")
+	}
+	return ""
+}
 
 // SitePodHandler implements the Caddy module for SitePod
 // It handles both API requests and static file serving
@@ -127,6 +162,11 @@ func (h *SitePodHandler) Provision(ctx caddy.Context) error {
 		h.logger.Warn("failed to create system user", zap.Error(err))
 	}
 
+	// Create demo user if IS_DEMO is set
+	if err := h.ensureDemoUser(); err != nil {
+		h.logger.Warn("failed to create demo user", zap.Error(err))
+	}
+
 	// Initialize caches
 	h.cache = newRefCache(h.cacheTTL)
 	h.routingCache = newRoutingCache(h.cacheTTL)
@@ -229,9 +269,17 @@ func (h *SitePodHandler) handleAPI(w http.ResponseWriter, r *http.Request) error
 	// Domain check (called by Caddy for on-demand TLS)
 	case path == "/domains/check" && r.Method == "GET":
 		return h.apiCheckDomain(w, r)
+
+	// Auth info (supports both admin and user tokens)
+	case path == "/auth/info" && r.Method == "GET":
+		return h.apiAuthInfo(w, r)
+
+	// Projects - supports both admin and user tokens
+	case path == "/projects" && r.Method == "GET":
+		return h.apiListProjectsAny(w, r)
 	}
 
-	// Auth required routes
+	// Auth required routes (user token only)
 	user, err := h.authenticate(r)
 	if err != nil {
 		return h.jsonError(w, http.StatusUnauthorized, "authentication required")
@@ -246,9 +294,7 @@ func (h *SitePodHandler) handleAPI(w http.ResponseWriter, r *http.Request) error
 	case path == "/account" && r.Method == "DELETE":
 		return h.apiDeleteAccount(w, r, user)
 
-	// Projects
-	case path == "/projects" && r.Method == "GET":
-		return h.apiListProjects(w, r, user)
+	// Projects (single project - user only for now)
 	case strings.HasPrefix(path, "/projects/") && r.Method == "GET":
 		projectName := strings.TrimPrefix(path, "/projects/")
 		return h.apiGetProject(w, r, projectName, user)
@@ -333,6 +379,54 @@ func (h *SitePodHandler) authenticate(r *http.Request) (*models.Record, error) {
 	}
 
 	return record, nil
+}
+
+// authenticateAny validates the auth token and returns an AuthContext
+// that can represent either a PocketBase admin or a regular user
+func (h *SitePodHandler) authenticateAny(r *http.Request) (*AuthContext, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return nil, errors.New("no authorization header")
+	}
+
+	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+	if tokenStr == authHeader {
+		return nil, errors.New("invalid authorization format")
+	}
+
+	// Parse the JWT to determine the token type
+	unverifiedClaims, _ := security.ParseUnverifiedJWT(tokenStr)
+	tokenType := cast.ToString(unverifiedClaims["type"])
+
+	switch tokenType {
+	case "admin":
+		// Try to validate as admin token
+		admin, err := h.app.Dao().FindAdminByToken(tokenStr, h.app.Settings().AdminAuthToken.Secret)
+		if err != nil {
+			return nil, err
+		}
+		return &AuthContext{Admin: admin}, nil
+
+	case "authRecord":
+		// Try to validate as user token
+		record, err := h.app.Dao().FindAuthRecordByToken(tokenStr, h.app.Settings().RecordAuthToken.Secret)
+		if err != nil {
+			return nil, err
+		}
+
+		// Check anonymous expiry
+		if record.GetBool("is_anonymous") {
+			expiresAt := record.GetDateTime("anonymous_expires_at")
+			if !expiresAt.IsZero() && time.Now().After(expiresAt.Time()) {
+				return nil, errors.New("anonymous session expired")
+			}
+		}
+
+		return &AuthContext{User: record}, nil
+
+	default:
+		return nil, errors.New("unknown token type")
+	}
 }
 
 // jsonResponse writes a JSON response

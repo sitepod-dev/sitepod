@@ -4,6 +4,7 @@ interface User {
   id: string
   email: string
   isAnonymous: boolean
+  isAdmin: boolean
 }
 
 interface AuthState {
@@ -26,10 +27,38 @@ function createAuth() {
   if (savedToken) {
     state.token = savedToken
     state.isAuthenticated = true
-    // TODO: Validate token and fetch user info
-    state.loading = false
+    // Validate token and fetch user info
+    validateToken(savedToken).then(user => {
+      if (user) {
+        state.user = user
+      } else {
+        // Token invalid, clear it
+        state.token = null
+        state.isAuthenticated = false
+        localStorage.removeItem('sitepod_token')
+      }
+      state.loading = false
+    })
   } else {
     state.loading = false
+  }
+
+  async function validateToken(token: string): Promise<User | null> {
+    try {
+      const response = await fetch('/api/v1/auth/info', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (!response.ok) return null
+      const data = await response.json()
+      return {
+        id: data.id,
+        email: data.email || '',
+        isAnonymous: data.is_anonymous || false,
+        isAdmin: data.is_admin || false
+      }
+    } catch {
+      return null
+    }
   }
 
   return {
@@ -52,11 +81,37 @@ function createAuth() {
         state.user = {
           id: data.record?.id || '',
           email: data.record?.email || email,
-          isAnonymous: data.record?.is_anonymous || false
+          isAnonymous: data.record?.is_anonymous || false,
+          isAdmin: false
         }
         state.isAuthenticated = true
         localStorage.setItem('sitepod_token', data.token)
         return { success: true, message: 'Logged in' }
+      } finally {
+        state.loading = false
+      }
+    },
+
+    async loginAdmin(email: string, password: string) {
+      state.loading = true
+      try {
+        const response = await fetch('/api/admins/auth-with-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identity: email, password })
+        })
+        if (!response.ok) throw new Error('Admin login failed')
+        const data = await response.json()
+        state.token = data.token
+        state.user = {
+          id: data.admin?.id || '',
+          email: data.admin?.email || email,
+          isAnonymous: false,
+          isAdmin: true
+        }
+        state.isAuthenticated = true
+        localStorage.setItem('sitepod_token', data.token)
+        return { success: true, message: 'Admin logged in' }
       } finally {
         state.loading = false
       }
@@ -77,7 +132,8 @@ function createAuth() {
         state.user = {
           id: data.user_id,
           email: '',
-          isAnonymous: true
+          isAnonymous: true,
+          isAdmin: false
         }
         state.isAuthenticated = true
         localStorage.setItem('sitepod_token', data.token)
