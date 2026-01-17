@@ -34,6 +34,19 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     ./cmd/caddy
 
 # -----------------------------------------------------------------------------
+# Stage: Build Console Frontend
+# -----------------------------------------------------------------------------
+FROM node:20-alpine AS console-builder
+
+WORKDIR /app
+
+COPY console/package.json console/package-lock.json* ./
+RUN npm ci
+
+COPY console/ .
+RUN npm run build
+
+# -----------------------------------------------------------------------------
 # Stage: Build Rust CLI
 # -----------------------------------------------------------------------------
 FROM rust:1.83-alpine AS cli-builder
@@ -75,6 +88,9 @@ RUN apk add --no-cache ca-certificates tzdata wget
 # Copy binaries
 COPY --from=caddy-builder /app/caddy-sitepod /usr/local/bin/caddy
 COPY --from=cli-builder /app/target/release/sitepod /usr/local/bin/sitepod
+
+# Copy console frontend
+COPY --from=console-builder /app/dist /app/console/dist
 
 # Copy Caddyfiles (both modes)
 COPY server/Caddyfile /etc/caddy/Caddyfile

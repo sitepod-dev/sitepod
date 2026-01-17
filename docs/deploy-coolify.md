@@ -2,6 +2,8 @@
 
 本文档介绍如何在 Coolify 上部署 SitePod。
 
+> 📖 关于部署拓扑的详细说明，请参阅 [部署拓扑文档](deploy-topology.md)。Coolify 部署属于 **拓扑 B（反向代理后端）**。
+
 ## 前置要求
 
 - 已安装并运行的 Coolify 实例
