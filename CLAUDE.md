@@ -241,6 +241,6 @@ sitepod console        # Open SitePod console in browser
 
 When `IS_DEMO=1`:
 - Creates demo user: `demo@sitepod.dev` / `demo123`
-- Console shows demo credentials on login page
-- Console admin requires `SITEPOD_CONSOLE_ADMIN_EMAIL` and `SITEPOD_CONSOLE_ADMIN_PASSWORD`
-- PocketBase admin (`/_/`) uses `SITEPOD_ADMIN_EMAIL` / `SITEPOD_ADMIN_PASSWORD`
+- Creates Console admin using `SITEPOD_ADMIN_EMAIL` / `SITEPOD_ADMIN_PASSWORD` (defaults to `admin@sitepod.local` / `sitepod123`)
+- Console shows demo credentials and admin credentials on login page
+- PocketBase admin (`/_/`) uses same credentials as Console admin
