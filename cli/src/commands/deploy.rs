@@ -193,14 +193,21 @@ async fn choose_subdomain_quick(config: &Config, default: &str) -> Result<String
                     subdomain
                 ));
                 let random_subdomain = generate_random_subdomain(&subdomain);
-                ui::kv("subdomain", ui::accent(&format!("{}.sitepod.dev", random_subdomain)));
+                ui::kv(
+                    "subdomain",
+                    ui::accent(&format!("{}.sitepod.dev", random_subdomain)),
+                );
                 return Ok(random_subdomain);
             }
             Err(_) => {
                 // Network error, proceed anyway
                 ui::kv(
                     "subdomain",
-                    format!("{}.sitepod.dev {}", subdomain, ui::dim("(will verify on deploy)")),
+                    format!(
+                        "{}.sitepod.dev {}",
+                        subdomain,
+                        ui::dim("(will verify on deploy)")
+                    ),
                 );
             }
         }
@@ -220,7 +227,13 @@ async fn check_subdomain_availability(config: &Config, subdomain: &str) -> Resul
 fn normalize_subdomain(s: &str) -> String {
     s.to_lowercase()
         .chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '-' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect::<String>()
         .trim_matches('-')
         .to_string()

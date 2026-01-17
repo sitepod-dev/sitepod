@@ -1,7 +1,7 @@
-use anyhow::{Context, Result};
 use crate::api::ApiClient;
 use crate::config::Config;
 use crate::ui;
+use anyhow::{Context, Result};
 
 /// Add a custom domain to a project
 pub async fn add(
@@ -59,10 +59,7 @@ pub async fn list(config: &Config, project: Option<&str>) -> Result<()> {
     let resp = client.list_domains(&project_name).await?;
 
     if resp.domains.is_empty() {
-        println!(
-            "No domains configured for {}",
-            ui::accent(&project_name)
-        );
+        println!("No domains configured for {}", ui::accent(&project_name));
         return Ok(());
     }
 
@@ -133,7 +130,9 @@ pub async fn rename(config: &Config, project: Option<&str>, new_subdomain: &str)
         .context("Project name required. Use --project or run from a project directory.")?;
 
     let client = ApiClient::new(config)?;
-    client.rename_subdomain(&project_name, new_subdomain).await?;
+    client
+        .rename_subdomain(&project_name, new_subdomain)
+        .await?;
 
     ui::ok("Subdomain updated");
     ui::kv("subdomain", ui::accent(new_subdomain));

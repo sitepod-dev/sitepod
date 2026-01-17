@@ -28,6 +28,7 @@ pub struct BindEmailResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct DeleteAccountResponse {
+    #[allow(dead_code)]
     pub message: String,
     pub deleted_projects: i32,
 }
@@ -223,4 +224,3 @@ pub struct HistoryItem {
     pub created_at: DateTime<Utc>,
     pub git_commit: Option<String>,
 }
-

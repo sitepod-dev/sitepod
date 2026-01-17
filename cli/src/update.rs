@@ -14,6 +14,7 @@ const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[derive(Debug, Deserialize)]
 struct GitHubRelease {
     tag_name: String,
+    #[allow(dead_code)]
     html_url: String,
 }
 
@@ -121,11 +122,8 @@ async fn fetch_latest_version() -> Result<String> {
 
 /// Compare versions (simple semver comparison)
 fn is_newer_version(latest: &str, current: &str) -> bool {
-    let parse_version = |v: &str| -> Vec<u32> {
-        v.split('.')
-            .filter_map(|s| s.parse().ok())
-            .collect()
-    };
+    let parse_version =
+        |v: &str| -> Vec<u32> { v.split('.').filter_map(|s| s.parse().ok()).collect() };
 
     let latest_parts = parse_version(latest);
     let current_parts = parse_version(current);
@@ -152,10 +150,7 @@ fn print_update_notification(latest: &str) {
         style(CURRENT_VERSION).dim(),
         style(latest).green().bold()
     );
-    eprintln!(
-        "  Run {} or visit:",
-        style("npm install -g sitepod").cyan()
-    );
+    eprintln!("  Run {} or visit:", style("npm install -g sitepod").cyan());
     eprintln!(
         "  {}",
         style(format!("https://github.com/{}/releases", GITHUB_REPO)).dim()

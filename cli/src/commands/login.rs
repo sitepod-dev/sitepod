@@ -20,10 +20,7 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
     };
 
     // Choose login method
-    let methods = vec![
-        "Anonymous (quick start, 24h limit)",
-        "Email & Password",
-    ];
+    let methods = vec!["Anonymous (quick start, 24h limit)", "Email & Password"];
 
     let selection = Select::new()
         .with_prompt("Login method")
@@ -38,10 +35,7 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
         println!();
         ui::step("Creating anonymous session");
 
-        let anon_url = format!(
-            "{}/api/v1/auth/anonymous",
-            endpoint.trim_end_matches('/')
-        );
+        let anon_url = format!("{}/api/v1/auth/anonymous", endpoint.trim_end_matches('/'));
 
         let resp = client
             .post(&anon_url)
@@ -62,9 +56,7 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
             .context("No token in response")?
             .to_string();
 
-        let expires_at = auth_response["expires_at"]
-            .as_str()
-            .unwrap_or("24 hours");
+        let expires_at = auth_response["expires_at"].as_str().unwrap_or("24 hours");
 
         println!();
         ui::warn("Anonymous session");
@@ -74,13 +66,9 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
         token
     } else {
         // Email & password login
-        let email: String = Input::new()
-            .with_prompt("Email")
-            .interact_text()?;
+        let email: String = Input::new().with_prompt("Email").interact_text()?;
 
-        let password: String = Password::new()
-            .with_prompt("Password")
-            .interact()?;
+        let password: String = Password::new().with_prompt("Password").interact()?;
 
         println!();
         ui::step("Authenticating");
@@ -118,10 +106,7 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
 
     println!();
     ui::ok("Logged in");
-    let config_path = Config::global_config_path()
-        .unwrap()
-        .display()
-        .to_string();
+    let config_path = Config::global_config_path().unwrap().display().to_string();
     ui::kv("config", ui::dim(&config_path));
 
     Ok(())

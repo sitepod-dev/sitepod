@@ -1,13 +1,12 @@
-use anyhow::{Context, Result};
 use crate::api::ApiClient;
 use crate::config::Config;
 use crate::ui;
+use anyhow::{Context, Result};
 
 /// Run the history command
 pub async fn run(config: &Config, project: Option<&str>, limit: usize) -> Result<()> {
-    let project_name = project.context(
-        "Project name not specified. Run 'sitepod init' or use --name flag.",
-    )?;
+    let project_name =
+        project.context("Project name not specified. Run 'sitepod init' or use --name flag.")?;
 
     let client = ApiClient::new(config)?;
 

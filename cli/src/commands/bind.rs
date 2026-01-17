@@ -19,9 +19,7 @@ pub async fn run(config: &Config, email: Option<String>) -> Result<()> {
     let email: String = if let Some(e) = email {
         e
     } else {
-        Input::new()
-            .with_prompt("Email")
-            .interact_text()?
+        Input::new().with_prompt("Email").interact_text()?
     };
 
     // Validate email format (basic check)
@@ -44,7 +42,10 @@ pub async fn run(config: &Config, email: Option<String>) -> Result<()> {
     println!("  - Click the verification link");
     println!("  - Account upgraded");
     println!();
-    println!("  {}", ui::dim("After verification, deployments are permanent."));
+    println!(
+        "  {}",
+        ui::dim("After verification, deployments are permanent.")
+    );
 
     Ok(())
 }

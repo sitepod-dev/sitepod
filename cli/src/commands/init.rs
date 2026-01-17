@@ -103,7 +103,10 @@ pub async fn run(
 
     if routing_mode == RoutingMode::Subdomain {
         if let Some(subdomain) = &project_toml.project.subdomain {
-            ui::kv("subdomain", ui::accent(&format!("{}.sitepod.dev", subdomain)));
+            ui::kv(
+                "subdomain",
+                ui::accent(&format!("{}.sitepod.dev", subdomain)),
+            );
         }
     } else if let Some(routing) = &project_toml.deploy.routing {
         if let (Some(domain), Some(slug)) = (&routing.domain, &routing.slug) {
@@ -181,7 +184,13 @@ async fn check_subdomain_availability(config: &Config, subdomain: &str) -> Resul
 fn normalize_subdomain(s: &str) -> String {
     s.to_lowercase()
         .chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' { c } else { '-' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect::<String>()
         .trim_matches('-')
         .to_string()

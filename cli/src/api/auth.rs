@@ -2,7 +2,9 @@
 
 use anyhow::{Context, Result};
 
-use super::types::{AnonymousAuthResponse, BindEmailRequest, BindEmailResponse, DeleteAccountResponse};
+use super::types::{
+    AnonymousAuthResponse, BindEmailRequest, BindEmailResponse, DeleteAccountResponse,
+};
 use super::ApiClient;
 
 impl ApiClient {

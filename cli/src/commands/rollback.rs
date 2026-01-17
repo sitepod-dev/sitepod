@@ -12,9 +12,8 @@ pub async fn run(
     env: &str,
     image: Option<String>,
 ) -> Result<()> {
-    let project_name = project.context(
-        "Project name not specified. Run 'sitepod init' or use --name flag.",
-    )?;
+    let project_name =
+        project.context("Project name not specified. Run 'sitepod init' or use --name flag.")?;
 
     let client = ApiClient::new(config)?;
 

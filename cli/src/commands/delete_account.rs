@@ -18,7 +18,9 @@ pub async fn run(config: &Config, skip_confirm: bool) -> Result<()> {
     // Confirm unless skipped
     if !skip_confirm {
         if !std::io::stdin().is_terminal() {
-            anyhow::bail!("Cannot confirm in non-interactive mode. Use --yes to skip confirmation.");
+            anyhow::bail!(
+                "Cannot confirm in non-interactive mode. Use --yes to skip confirmation."
+            );
         }
 
         if !Confirm::new()

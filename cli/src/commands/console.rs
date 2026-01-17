@@ -1,6 +1,6 @@
-use anyhow::{Context, Result};
 use crate::config::Config;
 use crate::ui;
+use anyhow::{Context, Result};
 
 /// Open the SitePod console in browser
 pub fn run(config: &Config) -> Result<()> {
@@ -10,9 +10,8 @@ pub fn run(config: &Config) -> Result<()> {
         .as_ref()
         .context("No endpoint configured. Run 'sitepod login' first.")?;
 
-    // Parse the endpoint to get the domain
-    let url = url::Url::parse(endpoint).context("Invalid endpoint URL")?;
-    let host = url.host_str().unwrap_or("localhost");
+    // Validate the endpoint URL
+    let _ = url::Url::parse(endpoint).context("Invalid endpoint URL")?;
 
     // Console is now at the root domain (same as endpoint)
     let console_url = endpoint.trim_end_matches('/').to_string();

@@ -17,6 +17,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+          cache-dependency-path: server/go.sum
 
       - name: Download dependencies
         working-directory: ./server
@@ -28,7 +29,7 @@ jobs:
 
       - name: Build
         working-directory: ./server
-        run: go build -o sitepod-server .
+        run: go build -o sitepod-server ./cmd/caddy
 
   test-cli:
     name: Test CLI (Rust)
@@ -74,12 +75,14 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+          cache-dependency-path: server/go.sum
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v3
         with:
           working-directory: ./server
           version: latest
+          args: --timeout=5m
 
   lint-cli:
     name: Lint CLI

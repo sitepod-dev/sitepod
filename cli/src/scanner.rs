@@ -32,10 +32,8 @@ impl Scanner {
             .canonicalize()
             .with_context(|| format!("Source directory not found: {}", source_dir.display()))?;
 
-        let ignore_patterns: Vec<Pattern> = ignore
-            .iter()
-            .filter_map(|p| Pattern::new(p).ok())
-            .collect();
+        let ignore_patterns: Vec<Pattern> =
+            ignore.iter().filter_map(|p| Pattern::new(p).ok()).collect();
 
         Ok(Self {
             source_dir,

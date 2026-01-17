@@ -115,7 +115,10 @@ pub async fn run(
         println!();
         ui::ok("Preview ready");
         ui::kv("url", ui::accent(&preview.url).underlined());
-        let expires = preview.expires_at.format("%Y-%m-%d %H:%M:%S UTC").to_string();
+        let expires = preview
+            .expires_at
+            .format("%Y-%m-%d %H:%M:%S UTC")
+            .to_string();
         ui::kv("expires", ui::dim(&expires));
     } else {
         // Use existing image
@@ -132,7 +135,10 @@ pub async fn run(
         println!();
         ui::ok("Preview ready");
         ui::kv("url", ui::accent(&preview.url).underlined());
-        let expires = preview.expires_at.format("%Y-%m-%d %H:%M:%S UTC").to_string();
+        let expires = preview
+            .expires_at
+            .format("%Y-%m-%d %H:%M:%S UTC")
+            .to_string();
         ui::kv("expires", ui::dim(&expires));
     }
 
