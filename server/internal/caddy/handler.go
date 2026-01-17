@@ -158,6 +158,7 @@ func (h *SitePodHandler) Validate() error {
 
 // ServeHTTP handles all HTTP requests
 func (h *SitePodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.Handler) error {
+	start := time.Now()
 	path := r.URL.Path
 
 	// API routes
@@ -171,8 +172,25 @@ func (h *SitePodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 		return nil
 	}
 
-	// Static file serving
-	return h.handleStatic(w, r)
+	// Static file serving with logging
+	err := h.handleStatic(w, r)
+	duration := time.Since(start)
+
+	// Log static requests (skip noisy assets in debug mode)
+	if duration > 10*time.Millisecond || err != nil {
+		status := 200
+		if err != nil {
+			status = 404
+		}
+		h.logger.Debug("static",
+			zap.String("host", r.Host),
+			zap.String("path", path),
+			zap.Int("status", status),
+			zap.Duration("duration", duration),
+		)
+	}
+
+	return err
 }
 
 // handleAPI routes API requests to the appropriate handler
