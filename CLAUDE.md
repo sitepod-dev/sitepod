@@ -180,8 +180,9 @@ data/
 
 | Endpoint | Purpose |
 |----------|---------|
+| `GET /api/v1/config` | Get server configuration (domain, is_demo) |
 | `POST /api/v1/auth/login` | Register or login with email/password |
-| `GET /api/v1/auth/info` | Get current user info |
+| `GET /api/v1/auth/info` | Get current user info (supports admin tokens) |
 | `POST /api/v1/plan` | Submit file manifest, get missing blob upload URLs |
 | `POST /api/v1/upload/{plan_id}/{hash}` | Upload blob (direct mode for local storage) |
 | `POST /api/v1/commit` | Confirm upload completion, create image |
@@ -230,8 +231,10 @@ sitepod console        # Open SitePod console in browser
 | `SITEPOD_PROXY_MODE` | Run behind reverse proxy (no TLS) | Not set |
 | `SITEPOD_STORAGE_TYPE` | Storage backend: `local`, `s3`, `oss`, `r2` | `local` |
 | `SITEPOD_ACCESS_LOG` | Log all static file requests | Not set |
-| `SITEPOD_ADMIN_EMAIL` | PocketBase admin email | `admin@sitepod.local` |
-| `SITEPOD_ADMIN_PASSWORD` | PocketBase admin password | `sitepod123` |
+| `SITEPOD_ADMIN_EMAIL` | PocketBase admin email (PB admin UI only) | `admin@sitepod.local` |
+| `SITEPOD_ADMIN_PASSWORD` | PocketBase admin password (PB admin UI only) | `sitepod123` |
+| `SITEPOD_CONSOLE_ADMIN_EMAIL` | Console admin email (users.is_admin) | Not set |
+| `SITEPOD_CONSOLE_ADMIN_PASSWORD` | Console admin password (users.is_admin) | Not set |
 | `IS_DEMO` | Demo mode - creates demo user | Not set |
 
 ### Demo Mode
@@ -239,4 +242,5 @@ sitepod console        # Open SitePod console in browser
 When `IS_DEMO=1`:
 - Creates demo user: `demo@sitepod.dev` / `demo123`
 - Console shows demo credentials on login page
-- Admin can log in with `admin@sitepod.local` / `sitepod123`
+- Console admin requires `SITEPOD_CONSOLE_ADMIN_EMAIL` and `SITEPOD_CONSOLE_ADMIN_PASSWORD`
+- PocketBase admin (`/_/`) uses `SITEPOD_ADMIN_EMAIL` / `SITEPOD_ADMIN_PASSWORD`
