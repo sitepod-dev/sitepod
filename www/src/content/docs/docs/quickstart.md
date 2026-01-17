@@ -17,6 +17,8 @@ cd your-project
 npx sitepod deploy
 ```
 
+No install required. If you install the CLI, you can drop `npx` from all commands.
+
 That's it! On first run, SitePod will:
 
 1. Create an anonymous session (24h)
@@ -65,12 +67,18 @@ $ npx sitepod deploy
 
 Email binding is not supported yet. Anonymous sessions expire after 24 hours.
 
+## Install the CLI (optional)
+
+```bash
+npm install --global sitepod
+```
+
 ## Deploy to production
 
 Once you've verified your beta deployment:
 
 ```bash
-sitepod deploy --prod
+npx sitepod deploy --prod
 ```
 
 ```
@@ -104,8 +112,8 @@ Commit this file to your repository.
 The examples above use the public SitePod instance. To use your own server:
 
 ```bash
-sitepod login --endpoint https://your-server.com
-sitepod deploy
+npx sitepod login --endpoint https://your-server.com
+npx sitepod deploy
 ```
 
 See [Self-Hosting](/docs/self-hosting/overview/) to run your own SitePod server.

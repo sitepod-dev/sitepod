@@ -5,6 +5,8 @@ description: Automate deployments with GitHub Actions, GitLab CI, and more
 
 Integrate SitePod into your CI/CD pipeline for automatic deployments.
 
+Examples below use `npx` (no install). If you prefer a global install, run `npm install --global sitepod` once and drop `npx` from all commands.
+
 ## API tokens
 
 First, create an API token for CI/CD use:
@@ -54,8 +56,7 @@ jobs:
 
       - name: Deploy to SitePod
         run: |
-          curl -fsSL https://get.sitepod.dev | sh
-          sitepod deploy --prod
+          npx sitepod deploy --prod
         env:
           SITEPOD_TOKEN: ${{ secrets.SITEPOD_TOKEN }}
 ```
@@ -90,8 +91,7 @@ jobs:
       - name: Create preview
         id: preview
         run: |
-          curl -fsSL https://get.sitepod.dev | sh
-          sitepod preview --slug pr-${{ github.event.pull_request.number }}
+          npx sitepod preview --slug pr-${{ github.event.pull_request.number }}
           echo "url=https://my-site--pr-${{ github.event.pull_request.number }}.preview.sitepod.dev" >> $GITHUB_OUTPUT
         env:
           SITEPOD_TOKEN: ${{ secrets.SITEPOD_TOKEN }}
@@ -113,8 +113,7 @@ jobs:
 ```yaml
 - name: Deploy to SitePod
   run: |
-    curl -fsSL https://get.sitepod.dev | sh
-    sitepod deploy --prod
+    npx sitepod deploy --prod
   env:
     SITEPOD_TOKEN: ${{ secrets.SITEPOD_TOKEN }}
     SITEPOD_ENDPOINT: https://sitepod.example.com
@@ -140,10 +139,9 @@ build:
 
 deploy:
   stage: deploy
-  image: ubuntu:latest
+  image: node:20
   script:
-    - curl -fsSL https://get.sitepod.dev | sh
-    - sitepod deploy --prod
+    - npx sitepod deploy --prod
   variables:
     SITEPOD_TOKEN: $SITEPOD_TOKEN
   only:
@@ -171,8 +169,7 @@ jobs:
       - run:
           name: Deploy
           command: |
-            curl -fsSL https://get.sitepod.dev | sh
-            sitepod deploy --prod
+            npx sitepod deploy --prod
 
 workflows:
   deploy:
@@ -204,11 +201,11 @@ Never commit tokens to your repository. Use your CI provider's secret management
 ```yaml
 deploy-staging:
   if: github.ref == 'refs/heads/develop'
-  run: sitepod deploy  # deploys to beta
+  run: npx sitepod deploy  # deploys to beta
 
 deploy-production:
   if: github.ref == 'refs/heads/main'
-  run: sitepod deploy --prod
+  run: npx sitepod deploy --prod
 ```
 
 ### 3. Add deployment message
@@ -218,23 +215,14 @@ Include git info in deployments:
 ```yaml
 - name: Deploy
   run: |
-    sitepod deploy --prod --message "$(git log -1 --pretty=%B)"
+    npx sitepod deploy --prod --message "$(git log -1 --pretty=%B)"
 ```
 
-### 4. Cache CLI installation
+### 4. Install the CLI globally (optional)
 
 ```yaml
-- name: Cache SitePod CLI
-  uses: actions/cache@v4
-  with:
-    path: ~/.local/bin/sitepod
-    key: sitepod-cli-${{ runner.os }}
-
 - name: Install SitePod CLI
-  run: |
-    if [ ! -f ~/.local/bin/sitepod ]; then
-      curl -fsSL https://get.sitepod.dev | sh
-    fi
+  run: npm install --global sitepod
 ```
 
 ## See also
