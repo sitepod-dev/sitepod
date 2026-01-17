@@ -22,6 +22,7 @@
   const limit = 20
 
   $effect(() => {
+    page
     loadImages()
   })
 
@@ -29,9 +30,9 @@
     loading = true
     error = ''
     try {
-      const data = await api.getHistory(projectId, 'prod', limit)
-      images = data || []
-      total = images.length
+      const data = await api.getImages(projectId, page, limit)
+      images = data.images || []
+      total = data.total || 0
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load images'
     } finally {
@@ -162,18 +163,18 @@
               <td class="px-6 py-4 whitespace-nowrap text-right">
                 <div class="flex items-center justify-end gap-2">
                   <button
-                    onclick={() => deploy(image.content_hash, 'beta')}
+                    onclick={() => deploy(image.image_id, 'beta')}
                     disabled={deploying !== null}
                     class="px-3 py-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 disabled:opacity-50 transition"
                   >
-                    {deploying === `${image.content_hash}-beta` ? '...' : 'Deploy to Beta'}
+                    {deploying === `${image.image_id}-beta` ? '...' : 'Deploy to Beta'}
                   </button>
                   <button
-                    onclick={() => deploy(image.content_hash, 'prod')}
+                    onclick={() => deploy(image.image_id, 'prod')}
                     disabled={deploying !== null}
                     class="px-3 py-1 text-xs font-medium text-cyan-700 bg-cyan-50 border border-cyan-200 rounded hover:bg-cyan-100 disabled:opacity-50 transition"
                   >
-                    {deploying === `${image.content_hash}-prod` ? '...' : 'Deploy to Prod'}
+                    {deploying === `${image.image_id}-prod` ? '...' : 'Deploy to Prod'}
                   </button>
                 </div>
               </td>

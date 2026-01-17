@@ -24,6 +24,7 @@ pub struct ScannedFile {
 pub struct Scanner {
     source_dir: PathBuf,
     ignore_patterns: Vec<Pattern>,
+    ignore_well_known: bool,
 }
 
 impl Scanner {
@@ -34,10 +35,12 @@ impl Scanner {
 
         let ignore_patterns: Vec<Pattern> =
             ignore.iter().filter_map(|p| Pattern::new(p).ok()).collect();
+        let ignore_well_known = ignore.iter().any(|p| p.contains(".well-known"));
 
         Ok(Self {
             source_dir,
             ignore_patterns,
+            ignore_well_known,
         })
     }
 
@@ -107,7 +110,14 @@ impl Scanner {
         let rel_path = path
             .strip_prefix(&self.source_dir)
             .unwrap_or(path)
-            .to_string_lossy();
+            .to_string_lossy()
+            .replace('\\', "/");
+
+        if !self.ignore_well_known
+            && (rel_path.starts_with(".well-known/") || rel_path.contains("/.well-known/"))
+        {
+            return false;
+        }
 
         for pattern in &self.ignore_patterns {
             if pattern.matches(&rel_path) {

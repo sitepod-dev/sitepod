@@ -2,6 +2,7 @@ pub mod console;
 pub mod delete_account;
 pub mod deploy;
 pub mod domain;
+pub mod helpers;
 pub mod history;
 pub mod init;
 pub mod login;

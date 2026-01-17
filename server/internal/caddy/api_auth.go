@@ -237,10 +237,11 @@ func (h *SitePodHandler) apiAuthInfo(w http.ResponseWriter, r *http.Request) err
 
 	// Regular user
 	isAnonymous := authCtx.User.GetBool("is_anonymous")
+	isAdmin := authCtx.User.GetBool("is_admin")
 	return h.jsonResponse(w, http.StatusOK, map[string]any{
 		"id":           authCtx.User.Id,
 		"email":        authCtx.User.GetString("email"),
-		"is_admin":     false,
+		"is_admin":     isAdmin,
 		"is_anonymous": isAnonymous,
 	})
 }

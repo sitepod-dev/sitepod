@@ -70,48 +70,27 @@ function createAuth() {
     async login(email: string, password: string) {
       state.loading = true
       try {
-        const response = await fetch('/api/collections/users/auth-with-password', {
+        const response = await fetch('/api/v1/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identity: email, password })
+          body: JSON.stringify({ email, password })
         })
-        if (!response.ok) throw new Error('Login failed')
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({}))
+          throw new Error(err.error || err.message || 'Login failed')
+        }
         const data = await response.json()
         state.token = data.token
-        state.user = {
-          id: data.record?.id || '',
-          email: data.record?.email || email,
-          isAnonymous: data.record?.is_anonymous || false,
+        const user = await validateToken(data.token)
+        state.user = user || {
+          id: data.user_id || '',
+          email: data.email || email,
+          isAnonymous: false,
           isAdmin: false
         }
         state.isAuthenticated = true
         localStorage.setItem('sitepod_token', data.token)
-        return { success: true, message: 'Logged in' }
-      } finally {
-        state.loading = false
-      }
-    },
-
-    async loginAdmin(email: string, password: string) {
-      state.loading = true
-      try {
-        const response = await fetch('/api/admins/auth-with-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ identity: email, password })
-        })
-        if (!response.ok) throw new Error('Admin login failed')
-        const data = await response.json()
-        state.token = data.token
-        state.user = {
-          id: data.admin?.id || '',
-          email: data.admin?.email || email,
-          isAnonymous: false,
-          isAdmin: true
-        }
-        state.isAuthenticated = true
-        localStorage.setItem('sitepod_token', data.token)
-        return { success: true, message: 'Admin logged in' }
+        return { success: true, message: data.message || (data.created ? 'Account created' : 'Logged in') }
       } finally {
         state.loading = false
       }

@@ -22,6 +22,9 @@ func (h *SitePodHandler) isSystemUser(user *models.Record) bool {
 
 func (h *SitePodHandler) userOwnsProject(user *models.Record, project *models.Record) bool {
 	ownerID := project.GetString("owner_id")
+	if user.GetBool("is_admin") {
+		return true
+	}
 	if ownerID == "" {
 		return h.isSystemUser(user)
 	}
@@ -82,18 +85,28 @@ func (h *SitePodHandler) requireDomainOwner(domain string, user *models.Record) 
 
 func (h *SitePodHandler) requireAdminToken(r *http.Request) error {
 	token := os.Getenv("SITEPOD_ADMIN_TOKEN")
+	if token != "" {
+		if header := r.Header.Get("X-Sitepod-Admin-Token"); header != "" && header == token {
+			return nil
+		}
+
+		auth := r.Header.Get("Authorization")
+		if strings.HasPrefix(auth, "Bearer ") && strings.TrimPrefix(auth, "Bearer ") == token {
+			return nil
+		}
+	}
+
+	if authCtx, err := h.authenticateAny(r); err == nil {
+		if authCtx.IsAdmin() {
+			return nil
+		}
+		if authCtx.User != nil && authCtx.User.GetBool("is_admin") {
+			return nil
+		}
+	}
+
 	if token == "" {
 		return errAdminTokenMissing
 	}
-
-	if header := r.Header.Get("X-Sitepod-Admin-Token"); header != "" && header == token {
-		return nil
-	}
-
-	auth := r.Header.Get("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") && strings.TrimPrefix(auth, "Bearer ") == token {
-		return nil
-	}
-
 	return errForbidden
 }

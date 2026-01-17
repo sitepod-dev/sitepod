@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { api, type Image } from '../api/client'
+  import { api, type Project } from '../api/client'
+  import { config } from '../lib/config.svelte'
   import { href } from '../lib/router.svelte'
   import dayjs from 'dayjs'
   import relativeTime from 'dayjs/plugin/relativeTime'
@@ -14,11 +15,12 @@
   interface EnvInfo {
     image_id: string
     content_hash: string
-    file_count: number
+    file_count?: number
     updated_at: string
   }
 
   let environments = $state<Record<string, EnvInfo>>({})
+  let project = $state<Project | null>(null)
   let loading = $state(true)
   let error = $state('')
 
@@ -30,17 +32,30 @@
     loading = true
     error = ''
     try {
+      environments = {}
+      project = await api.getProject(projectId)
+
       // Load both prod and beta
       const [prodData, betaData] = await Promise.all([
         api.getCurrentDeployment(projectId, 'prod').catch(() => null),
         api.getCurrentDeployment(projectId, 'beta').catch(() => null)
       ])
 
-      if (prodData?.environments?.prod) {
-        environments.prod = prodData.environments.prod
+      if (prodData) {
+        environments.prod = {
+          image_id: prodData.image_id,
+          content_hash: prodData.content_hash,
+          file_count: prodData.file_count,
+          updated_at: prodData.deployed_at
+        }
       }
-      if (betaData?.environments?.beta) {
-        environments.beta = betaData.environments.beta
+      if (betaData) {
+        environments.beta = {
+          image_id: betaData.image_id,
+          content_hash: betaData.content_hash,
+          file_count: betaData.file_count,
+          updated_at: betaData.deployed_at
+        }
       }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to load project'
@@ -50,8 +65,7 @@
   }
 
   function getEnvUrl(env: string): string {
-    if (env === 'prod') return `https://${projectId}.sitepod.dev`
-    return `https://${projectId}-beta.sitepod.dev`
+    return config.getProjectUrl(projectId, env as 'prod' | 'beta', project?.subdomain)
   }
 </script>
 
@@ -62,7 +76,7 @@
       <h1 class="text-2xl font-bold text-slate-900">{projectId}</h1>
       <p class="text-slate-500 mt-1">
         <a href={getEnvUrl('prod')} target="_blank" class="hover:text-cyan-600">
-          {projectId}.sitepod.dev
+          {(project?.subdomain || projectId)}.{config.domain}
         </a>
       </p>
     </div>
@@ -120,7 +134,9 @@
               </div>
               <div>
                 <span class="text-sm text-slate-500">Files</span>
-                <p class="text-sm text-slate-900">{environments[env].file_count} files</p>
+                <p class="text-sm text-slate-900">
+                  {environments[env].file_count ?? '—'} files
+                </p>
               </div>
               <div>
                 <span class="text-sm text-slate-500">Updated</span>
@@ -161,8 +177,8 @@
             </div>
           </a>
 
-          <button
-            onclick={() => {/* TODO: rollback modal */}}
+          <a
+            href={href(`/project/${projectId}/images`)}
             class="flex items-center gap-3 p-4 rounded-md border border-slate-200 hover:border-amber-300 hover:bg-amber-50 transition text-left"
           >
             <div class="w-10 h-10 bg-amber-100 rounded-md flex items-center justify-center">
@@ -174,7 +190,7 @@
               <p class="font-medium text-slate-900">Rollback</p>
               <p class="text-sm text-slate-500">Revert to previous version</p>
             </div>
-          </button>
+          </a>
 
           <a
             href={href(`/project/${projectId}/settings`)}

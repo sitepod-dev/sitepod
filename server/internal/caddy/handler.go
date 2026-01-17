@@ -253,9 +253,11 @@ func (h *SitePodHandler) handleAPI(w http.ResponseWriter, r *http.Request) error
 
 	// Route matching - no auth required
 	switch {
-	// Health & Metrics
+	// Health & Metrics & Config
 	case path == "/health" && r.Method == "GET":
 		return h.apiHealth(w, r)
+	case path == "/config" && r.Method == "GET":
+		return h.apiConfig(w, r)
 	case path == "/metrics" && r.Method == "GET":
 		return h.apiMetrics(w, r)
 
@@ -297,6 +299,9 @@ func (h *SitePodHandler) handleAPI(w http.ResponseWriter, r *http.Request) error
 	case strings.HasPrefix(path, "/projects/") && r.Method == "GET":
 		projectName := strings.TrimPrefix(path, "/projects/")
 		return h.apiGetProject(w, r, projectName, user)
+	case strings.HasPrefix(path, "/projects/") && r.Method == "DELETE":
+		projectName := strings.TrimPrefix(path, "/projects/")
+		return h.apiDeleteProject(w, r, projectName, user)
 
 	// Subdomain check
 	case path == "/subdomain/check" && r.Method == "GET":

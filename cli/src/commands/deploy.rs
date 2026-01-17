@@ -11,6 +11,7 @@ use std::sync::Arc;
 use tokio::sync::Semaphore;
 
 use crate::api::ApiClient;
+use crate::commands::helpers;
 use crate::config::{Config, ProjectToml};
 use crate::scanner::{get_source_dir, Scanner};
 use crate::ui;
@@ -69,13 +70,15 @@ async fn auto_init(config: &Config) -> Result<()> {
         .and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string()))
         .unwrap_or_else(|| "my-project".to_string());
 
+    let base_domain = helpers::fetch_base_domain(config.server.endpoint.as_deref()).await;
+
     let project_name: String = Input::new()
         .with_prompt("Project name")
         .default(default_name.clone())
         .interact_text()?;
 
     // Get subdomain with availability check
-    let subdomain = choose_subdomain_quick(config, &project_name).await?;
+    let subdomain = choose_subdomain_quick(config, &project_name, base_domain.as_deref()).await?;
 
     // Detect build directory
     let build_dir = detect_build_directory();
@@ -91,7 +94,11 @@ async fn auto_init(config: &Config) -> Result<()> {
 }
 
 /// Quick subdomain selection for auto-init flow
-async fn choose_subdomain_quick(config: &Config, default: &str) -> Result<String> {
+async fn choose_subdomain_quick(
+    config: &Config,
+    default: &str,
+    base_domain: Option<&str>,
+) -> Result<String> {
     let normalized_default = normalize_subdomain(default);
 
     let input: String = Input::new()
@@ -111,20 +118,20 @@ async fn choose_subdomain_quick(config: &Config, default: &str) -> Result<String
         match check_subdomain_availability(config, &subdomain).await {
             Ok(true) => {
                 println!(
-                    "  {}.sitepod.dev {}",
-                    ui::accent(&subdomain),
+                    "  {} {}",
+                    ui::accent(&helpers::format_subdomain(&subdomain, base_domain)),
                     ui::dim("(available)")
                 );
             }
             Ok(false) => {
                 ui::warn(&format!(
-                    "{}.sitepod.dev taken. Using random suffix.",
-                    subdomain
+                    "{} taken. Using random suffix.",
+                    helpers::format_subdomain(&subdomain, base_domain)
                 ));
                 let random_subdomain = generate_random_subdomain(&subdomain);
                 ui::kv(
                     "subdomain",
-                    ui::accent(&format!("{}.sitepod.dev", random_subdomain)),
+                    ui::accent(&helpers::format_subdomain(&random_subdomain, base_domain)),
                 );
                 return Ok(random_subdomain);
             }
@@ -133,8 +140,8 @@ async fn choose_subdomain_quick(config: &Config, default: &str) -> Result<String
                 ui::kv(
                     "subdomain",
                     format!(
-                        "{}.sitepod.dev {}",
-                        subdomain,
+                        "{} {}",
+                        helpers::format_subdomain(&subdomain, base_domain),
                         ui::dim("(will verify on deploy)")
                     ),
                 );

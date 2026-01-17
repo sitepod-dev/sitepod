@@ -24,18 +24,34 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body: options.body ? JSON.stringify(options.body) : undefined
   })
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Request failed' }))
-    throw new Error(error.message || `HTTP ${response.status}`)
+  const text = await response.text()
+  let data: unknown = null
+  if (text) {
+    try {
+      data = JSON.parse(text)
+    } catch {
+      data = text
+    }
   }
 
-  return response.json()
+  if (!response.ok) {
+    const message =
+      (typeof data === 'object' && data !== null && ('error' in data || 'message' in data)
+        ? ((data as { error?: string, message?: string }).error || (data as { message?: string }).message)
+        : typeof data === 'string'
+          ? data
+          : null) || `HTTP ${response.status}`
+    throw new Error(message)
+  }
+
+  return (data ?? {}) as T
 }
 
 // Types
 export interface Project {
   id: string
   name: string
+  subdomain?: string
   owner_id: string
   owner_email?: string // Only visible to admin
   created_at: string
@@ -44,6 +60,7 @@ export interface Project {
 
 export interface Image {
   id: string
+  image_id: string
   project_id: string
   content_hash: string
   file_count: number
@@ -61,15 +78,34 @@ export interface Release {
 }
 
 export interface CurrentDeployment {
-  project: Project
-  environments: {
-    [env: string]: {
-      image_id: string
-      content_hash: string
-      file_count: number
-      updated_at: string
-    }
-  }
+  image_id: string
+  content_hash: string
+  deployed_at: string
+  file_count?: number
+}
+
+export interface Domain {
+  domain: string
+  slug: string
+  type: string
+  status: string
+  is_primary: boolean
+  created_at: string
+}
+
+export interface AddDomainResponse {
+  domain: string
+  slug: string
+  status: string
+  verification_token?: string
+  verification_txt?: string
+}
+
+export interface VerifyDomainResponse {
+  domain: string
+  status: string
+  verified: boolean
+  message?: string
 }
 
 // API functions
@@ -80,17 +116,17 @@ export const api = {
   },
 
   async getProject(id: string): Promise<Project> {
-    return request(`/projects/${id}`)
+    return request(`/projects/${encodeURIComponent(id)}`)
   },
 
   // Deployments
   async getCurrentDeployment(projectName: string, env: string = 'prod'): Promise<CurrentDeployment> {
-    return request(`/current?project=${projectName}&environment=${env}`)
+    return request(`/current?project=${encodeURIComponent(projectName)}&environment=${env}`)
   },
 
   // Images
-  async getImages(projectId: string, page: number = 1, limit: number = 20): Promise<{ images: Image[], total: number }> {
-    return request(`/images?project_id=${projectId}&page=${page}&limit=${limit}`)
+  async getImages(projectName: string, page: number = 1, limit: number = 20): Promise<{ images: Image[], total: number }> {
+    return request(`/images?project=${encodeURIComponent(projectName)}&page=${page}&limit=${limit}`)
   },
 
   // Releases
@@ -109,8 +145,33 @@ export const api = {
   },
 
   // History
-  async getHistory(projectName: string, env: string = 'prod', limit: number = 20): Promise<Image[]> {
-    return request(`/history?project=${projectName}&env=${env}&limit=${limit}`)
+  async getHistory(projectName: string, env: string = 'prod', limit: number = 20): Promise<{ items: { image_id: string, content_hash: string, created_at: string, git_commit?: string }[] }> {
+    return request(`/history?project=${encodeURIComponent(projectName)}&env=${env}&limit=${limit}`)
+  },
+
+  // Domains
+  async listDomains(projectName: string): Promise<{ domains: Domain[] }> {
+    return request(`/domains?project=${encodeURIComponent(projectName)}`)
+  },
+
+  async addDomain(projectName: string, domain: string, slug: string = '/'): Promise<AddDomainResponse> {
+    return request('/domains', {
+      method: 'POST',
+      body: { project: projectName, domain, slug }
+    })
+  },
+
+  async verifyDomain(domain: string): Promise<VerifyDomainResponse> {
+    return request(`/domains/${encodeURIComponent(domain)}/verify`, { method: 'POST' })
+  },
+
+  async removeDomain(domain: string): Promise<void> {
+    await request(`/domains/${encodeURIComponent(domain)}`, { method: 'DELETE' })
+  },
+
+  // Projects
+  async deleteProject(projectName: string): Promise<{ message?: string }> {
+    return request(`/projects/${encodeURIComponent(projectName)}`, { method: 'DELETE' })
   },
 
   // Health

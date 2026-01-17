@@ -48,12 +48,12 @@ if [ ! -f "$SCRIPT_DIR/bin/sitepod-server" ] || [ ! -f "$SCRIPT_DIR/bin/sitepod"
     cd "$SCRIPT_DIR"
 fi
 
-# Start server
+# Start server with IS_DEMO=1 for demo mode tests
 info "Starting server..."
 rm -rf "$DATA_DIR"
 mkdir -p "$DATA_DIR"
 cd "$SCRIPT_DIR"
-SITEPOD_ADMIN_TOKEN="$ADMIN_TOKEN" "$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
+IS_DEMO=1 SITEPOD_ADMIN_TOKEN="$ADMIN_TOKEN" "$SCRIPT_DIR/bin/sitepod-server" run --config server/Caddyfile.local > /tmp/sitepod-test.log 2>&1 &
 SERVER_PID=$!
 sleep 8
 
@@ -71,6 +71,70 @@ if echo "$HEALTH" | grep -q "ok"; then
     pass "Health check passed"
 else
     fail "Health check failed: $HEALTH"
+fi
+
+# Test config endpoint (Demo mode)
+info "Testing config endpoint..."
+CONFIG=$(curl -s "$ENDPOINT/api/v1/config")
+if echo "$CONFIG" | grep -q '"is_demo":true'; then
+    pass "Config endpoint returns is_demo=true"
+else
+    fail "Config endpoint failed: $CONFIG"
+fi
+if echo "$CONFIG" | grep -q '"domain"'; then
+    pass "Config endpoint returns domain"
+else
+    fail "Config missing domain: $CONFIG"
+fi
+
+# Test demo user login
+info "Testing demo user login..."
+DEMO_RESP=$(curl -s -X POST -H "Content-Type: application/json" -d '{"email":"demo@sitepod.dev","password":"demo123"}' "$ENDPOINT/api/v1/auth/login")
+DEMO_TOKEN=$(echo "$DEMO_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+if [ -z "$DEMO_TOKEN" ]; then
+    fail "Demo login failed: $DEMO_RESP"
+fi
+pass "Demo user login successful"
+
+# Test demo user auth info
+info "Testing demo user auth info..."
+DEMO_INFO=$(curl -s -H "Authorization: Bearer $DEMO_TOKEN" "$ENDPOINT/api/v1/auth/info")
+if echo "$DEMO_INFO" | grep -q '"is_admin":false'; then
+    pass "Demo user is not admin"
+else
+    fail "Demo auth info failed: $DEMO_INFO"
+fi
+
+# Test PocketBase admin login
+info "Testing PocketBase admin login..."
+ADMIN_RESP=$(curl -s -X POST -H "Content-Type: application/json" -d '{"identity":"admin@sitepod.local","password":"sitepod123"}' "$ENDPOINT/api/admins/auth-with-password")
+PB_ADMIN_TOKEN=$(echo "$ADMIN_RESP" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+if [ -z "$PB_ADMIN_TOKEN" ]; then
+    fail "PocketBase admin login failed: $ADMIN_RESP"
+fi
+pass "PocketBase admin login successful"
+
+# Test admin auth info
+info "Testing admin auth info..."
+ADMIN_INFO=$(curl -s -H "Authorization: Bearer $PB_ADMIN_TOKEN" "$ENDPOINT/api/v1/auth/info")
+if echo "$ADMIN_INFO" | grep -q '"is_admin":true'; then
+    pass "Admin auth info shows is_admin=true"
+else
+    fail "Admin auth info failed: $ADMIN_INFO"
+fi
+
+# Test admin can see all projects (including system ones)
+info "Testing admin projects view..."
+ADMIN_PROJECTS=$(curl -s -H "Authorization: Bearer $PB_ADMIN_TOKEN" "$ENDPOINT/api/v1/projects")
+if echo "$ADMIN_PROJECTS" | grep -q '"owner_email"'; then
+    pass "Admin can see owner_email in projects"
+else
+    fail "Admin projects missing owner_email: $ADMIN_PROJECTS"
+fi
+if echo "$ADMIN_PROJECTS" | grep -q '"console"'; then
+    pass "Admin can see system project (console)"
+else
+    fail "Admin cannot see system projects: $ADMIN_PROJECTS"
 fi
 
 # Test email/password login (register or login)

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { api, type Project } from '../api/client'
   import { auth } from '../lib/auth.svelte'
+  import { config } from '../lib/config.svelte'
   import { href } from '../lib/router.svelte'
   import dayjs from 'dayjs'
   import relativeTime from 'dayjs/plugin/relativeTime'
@@ -105,7 +106,7 @@
                   {project.name}
                 </h3>
                 <p class="text-sm text-slate-500">
-                  {project.name}.sitepod.dev
+                  {(project.subdomain || project.name)}.{config.domain}
                 </p>
               </div>
             </div>

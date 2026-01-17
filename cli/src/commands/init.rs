@@ -4,6 +4,7 @@ use rand::Rng;
 use std::path::Path;
 
 use crate::api::ApiClient;
+use crate::commands::helpers;
 use crate::config::{Config, ProjectToml, RoutingMode};
 use crate::ui;
 
@@ -44,7 +45,7 @@ pub async fn run(
 
     // Choose routing mode
     let modes = vec![
-        "Subdomain mode (e.g., my-app.sitepod.dev)",
+        "Subdomain mode (e.g., my-app.yourdomain.com)",
         "Path mode (e.g., domain.com/my-app/)",
     ];
 
@@ -59,6 +60,8 @@ pub async fn run(
     } else {
         RoutingMode::Path
     };
+
+    let base_domain = helpers::fetch_base_domain(config.server.endpoint.as_deref()).await;
 
     // Get build directory
     let default_dir = detect_build_directory();
@@ -77,7 +80,7 @@ pub async fn run(
         let chosen_subdomain = if let Some(sub) = subdomain {
             sub
         } else {
-            choose_subdomain(config, &project_name).await?
+            choose_subdomain(config, &project_name, base_domain.as_deref()).await?
         };
 
         ProjectToml::with_subdomain(&project_name, &chosen_subdomain, &build_dir)
@@ -105,7 +108,10 @@ pub async fn run(
         if let Some(subdomain) = &project_toml.project.subdomain {
             ui::kv(
                 "subdomain",
-                ui::accent(&format!("{}.sitepod.dev", subdomain)),
+                ui::accent(&helpers::format_subdomain(
+                    subdomain,
+                    base_domain.as_deref(),
+                )),
             );
         }
     } else if let Some(routing) = &project_toml.deploy.routing {
@@ -124,7 +130,11 @@ pub async fn run(
 }
 
 /// Interactive subdomain selection with availability checking
-async fn choose_subdomain(config: &Config, default: &str) -> Result<String> {
+async fn choose_subdomain(
+    config: &Config,
+    default: &str,
+    base_domain: Option<&str>,
+) -> Result<String> {
     // Normalize default to be URL-safe
     let normalized_default = normalize_subdomain(default);
 
@@ -148,17 +158,22 @@ async fn choose_subdomain(config: &Config, default: &str) -> Result<String> {
         if config.has_token() {
             match check_subdomain_availability(config, &subdomain).await {
                 Ok(true) => {
-                    println!("{} {}.sitepod.dev available", ui::icon_ok(), subdomain);
+                    let label = helpers::format_subdomain(&subdomain, base_domain);
+                    println!("{} {} available", ui::icon_ok(), label);
                     return Ok(subdomain);
                 }
                 Ok(false) => {
-                    println!("{} {}.sitepod.dev taken", ui::icon_err(), subdomain);
+                    let label = helpers::format_subdomain(&subdomain, base_domain);
+                    println!("{} {} taken", ui::icon_err(), label);
                     // Continue loop to ask again
                 }
                 Err(e) => {
                     // If check fails (e.g., network error), allow proceeding
                     ui::warn(&format!("Availability check failed: {}", e));
-                    ui::kv("subdomain", &subdomain);
+                    ui::kv(
+                        "subdomain",
+                        helpers::format_subdomain(&subdomain, base_domain),
+                    );
                     return Ok(subdomain);
                 }
             }
