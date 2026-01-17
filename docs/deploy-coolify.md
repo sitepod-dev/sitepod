@@ -171,9 +171,9 @@ sitepod deploy --prod # 部署到生产
 
 | 文件 | 说明 |
 |------|------|
-| `Dockerfile.coolify` | Coolify 专用 Dockerfile，禁用 SSL，使用 8080 端口 |
-| `docker-compose.coolify.yml` | Coolify 专用 Compose，配置持久化存储 |
-| `server/examples/Caddyfile.proxy` | 反向代理模式 Caddyfile |
+| `Dockerfile` | 主 Dockerfile，通过 `SITEPOD_PROXY_MODE=1` 切换代理模式 |
+| `docker-compose.coolify.yml` | Coolify 专用 Compose，预设了代理模式配置 |
+| `server/docker-entrypoint.sh` | 启动脚本，根据环境变量选择 Caddyfile |
 
 ## 常见问题
 
