@@ -28,6 +28,11 @@
     password = 'demo123'
   }
 
+  function fillAdminCredentials() {
+    email = 'admin@sitepod.local'
+    password = 'sitepod123'
+  }
+
   async function handleEmailLogin(e: Event) {
     e.preventDefault()
     if (!email || !password) return
@@ -72,15 +77,25 @@
     {#if configLoaded && isDemo}
       <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <p class="text-sm font-medium text-amber-800 mb-2">Demo Mode</p>
-        <button
-          type="button"
-          onclick={fillDemoCredentials}
-          class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded hover:bg-amber-200 transition"
-        >
-          Fill Demo Credentials
-        </button>
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onclick={fillDemoCredentials}
+            class="text-xs px-2 py-1 bg-amber-100 text-amber-700 rounded hover:bg-amber-200 transition"
+          >
+            Fill Demo User
+          </button>
+          <button
+            type="button"
+            onclick={fillAdminCredentials}
+            class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded hover:bg-orange-200 transition"
+          >
+            Fill Admin
+          </button>
+        </div>
         <p class="text-xs text-amber-600 mt-2">
-          demo@sitepod.dev / demo123
+          Demo: demo@sitepod.dev / demo123<br>
+          Admin: admin@sitepod.local / sitepod123
         </p>
       </div>
     {/if}
