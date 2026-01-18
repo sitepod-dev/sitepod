@@ -1,0 +1,5 @@
+[project]
+name = "binary-assets"
+
+[build]
+directory = "./dist"

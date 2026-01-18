@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SPA Test Site</title>
+  <style>
+    body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }
+    nav { margin-bottom: 20px; }
+    nav a { margin-right: 15px; color: #0066cc; }
+    #app { padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>SPA Test Site</h1>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/about">About</a>
+    <a href="/products">Products</a>
+    <a href="/products/item-1">Item 1</a>
+    <a href="/contact">Contact</a>
+  </nav>
+  <div id="app">
+    <p>This is a Single Page Application test.</p>
+    <p>All routes should fall back to this index.html.</p>
+    <p>Current path: <code id="path"></code></p>
+  </div>
+  <script>
+    document.getElementById('path').textContent = window.location.pathname;
+    window.addEventListener('popstate', () => {
+      document.getElementById('path').textContent = window.location.pathname;
+    });
+    document.querySelectorAll('nav a').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        history.pushState({}, '', a.href);
+        document.getElementById('path').textContent = new URL(a.href).pathname;
+      });
+    });
+  </script>
+</body>
+</html>

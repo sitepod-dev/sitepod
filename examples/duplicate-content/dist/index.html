@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Duplicate Content Test</title>
+  <link rel="stylesheet" href="/shared.css">
+  <style>body { font-family: system-ui; max-width: 600px; margin: 50px auto; padding: 20px; }</style>
+</head>
+<body>
+  <h1>Duplicate Content Test</h1>
+  <p>This site contains multiple copies of the same files to test content-addressed deduplication.</p>
+  <h2>Identical Files (should dedupe to 1 blob)</h2>
+  <ul>
+    <li><a href="/shared.css">shared.css</a> (original)</li>
+    <li><a href="/copy1/shared.css">copy1/shared.css</a> (identical)</li>
+    <li><a href="/copy2/shared.css">copy2/shared.css</a> (identical)</li>
+    <li><a href="/copy3/shared.css">copy3/shared.css</a> (identical)</li>
+  </ul>
+  <h2>Identical HTML (should dedupe)</h2>
+  <ul>
+    <li><a href="/copy1/page.html">copy1/page.html</a></li>
+    <li><a href="/copy2/page.html">copy2/page.html</a></li>
+    <li><a href="/copy3/page.html">copy3/page.html</a></li>
+  </ul>
+  <p><strong>Expected:</strong> 10 files uploaded, but only ~4 unique blobs stored.</p>
+</body>
+</html>

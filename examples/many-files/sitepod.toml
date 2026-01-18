@@ -1,0 +1,5 @@
+[project]
+name = "many-files"
+
+[build]
+directory = "./dist"

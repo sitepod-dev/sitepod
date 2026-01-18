@@ -1,0 +1,5 @@
+[project]
+name = "unicode-files"
+
+[build]
+directory = "./dist"

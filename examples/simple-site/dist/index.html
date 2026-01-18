@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SitePod Demo</title>
+    <style>
+        :root {
+            --bg: #09090b;
+            --card-bg: #18181b;
+            --border: #27272a;
+            --text-main: #e4e4e7;
+            --text-muted: #71717a;
+            --accent: #14b8a6; /* Teal-500 */
+        }
+        body {
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            background: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+        }
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            opacity: 0.5;
+        }
+        h1 {
+            margin: 0 0 0.5rem 0;
+            color: var(--accent);
+            font-size: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 8px var(--accent);
+            animation: pulse 2s infinite;
+        }
+        p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-bottom: 2rem;
+        }
+        .data-grid {
+            display: grid;
+            gap: 1rem;
+            font-size: 0.8rem;
+            border-top: 1px dashed var(--border);
+            padding-top: 1.5rem;
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .label { color: var(--text-muted); }
+        .value { color: var(--text-main); font-weight: 600; }
+        
+        .footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        code {
+            background: #27272a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1><div class="status-dot"></div>Deployment Successful</h1>
+            <p>
+                Congratulations! You have successfully deployed your static site using SitePod.
+            </p>
+
+            <div class="data-grid">
+                <div class="data-row">
+                    <span class="label">Domain</span>
+                    <span class="value" id="domain">...</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Protocol</span>
+                    <span class="value" id="protocol">...</span>
+                </div>
+                <div class="data-row">
+                    <span class="label">Rendered At</span>
+                    <span class="value" id="time">...</span>
+                </div>
+                 <div class="data-row">
+                    <span class="label">User Agent</span>
+                    <span class="value" id="ua" style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">...</span>
+                </div>
+            </div>
+
+            <div class="footer">
+                Try modifying <code>dist/index.html</code> and run <code>sitepod deploy</code> again.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('domain').textContent = window.location.hostname;
+        document.getElementById('protocol').textContent = window.location.protocol.replace(':', '').toUpperCase();
+        document.getElementById('time').textContent = new Date().toLocaleTimeString();
+        document.getElementById('ua').textContent = navigator.userAgent;
+    </script>
+</body>
+</html>

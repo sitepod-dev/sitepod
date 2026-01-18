@@ -1,0 +1,5 @@
+[project]
+name = "nested-deep"
+
+[build]
+directory = "./dist"
