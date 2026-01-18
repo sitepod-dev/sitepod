@@ -274,15 +274,16 @@ func (h *SitePodHandler) apiListProjectsAny(w http.ResponseWriter, r *http.Reque
 	if isAdmin {
 		// Admin can see all projects
 		projects, err = h.app.FindRecordsByFilter(
-			"projects", "1=1", "-created", 100, 0, nil,
+			"projects", "", "-id", 100, 0, nil,
 		)
 		if err != nil {
+			h.logger.Error("failed to list projects for admin", zap.Error(err))
 			return h.jsonResponse(w, http.StatusOK, []any{})
 		}
 	} else {
 		// Regular user can only see their own projects
 		projects, err = h.app.FindRecordsByFilter(
-			"projects", "owner_id = {:owner_id}", "-created", 100, 0,
+			"projects", "owner_id = {:owner_id}", "-id", 100, 0,
 			map[string]any{"owner_id": user.Id},
 		)
 		if err != nil {
@@ -293,12 +294,10 @@ func (h *SitePodHandler) apiListProjectsAny(w http.ResponseWriter, r *http.Reque
 	result := make([]map[string]any, len(projects))
 	for i, p := range projects {
 		item := map[string]any{
-			"id":         p.Id,
-			"name":       p.GetString("name"),
-			"subdomain":  p.GetString("subdomain"),
-			"owner_id":   p.GetString("owner_id"),
-			"created_at": p.GetDateTime("created").String(),
-			"updated_at": p.GetDateTime("updated").String(),
+			"id":        p.Id,
+			"name":      p.GetString("name"),
+			"subdomain": p.GetString("subdomain"),
+			"owner_id":  p.GetString("owner_id"),
 		}
 
 		// Admin can see owner_email
