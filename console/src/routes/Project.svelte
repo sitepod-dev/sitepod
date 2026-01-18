@@ -115,13 +115,19 @@
               <span class="w-3 h-3 rounded-full {env === 'prod' ? 'bg-green-500' : 'bg-amber-500'}"></span>
               <h3 class="font-semibold text-slate-900 capitalize">{env}</h3>
             </div>
-            <a
-              href={getEnvUrl(env)}
-              target="_blank"
-              class="text-sm text-cyan-600 hover:text-cyan-700"
-            >
-              Visit →
-            </a>
+            {#if environments[env]}
+              <a
+                href={getEnvUrl(env)}
+                target="_blank"
+                class="text-sm text-cyan-600 hover:text-cyan-700"
+              >
+                Visit →
+              </a>
+            {:else}
+              <span class="text-sm text-slate-400 cursor-not-allowed">
+                Visit →
+              </span>
+            {/if}
           </div>
 
           {#if environments[env]}
