@@ -207,29 +207,17 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 	})
 }
 
-// API: Auth Info - returns current user/admin info
+// API: Auth Info - returns current user info
 func (h *SitePodHandler) apiAuthInfo(w http.ResponseWriter, r *http.Request) error {
-	authCtx, err := h.authenticateAny(r)
+	user, err := h.authenticate(r)
 	if err != nil {
 		return h.jsonError(w, http.StatusUnauthorized, "authentication required")
 	}
 
-	if authCtx.IsAdmin() {
-		return h.jsonResponse(w, http.StatusOK, map[string]any{
-			"id":           authCtx.Superuser.Id,
-			"email":        authCtx.Superuser.GetString("email"),
-			"is_admin":     true,
-			"is_anonymous": false,
-		})
-	}
-
-	// Regular user
-	isAnonymous := authCtx.User.GetBool("is_anonymous")
-	isAdmin := authCtx.User.GetBool("is_admin")
 	return h.jsonResponse(w, http.StatusOK, map[string]any{
-		"id":           authCtx.User.Id,
-		"email":        authCtx.User.GetString("email"),
-		"is_admin":     isAdmin,
-		"is_anonymous": isAnonymous,
+		"id":           user.Id,
+		"email":        user.GetString("email"),
+		"is_admin":     user.GetBool("is_admin"),
+		"is_anonymous": user.GetBool("is_anonymous"),
 	})
 }

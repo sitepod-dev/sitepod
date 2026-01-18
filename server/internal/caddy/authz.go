@@ -96,11 +96,8 @@ func (h *SitePodHandler) requireAdminToken(r *http.Request) error {
 		}
 	}
 
-	if authCtx, err := h.authenticateAny(r); err == nil {
-		if authCtx.IsAdmin() {
-			return nil
-		}
-		if authCtx.User != nil && authCtx.User.GetBool("is_admin") {
+	if user, err := h.authenticate(r); err == nil {
+		if user.GetBool("is_admin") {
 			return nil
 		}
 	}

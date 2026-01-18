@@ -20,33 +20,26 @@ import (
 	_ "github.com/sitepod/sitepod/migrations"
 )
 
-// AuthContext represents an authenticated entity - either a superuser or a regular user
+// AuthContext represents an authenticated user
 type AuthContext struct {
-	Superuser *core.Record // PocketBase superuser (from _superusers collection)
-	User      *core.Record // Regular user
+	User *core.Record // User from users collection
 }
 
-// IsAdmin returns true if the auth context is for a PocketBase superuser
+// IsAdmin returns true if the user has is_admin=true
 func (a *AuthContext) IsAdmin() bool {
-	return a.Superuser != nil
+	return a.User != nil && a.User.GetBool("is_admin")
 }
 
-// GetID returns the ID of the authenticated entity
+// GetID returns the ID of the authenticated user
 func (a *AuthContext) GetID() string {
-	if a.Superuser != nil {
-		return a.Superuser.Id
-	}
 	if a.User != nil {
 		return a.User.Id
 	}
 	return ""
 }
 
-// GetEmail returns the email of the authenticated entity
+// GetEmail returns the email of the authenticated user
 func (a *AuthContext) GetEmail() string {
-	if a.Superuser != nil {
-		return a.Superuser.GetString("email")
-	}
 	if a.User != nil {
 		return a.User.GetString("email")
 	}
@@ -375,30 +368,13 @@ func (h *SitePodHandler) authenticate(r *http.Request) (*core.Record, error) {
 }
 
 // authenticateAny validates the auth token and returns an AuthContext
-// that can represent either a PocketBase superuser or a regular user
+// Only accepts users from the users collection (not PocketBase superusers)
 func (h *SitePodHandler) authenticateAny(r *http.Request) (*AuthContext, error) {
-	authHeader := r.Header.Get("Authorization")
-	if authHeader == "" {
-		return nil, errors.New("no authorization header")
-	}
-
-	tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-	if tokenStr == authHeader {
-		return nil, errors.New("invalid authorization format")
-	}
-
-	// Try to find the auth record by token - this validates and determines the token type
-	record, err := h.app.FindAuthRecordByToken(tokenStr, core.TokenTypeAuth)
+	user, err := h.authenticate(r)
 	if err != nil {
 		return nil, err
 	}
-
-	// Check if it's from the _superusers collection
-	if record.Collection().Name == core.CollectionNameSuperusers {
-		return &AuthContext{Superuser: record}, nil
-	}
-
-	return &AuthContext{User: record}, nil
+	return &AuthContext{User: user}, nil
 }
 
 // jsonResponse writes a JSON response

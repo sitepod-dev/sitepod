@@ -262,15 +262,12 @@ func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, u
 
 // API: List Projects (supports both admin and user tokens)
 func (h *SitePodHandler) apiListProjectsAny(w http.ResponseWriter, r *http.Request) error {
-	authCtx, err := h.authenticateAny(r)
+	user, err := h.authenticate(r)
 	if err != nil {
 		return h.jsonError(w, http.StatusUnauthorized, "authentication required")
 	}
 
-	isAdmin := authCtx.IsAdmin()
-	if !isAdmin && authCtx.User != nil && authCtx.User.GetBool("is_admin") {
-		isAdmin = true
-	}
+	isAdmin := user.GetBool("is_admin")
 
 	var projects []*core.Record
 
@@ -286,7 +283,7 @@ func (h *SitePodHandler) apiListProjectsAny(w http.ResponseWriter, r *http.Reque
 		// Regular user can only see their own projects
 		projects, err = h.app.FindRecordsByFilter(
 			"projects", "owner_id = {:owner_id}", "-created", 100, 0,
-			map[string]any{"owner_id": authCtx.User.Id},
+			map[string]any{"owner_id": user.Id},
 		)
 		if err != nil {
 			return h.jsonResponse(w, http.StatusOK, []any{})
