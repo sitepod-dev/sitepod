@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase/core"
+	"go.uber.org/zap"
 )
 
 // API: Add Domain
@@ -109,12 +110,22 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 // API: List Domains
 func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, user *core.Record) error {
 	projectName := r.URL.Query().Get("project")
+	h.logger.Info("[SITEPOD API] apiListDomains called",
+		zap.String("project", projectName),
+		zap.String("user_id", user.Id),
+		zap.Bool("is_admin", user.GetBool("is_admin")),
+	)
+
 	if projectName == "" {
 		return h.jsonError(w, http.StatusBadRequest, "project required")
 	}
 
 	project, err := h.requireProjectOwnerByName(projectName, user)
 	if err != nil {
+		h.logger.Info("[SITEPOD API] requireProjectOwnerByName failed",
+			zap.String("project", projectName),
+			zap.Error(err),
+		)
 		if errors.Is(err, errForbidden) {
 			return h.jsonError(w, http.StatusForbidden, "forbidden")
 		}
@@ -126,7 +137,7 @@ func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, 
 		map[string]any{"project_id": project.Id},
 	)
 	if err != nil {
-		return h.jsonError(w, http.StatusInternalServerError, "failed to list domains")
+		return h.jsonErrorf(w, http.StatusInternalServerError, "failed to list domains", err)
 	}
 
 	result := make([]map[string]any, len(domains))

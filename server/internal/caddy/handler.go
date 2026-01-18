@@ -128,6 +128,7 @@ func (h *SitePodHandler) Provision(ctx caddy.Context) error {
 	// Initialize PocketBase (headless mode - no HTTP server)
 	h.app = pocketbase.NewWithConfig(pocketbase.Config{
 		DefaultDataDir: h.DataDir,
+		DefaultDev:     envBool("SITEPOD_PB_DEV"),
 	})
 
 	// Bootstrap the app (initialize config and logger)
@@ -138,6 +139,11 @@ func (h *SitePodHandler) Provision(ctx caddy.Context) error {
 	// Disable PocketBase internal request logging (we use Caddy's logging)
 	settings := h.app.Settings()
 	settings.Logs.MaxDays = 0
+
+	// Forward PocketBase logs to Caddy's logger (without enabling PB log storage)
+	if err := h.installPocketBaseLogger(); err != nil {
+		h.logger.Warn("failed to install pocketbase logger", zap.Error(err))
+	}
 
 	// Initialize database schema
 	if err := h.initDatabaseSchema(); err != nil {
@@ -193,6 +199,7 @@ func (h *SitePodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request, next 
 
 	// API routes
 	if strings.HasPrefix(path, "/api/v1/") {
+		h.logger.Info("[SITEPOD] API request", zap.String("method", r.Method), zap.String("path", path))
 		return h.handleAPI(w, r)
 	}
 
@@ -389,6 +396,19 @@ func (h *SitePodHandler) jsonError(w http.ResponseWriter, status int, message st
 	// Log server errors (5xx)
 	if status >= 500 {
 		h.logger.Error("[SITEPOD API] server error", zap.Int("status", status), zap.String("message", message))
+	}
+	return h.jsonResponse(w, status, map[string]string{"error": message})
+}
+
+// jsonErrorf writes a JSON error response with formatted cause for logging
+func (h *SitePodHandler) jsonErrorf(w http.ResponseWriter, status int, message string, cause error) error {
+	// Log server errors (5xx) with cause
+	if status >= 500 {
+		h.logger.Error("[SITEPOD API] server error",
+			zap.Int("status", status),
+			zap.String("message", message),
+			zap.Error(cause),
+		)
 	}
 	return h.jsonResponse(w, status, map[string]string{"error": message})
 }
