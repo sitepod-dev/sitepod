@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase/core"
-	"go.uber.org/zap"
 )
 
 // API: Add Domain
@@ -127,7 +126,6 @@ func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, 
 		map[string]any{"project_id": project.Id},
 	)
 	if err != nil {
-		h.logger.Error("failed to list domains", zap.Error(err), zap.String("project_id", project.Id))
 		return h.jsonError(w, http.StatusInternalServerError, "failed to list domains")
 	}
 

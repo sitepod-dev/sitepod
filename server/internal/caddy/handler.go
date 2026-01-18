@@ -386,5 +386,9 @@ func (h *SitePodHandler) jsonResponse(w http.ResponseWriter, status int, data an
 
 // jsonError writes a JSON error response
 func (h *SitePodHandler) jsonError(w http.ResponseWriter, status int, message string) error {
+	// Log server errors (5xx)
+	if status >= 500 {
+		h.logger.Error("API error", zap.Int("status", status), zap.String("message", message))
+	}
 	return h.jsonResponse(w, status, map[string]string{"error": message})
 }
