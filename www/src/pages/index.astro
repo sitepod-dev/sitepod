@@ -8,7 +8,7 @@ import { VERSION } from '../consts';
 const currentYear = new Date().getFullYear();
 ---
 
-<LandingLayout title="SitePod — Self-hosted static deployments">
+<LandingLayout title="SitePod — Self-hosted static releases">
 	<Navbar />
 
 	<main class="relative pt-32 pb-16">
@@ -22,12 +22,30 @@ const currentYear = new Date().getFullYear();
                         <span class="text-[10px] font-mono font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider">v{VERSION} Public Beta</span>
                     </div>
                     <h1 class="text-5xl sm:text-7xl font-bold tracking-tight text-slate-900 dark:text-slate-50 mb-6 font-display leading-[1.1]">
-                        Deploy static sites, then <span class="text-cyan-600 dark:text-cyan-400">roll back in seconds</span>.
+                        Self-hosted static releases, <span class="text-cyan-600 dark:text-cyan-400">roll back in seconds</span>.
                     </h1>
                     <p class="text-xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
-                        Self-hosted, one-binary deploys.
-                        <span class="text-slate-900 dark:text-slate-200 font-medium">Open-source alternative to surge.sh.</span>
+                        Deploy a build directory to your own infrastructure with content-hash versions,
+                        preview URLs, and prod/beta environments. No build service — bring your own output.
                     </p>
+                    <p class="mt-4 text-sm text-slate-500 max-w-xl">
+                        Feels like a one-command CLI deploy, but you own the storage and domains.
+                    </p>
+
+                    <ul class="mt-6 space-y-2 text-sm text-slate-500">
+                        <li class="flex items-center gap-2">
+                            <span class="w-1 h-1 rounded-full bg-cyan-500"></span>
+                            One command release to prod/beta/preview
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="w-1 h-1 rounded-full bg-cyan-500"></span>
+                            Incremental uploads via content hashes
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="w-1 h-1 rounded-full bg-cyan-500"></span>
+                            Instant rollback by switching refs
+                        </li>
+                    </ul>
 
                     <div class="mt-8 flex flex-wrap gap-4 items-start">
                         <div class="relative group">
@@ -68,6 +86,42 @@ const currentYear = new Date().getFullYear();
                  <p class="text-sm text-slate-500 mt-2 px-1 max-w-2xl">
                     Pointer-based releases. Rollback is a ref switch.
                 </p>
+            </div>
+
+            <!-- POSITIONING SECTION -->
+            <div class="border-t border-slate-200 dark:border-slate-800 pt-24 mb-24">
+                <div class="flex justify-between items-baseline px-1">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-slate-500">Positioning</h2>
+                    <span class="font-mono text-xs text-cyan-600 dark:text-cyan-400">2x2</span>
+                </div>
+                <p class="text-sm text-slate-500 mt-2 px-1 max-w-2xl">
+                    A quick map of where SitePod fits among common static deployment workflows.
+                </p>
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div></div>
+                    <div class="text-xs uppercase tracking-widest text-slate-400 font-mono">Directory upload</div>
+                    <div class="text-xs uppercase tracking-widest text-slate-400 font-mono">Git-driven</div>
+
+                    <div class="text-xs uppercase tracking-widest text-slate-400 font-mono flex items-center">Platform-hosted</div>
+                    <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                        <div class="font-semibold text-slate-900 dark:text-slate-200">Surge</div>
+                        <div class="text-slate-500 text-xs">CLI uploads a folder</div>
+                    </div>
+                    <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                        <div class="font-semibold text-slate-900 dark:text-slate-200">GitHub Pages / Cloudflare Pages</div>
+                        <div class="text-slate-500 text-xs">Git push builds & deploys</div>
+                    </div>
+
+                    <div class="text-xs uppercase tracking-widest text-slate-400 font-mono flex items-center">Self-hosted</div>
+                    <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-cyan-500/30">
+                        <div class="font-semibold text-slate-900 dark:text-slate-200">SitePod</div>
+                        <div class="text-slate-500 text-xs">Directory-first with versioned refs</div>
+                    </div>
+                    <div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                        <div class="font-semibold text-slate-900 dark:text-slate-200">DIY CI + OSS/CDN</div>
+                        <div class="text-slate-500 text-xs">Custom scripts & pipelines</div>
+                    </div>
+                </div>
             </div>
 
             <!-- GRID SYSTEM: CONTROL vs DATA -->

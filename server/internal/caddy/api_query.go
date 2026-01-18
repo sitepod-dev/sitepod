@@ -134,7 +134,7 @@ func (h *SitePodHandler) apiGetHistory(w http.ResponseWriter, r *http.Request, u
 	}
 
 	images, err := h.app.FindRecordsByFilter(
-		"images", "project_id = {:project_id}", "-created", limit, 0,
+		"images", "project_id = {:project_id}", "-id", limit, 0,
 		map[string]any{"project_id": project.Id},
 	)
 	if err != nil {
@@ -224,7 +224,7 @@ func (h *SitePodHandler) apiListImages(w http.ResponseWriter, r *http.Request, u
 	}
 
 	images, err := h.app.FindRecordsByFilter(
-		"images", "project_id = {:project_id}", "-created", limit, offset,
+		"images", "project_id = {:project_id}", "-id", limit, offset,
 		map[string]any{"project_id": project.Id},
 	)
 	if err != nil {

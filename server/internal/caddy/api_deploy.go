@@ -382,7 +382,7 @@ func (h *SitePodHandler) apiRelease(w http.ResponseWriter, r *http.Request, user
 		image, err = h.app.FindFirstRecordByData("images", "image_id", req.ImageID)
 	} else {
 		images, err := h.app.FindRecordsByFilter(
-			"images", "project_id = {:project_id}", "-created", 1, 0,
+			"images", "project_id = {:project_id}", "-id", 1, 0,
 			map[string]any{"project_id": project.Id},
 		)
 		if err == nil && len(images) > 0 {

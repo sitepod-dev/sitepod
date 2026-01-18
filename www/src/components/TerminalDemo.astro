@@ -1,7 +1,7 @@
 <div class="relative rounded border border-slate-800 bg-slate-950 font-mono text-sm leading-relaxed w-full max-w-lg mx-auto shadow-2xl shadow-black/50">
     <!-- Header (Minimal) -->
     <div class="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-slate-900">
-        <div class="text-xs text-slate-500">zsh — sitepod deploy</div>
+        <div class="text-xs text-slate-500">zsh — deploy → preview → rollback</div>
         <div class="flex gap-1.5">
             <div class="w-2 h-2 rounded-full bg-slate-700"></div>
         </div>
@@ -11,21 +11,21 @@
     <div class="p-4 h-[300px] text-slate-400 overflow-y-auto overflow-x-hidden" id="terminal-output">
         <div class="flex mt-2 mb-1">
             <span class="text-cyan-500 mr-2">$</span>
-            <span class="text-slate-100">sitepod deploy</span>
+            <span class="text-slate-100">sitepod deploy --prod</span>
         </div>
         <div class="text-slate-400"><span class="text-cyan-500 mr-2">◐</span>Scanning ./dist</div>
         <div class="text-slate-400"><span class="text-cyan-500 mr-2">→</span>12 new, 30 reused (71%)</div>
         <div class="text-slate-300"><span class="text-lime-400 mr-2">✓</span>Released to prod</div>
         <div>
             <span class="text-slate-500 w-20 inline-block">url:</span>
-            <span class="text-slate-300">https://sitepod.dev</span>
+            <span class="text-slate-300">https://acme.example.com</span>
         </div>
     </div>
 </div>
 
 <script>
     const steps = [
-        { text: "sitepod deploy", type: "input", delay: 800 },
+        { text: "sitepod deploy --prod", type: "input", delay: 800 },
         { text: "Scanning ./dist", type: "step", delay: 400 },
         { text: "Found 42 files", type: "success", delay: 300 },
         { text: "Planning deployment", type: "step", delay: 400 },
@@ -36,12 +36,19 @@
         { text: "Commit ready", type: "success", delay: 300 },
         { text: "Releasing to prod", type: "step", delay: 300 },
         { text: "Released to prod", type: "success", delay: 400 },
-        { text: "url: https://sitepod.dev", type: "kv", delay: 800 },
-        { text: "", type: "spacer", delay: 800 },
-        { text: "sitepod status", type: "input", delay: 800 },
-        { text: "Domain:   sitepod.dev", type: "kv", delay: 100 },
-        { text: "Version:  v12 (current)", type: "kv-highlight", delay: 100 },
-        { text: "Ref:      prod", type: "kv", delay: 100 },
+        { text: "url: https://acme.example.com", type: "kv", delay: 800 },
+        { text: "", type: "spacer", delay: 600 },
+        { text: "sitepod preview", type: "input", delay: 800 },
+        { text: "Creating preview", type: "step", delay: 400 },
+        { text: "Preview ready", type: "success", delay: 400 },
+        { text: "url: https://acme-preview.sitepod.dev", type: "kv", delay: 600 },
+        { text: "expires: 2026-01-19 12:00:00 UTC", type: "kv", delay: 600 },
+        { text: "", type: "spacer", delay: 600 },
+        { text: "sitepod rollback", type: "input", delay: 800 },
+        { text: "Rollback prod → img_9f2c1a", type: "step", delay: 400 },
+        { text: "Rollback complete", type: "success", delay: 400 },
+        { text: "url: https://acme.example.com", type: "kv", delay: 600 },
+        { text: "previous: img_2a1b7d", type: "kv", delay: 600 },
     ];
 
     function runAnimation() {

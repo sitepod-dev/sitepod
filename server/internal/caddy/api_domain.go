@@ -118,7 +118,7 @@ func (h *SitePodHandler) apiListDomains(w http.ResponseWriter, r *http.Request, 
 	}
 
 	domains, err := h.app.FindRecordsByFilter(
-		"domains", "project_id = {:project_id}", "-is_primary,-created", 100, 0,
+		"domains", "project_id = {:project_id}", "-is_primary,-id", 100, 0,
 		map[string]any{"project_id": project.Id},
 	)
 	if err != nil {
