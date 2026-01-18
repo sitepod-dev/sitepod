@@ -74,15 +74,16 @@ func (h *SitePodHandler) ensureDefaultAdmin() error {
 }
 
 // ensureConsoleAdmin creates or updates a console admin user based on env vars.
-// In Demo mode, if SITEPOD_CONSOLE_ADMIN_* is not set, uses PocketBase admin credentials.
+// In Demo mode or local development, if SITEPOD_CONSOLE_ADMIN_* is not set, uses PocketBase admin credentials.
 func (h *SitePodHandler) ensureConsoleAdmin() error {
 	email := os.Getenv("SITEPOD_CONSOLE_ADMIN_EMAIL")
 	password := os.Getenv("SITEPOD_CONSOLE_ADMIN_PASSWORD")
 
-	// In Demo mode, fallback to PocketBase admin credentials if Console admin not set
+	// In Demo mode or local dev, fallback to PocketBase admin credentials if Console admin not set
 	isDemo := os.Getenv("IS_DEMO") == "1" || os.Getenv("IS_DEMO") == "true"
+	isLocalDev := strings.HasPrefix(h.Domain, "localhost")
 	if email == "" || password == "" {
-		if isDemo {
+		if isDemo || isLocalDev {
 			email = os.Getenv("SITEPOD_ADMIN_EMAIL")
 			if email == "" {
 				email = "admin@sitepod.local"
