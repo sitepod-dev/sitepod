@@ -1,17 +1,27 @@
 # SitePod
 
-**Self-hosted static deployments. Immutable deploys, instant rollback.**
+**Self-hosted static releases with instant rollback.**
 
-SitePod treats every deployment as an immutable **Pod** — a content-addressed snapshot of your site. Environments (prod, beta, preview) are just refs pointing to pods. Switch versions in milliseconds, not minutes.
+SitePod treats every deployment as an immutable **Pod** — a content-addressed snapshot of your site. Environments (prod, beta, preview) are just refs pointing to pods. Switch versions in seconds, not minutes.
 
-- 🚀 One command to deploy: `sitepod deploy --prod`
+- 🚀 One command release: `sitepod deploy --prod`
+- 👀 Preview URLs for fast review
 - ⚡ Instant rollback: switch refs, not rebuild
 - 📦 Incremental uploads: only upload what changed
 - 🔒 Self-hosted: your data, your infrastructure
 
+SitePod is **directory-first**. It does not build your app — bring your own output (`dist/`, `build/`, `out/`).
+
+## Positioning (2×2)
+
+| | Directory upload | Git-driven |
+|---|---|---|
+| **Platform-hosted** | Surge | GitHub Pages / Cloudflare Pages |
+| **Self-hosted** | **SitePod** | DIY CI + OSS/CDN |
+
 ## Quick Start
 
-### Local Testing (30 seconds)
+### Local Testing (60 seconds: deploy → preview → rollback)
 
 ```bash
 # Build everything
@@ -30,6 +40,12 @@ cd examples/simple-site
 
 # Visit your site
 open http://demo-site-beta.localhost:8080
+
+# Create a 24h preview URL
+../../bin/sitepod preview
+
+# Roll back (interactive selection)
+../../bin/sitepod rollback
 ```
 
 ### Install CLI

@@ -1,4 +1,4 @@
-# SitePod — Self-hosted static deployments
+# SitePod — Self-hosted static releases
 
 ## 运维手册 (OPS)
 

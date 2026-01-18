@@ -29,5 +29,15 @@ This is a minimal example demonstrating how to deploy a static HTML site with Si
    sitepod deploy
    ```
 
-4. **Update**:
+4. **Preview**:
+   ```bash
+   sitepod preview
+   ```
+
+5. **Rollback**:
+   ```bash
+   sitepod rollback
+   ```
+
+6. **Update**:
    Modify `dist/index.html` and run `sitepod deploy` again. The changes will be live instantly.

@@ -11,7 +11,7 @@ mod update;
 
 use commands::{console, deploy, domain, history, init, login, preview, rollback};
 
-/// SitePod — Self-hosted static deployments
+/// SitePod — Self-hosted static releases
 #[derive(Parser)]
 #[command(name = "sitepod")]
 #[command(author, version, about, long_about = None)]

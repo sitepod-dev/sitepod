@@ -2,7 +2,7 @@
 name = "sitepod"
 version = "0.2.0"
 edition = "2021"
-description = "CLI for SitePod - Self-hosted static deployments"
+description = "CLI for SitePod - Self-hosted static releases"
 license = "MIT"
 repository = "https://github.com/sitepod-dev/sitepod"
 

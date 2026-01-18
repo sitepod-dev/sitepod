@@ -1,14 +1,15 @@
 ---
 title: Quick Start
-description: Deploy your first static site in 30 seconds
+description: Deploy, preview, and rollback in under a minute
 ---
 
-Get your static site deployed in under a minute.
+Get your static site released in under a minute.
 
 ## Prerequisites
 
 - Node.js 18+ (for npx)
 - A static site with a build directory (e.g., `dist/`, `build/`, `out/`)
+- SitePod does **not** build your app — run your build first
 
 ## Deploy in 30 seconds
 
@@ -58,6 +59,20 @@ $ npx sitepod deploy
 
   url: https://my-site-beta.sitepod.dev
 ```
+
+## 60-second demo: deploy → preview → rollback
+
+After your first deploy, try the full release flow:
+
+```bash
+# Create a 24h preview URL
+npx sitepod preview
+
+# Roll back to a previous version (interactive)
+npx sitepod rollback
+```
+
+Preview gives you a shareable, expiring URL. Rollback switches the environment ref to a previous Pod — no rebuild needed.
 
 ## Install the CLI (optional)
 

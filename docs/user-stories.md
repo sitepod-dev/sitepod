@@ -11,7 +11,7 @@
 ```bash
 $ cd my-project
 
-# 1. 登录（类似 surge.sh，新邮箱自动注册）
+# 1. 登录（新邮箱自动注册）
 $ npx sitepod login
 ? 服务器地址: https://app.sitepod.dev
 ? 邮箱: alice@example.com
@@ -34,6 +34,19 @@ $ npx sitepod deploy
 ✓ 已部署到 beta
 
   https://my-project-beta.sitepod.dev
+
+# 3. 生成预览链接（默认 24h）
+$ npx sitepod preview
+✓ 预览已创建
+
+  https://my-project-preview.sitepod.dev
+
+# 4. 回滚（选择历史版本）
+$ npx sitepod rollback
+? 回滚到: img_9f2c1a - 2026-01-18 10:30
+✓ 回滚完成
+
+  https://my-project.sitepod.dev
 ```
 
 **子域名冲突时：**

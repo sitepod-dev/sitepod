@@ -53,6 +53,10 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 	}
 
 	baseDomain := h.Domain
+	// Strip port from base domain for comparison
+	if idx := strings.Index(baseDomain, ":"); idx != -1 {
+		baseDomain = baseDomain[:idx]
+	}
 	domainType := "custom"
 	status := "pending"
 	verificationToken := ""

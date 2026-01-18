@@ -3,15 +3,15 @@ title: Introduction
 description: What is SitePod and why you should use it
 ---
 
-SitePod is a **self-hosted static site deployment platform** that treats deployments as immutable snapshots. Deploy once, rollback in seconds.
+SitePod is a **self-hosted static release & rollback platform** for static sites. Deploy once, rollback in seconds.
 
 ## What is SitePod?
 
-SitePod provides a simple way to deploy static websites with:
+SitePod provides a simple way to release static websites with:
 
 - **Single binary** - One executable contains the HTTP server (Caddy), API, and SQLite database
 - **Instant rollbacks** - Switch between any previous deployment version instantly
-- **Zero config** - Auto-detect build directories, generate subdomains, handle SSL
+- **Directory-first** - Upload your build output (`dist/`, `build/`, `out/`)
 - **Self-hosted** - Run on your own infrastructure with full control
 
 ## How it works
@@ -27,6 +27,20 @@ Upload files → Create Pod (snapshot) → Point environment to Pod
                                               ↓
                                       Rollback = move pointer
 ```
+
+## Where SitePod fits
+
+Think of static deployment along two axes:
+
+- **Upload model**: directory upload vs Git-driven
+- **Hosting**: platform-hosted vs self-hosted
+
+| | Directory upload | Git-driven |
+|---|---|---|
+| **Platform-hosted** | Surge | GitHub Pages / Cloudflare Pages |
+| **Self-hosted** | **SitePod (primary path)** | DIY CI + OSS/CDN |
+
+If you've used Surge, the CLI flow will feel familiar — but SitePod deploys to **your** storage and domains.
 
 ## Key Features
 
@@ -44,18 +58,18 @@ Upload files → Create Pod (snapshot) → Point environment to Pod
 - **Automatic HTTPS**: Let's Encrypt integration via Caddy
 - **Low resource usage**: Runs on minimal VPS
 
-## Comparison
+## When SitePod is a fit
 
-| Feature | SitePod | Vercel/Netlify |
-|---------|---------|----------------|
-| Self-hosted | Yes | No |
-| Pricing | Free (your infra) | Tiered |
-| Control | Full | Limited |
-| Rollback | Instant | Usually instant |
-| Custom domains | Yes | Yes |
-| Build service | No (BYO) | Yes |
+- You need **self-hosting** for compliance, latency, or control
+- You already have a build step and want **versioned releases + fast rollback**
+- You want **multi-environment** releases without building a custom pipeline
 
-SitePod focuses on **deployment and hosting** - bring your own build system (npm, Vite, Next export, etc.).
+## When another option may be better
+
+- You want a **managed build service** (e.g., Vercel/Netlify)
+- You prefer **Git-driven auto-deploy** without self-hosting
+
+SitePod focuses on **release and rollback**. Bring your own build system (npm, Vite, Next export, etc.).
 
 ## Next Steps
 

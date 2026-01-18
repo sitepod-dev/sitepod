@@ -16,13 +16,13 @@ SitePod
 
 **英文副标题** (任选一)
 ```
-SitePod — Self-hosted static deployments
-SitePod — Immutable deploys, instant rollback
+SitePod — Self-hosted static releases
+SitePod — Static release & rollback platform
 ```
 
 **中文副标题**
 ```
-SitePod — 自托管静态站点发布，秒级回滚
+SitePod — 自托管静态站点发布与回滚平台
 ```
 
 **使用规则:**
@@ -33,17 +33,17 @@ SitePod — 自托管静态站点发布，秒级回滚
 ### 1.2 首页 Hero 文案
 
 ```
-SitePod — Self-hosted static deployments
+SitePod — Self-hosted static releases
 
-Deploy once, rollback in seconds.
-Your sites as immutable pods.
+Release with one command.
+Rollback in seconds with immutable versions.
 ```
 
 中文版:
 ```
-SitePod — 自托管静态站点发布，秒级回滚
+SitePod — 自托管静态站点发布与回滚平台
 
-一次部署，秒级回滚。
+一条命令发布，秒级回滚。
 把你的站点变成不可变的 Pod。
 ```
 
@@ -55,7 +55,7 @@ SitePod — 自托管静态站点发布，秒级回滚
 
 > **Pod = 一个不可变的站点快照 (manifest + blobs)，环境只是一个可变的 ref 指针。**
 
-这是 SitePod 区别于 Vercel/Netlify 的核心设计：
+这是 SitePod 区别于托管型平台的核心设计：
 
 | | 传统平台 | SitePod |
 |---|----------|---------|
@@ -69,14 +69,15 @@ SitePod — 自托管静态站点发布，秒级回滚
 ```markdown
 # SitePod
 
-**Self-hosted static deployments. Immutable deploys, instant rollback.**
+**Self-hosted static releases with instant rollback.**
 
 SitePod treats every deployment as an immutable **Pod** — a content-addressed
 snapshot of your site. Environments (prod, beta, preview) are just refs pointing
-to pods. Switch versions in milliseconds, not minutes.
+to pods. Switch versions in seconds, not minutes.
 
-- 🚀 One command to deploy: `sitepod deploy --prod`
+- 🚀 One command release: `sitepod deploy --prod`
 - ⚡ Instant rollback: switch refs, not rebuild
+- 👀 Preview URLs: share work-in-progress safely
 - 📦 Incremental uploads: only upload what changed
 - 🔒 Self-hosted: your data, your infrastructure
 ```
@@ -575,18 +576,18 @@ docs.sitepod.dev/
 ### 6.1 一句话介绍
 
 ```
-SitePod: Self-hosted Vercel alternative with instant rollback.
+SitePod: Self-hosted static release & rollback platform.
 ```
 
 ```
-SitePod: 可自托管的静态站点发布平台，秒级回滚。
+SitePod: 自托管静态站点发布与回滚平台。
 ```
 
 ### 6.2 三点价值
 
 ```
-1. 🚀 One command deploy — sitepod deploy --prod
-2. ⚡ Instant rollback — switch versions in < 1 second
+1. 🚀 One command release — deploy to prod/beta/preview
+2. ⚡ Instant rollback — switch refs, no rebuild
 3. 🔒 Self-hosted — your data stays on your infrastructure
 ```
 
@@ -595,6 +596,7 @@ SitePod: 可自托管的静态站点发布平台，秒级回滚。
 ```
 - Immutable pods: content-addressed storage, never overwrite
 - Incremental uploads: only upload what changed (Plan/Commit)
+- Ref-based releases: roll back by switching pointers
 - Zero vendor lock-in: pluggable storage (Local/S3/OSS/R2)
 - Single binary: PocketBase + Caddy, zero external dependencies
 ```
@@ -606,16 +608,16 @@ SitePod: 可自托管的静态站点发布平台，秒级回滚。
 ### 7.1 Meta Tags
 
 ```html
-<title>SitePod — Self-hosted static deployments</title>
-<meta name="description" content="Deploy static sites with instant rollback. Self-hosted alternative to Vercel/Netlify. One command deploy, immutable versions, zero vendor lock-in.">
-<meta name="keywords" content="static site, deployment, self-hosted, vercel alternative, netlify alternative, rollback, CDN">
+<title>SitePod — Self-hosted static releases</title>
+<meta name="description" content="Self-hosted static releases with instant rollback. One-command deploys, content-hash versions, preview environments, and pluggable storage.">
+<meta name="keywords" content="static site, release, deployment, rollback, self-hosted, preview, content-addressed storage, multi-environment">
 ```
 
 ### 7.2 Open Graph
 
 ```html
-<meta property="og:title" content="SitePod — Self-hosted static deployments">
-<meta property="og:description" content="Deploy once, rollback in seconds. Your sites as immutable pods.">
+<meta property="og:title" content="SitePod — Self-hosted static releases">
+<meta property="og:description" content="Release once, rollback in seconds. Your sites as immutable pods.">
 <meta property="og:image" content="https://sitepod.dev/og-image.png">
 <meta property="og:url" content="https://sitepod.dev">
 ```
@@ -623,8 +625,8 @@ SitePod: 可自托管的静态站点发布平台，秒级回滚。
 ### 7.3 GitHub Topics
 
 ```
-static-site, deployment, self-hosted, vercel-alternative,
-netlify-alternative, cdn, devops, cli, rust, golang
+static-site, release, deployment, rollback, self-hosted,
+preview, content-addressed, cdn, devops, cli, rust, golang
 ```
 
 ---

@@ -124,7 +124,9 @@ pub async fn run(
     println!("Next:");
     println!("  - Build your project");
     println!("  - {}", ui::cmd("sitepod deploy"));
+    println!("  - {}", ui::cmd("sitepod preview"));
     println!("  - {}", ui::cmd("sitepod deploy --prod"));
+    println!("  - {}", ui::cmd("sitepod rollback"));
 
     Ok(())
 }

@@ -40,7 +40,7 @@
         font-size="28"
         font-weight="400"
         fill="#94A3B8"
-        text-anchor="middle">Self-hosted static deployments</text>
+        text-anchor="middle">Self-hosted static releases</text>
 
   <!-- Bottom tagline -->
   <text x="600" y="540"
@@ -48,5 +48,5 @@
         font-size="22"
         font-weight="400"
         fill="#64748B"
-        text-anchor="middle">Deploy once, rollback in seconds</text>
+        text-anchor="middle">Release once, rollback in seconds</text>
 </svg>

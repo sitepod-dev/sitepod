@@ -1,4 +1,4 @@
-# SitePod — Self-hosted static deployments
+# SitePod — Self-hosted static releases
 
 ## 产品需求文档 (PRD)
 
@@ -27,7 +27,7 @@
 
 ### 1.2 产品定位
 
-**SitePod** 是一个可自托管的静态站点部署平台，提供：
+**SitePod** 是一个可自托管的静态站点发布与回滚平台（目录直传为主），提供：
 
 - 一行命令完成上传、发布
 - 基于内容哈希的版本管理
@@ -63,7 +63,7 @@ SitePod:  sitepod deploy --prod
 | **Manifest** | 版本清单，列出所有文件 | package-lock.json |
 | **Blob** | 按内容哈希存储的文件 | Git Object |
 | **Ref** | 环境指向的版本引用 | Git Branch |
-| **Environment** | 部署环境 (prod/beta/preview) | Vercel Preview |
+| **Environment** | 部署环境 (prod/beta/preview) | Preview 环境 |
 
 ---
 
@@ -145,7 +145,7 @@ SitePod:  sitepod deploy --prod
 
 #### 登录流程
 
-登录采用邮箱 + 密码方式，类似 surge.sh：
+登录采用邮箱 + 密码方式，新邮箱自动创建账号：
 
 - 新用户输入邮箱和密码后自动创建账户
 - 已有用户输入邮箱和密码后登录

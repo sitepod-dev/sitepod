@@ -527,7 +527,7 @@ sitepod --version
 sitepod login --endpoint https://sitepod.example.com
 
 # 输入邮箱和密码
-# 新邮箱会自动创建账号（类似 surge.sh）
+# 新邮箱会自动创建账号
 ```
 
 ### 2. 初始化项目

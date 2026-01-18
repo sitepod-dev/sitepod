@@ -16,6 +16,13 @@ This directory contains example projects for testing SitePod deployments.
 | `large-files` | Files up to 7MB | Large file upload |
 | `many-files` | 500+ small files | Batch upload performance |
 
+## 60-Second Demo (deploy → preview → rollback)
+
+```bash
+# From repo root
+./scripts/demo-60s.sh
+```
+
 ## Deploy All Examples
 
 ```bash

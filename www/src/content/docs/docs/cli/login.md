@@ -49,7 +49,7 @@ $ sitepod login
 ✓ Logged in
 ```
 
-If the email doesn't exist, an account will be created automatically (like surge.sh).
+If the email doesn't exist, an account will be created automatically.
 
 ## Configuration
 
