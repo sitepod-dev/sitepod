@@ -4,11 +4,13 @@
 
   let email = $state('')
   let password = $state('')
+  let confirmPassword = $state('')
   let error = $state('')
   let message = $state('')
   let loading = $state(false)
   let isDemo = $state(false)
   let configLoaded = $state(false)
+  let mode = $state<'login' | 'register'>('login')
 
   onMount(async () => {
     try {
@@ -33,19 +35,31 @@
     password = 'sitepod123'
   }
 
-  async function handleEmailLogin(e: Event) {
+  function switchMode(newMode: 'login' | 'register') {
+    mode = newMode
+    error = ''
+    message = ''
+    confirmPassword = ''
+  }
+
+  async function handleSubmit(e: Event) {
     e.preventDefault()
     if (!email || !password) return
+
+    if (mode === 'register' && password !== confirmPassword) {
+      error = 'Passwords do not match'
+      return
+    }
 
     loading = true
     error = ''
     try {
       const result = await auth.login(email, password)
       if (result.success) {
-        message = result.message || 'Logged in'
+        message = result.message || (mode === 'register' ? 'Account created' : 'Logged in')
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Login failed'
+      error = err instanceof Error ? err.message : (mode === 'register' ? 'Registration failed' : 'Login failed')
     } finally {
       loading = false
     }
@@ -55,10 +69,30 @@
 <div class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-md border border-slate-200 shadow-sm p-8 w-full max-w-md">
     <!-- Logo -->
-    <div class="text-center mb-8">
+    <div class="text-center mb-6">
       <img src="/logo-icon.svg" alt="SitePod" class="h-10 w-10 mx-auto mb-4" />
       <h1 class="text-2xl font-bold text-slate-900">SitePod Console</h1>
-      <p class="text-slate-500 mt-2">Sign in to manage your deployments</p>
+      <p class="text-slate-500 mt-2">
+        {mode === 'login' ? 'Sign in to manage your deployments' : 'Create a new account'}
+      </p>
+    </div>
+
+    <!-- Mode Toggle -->
+    <div class="flex mb-6 bg-slate-100 rounded-lg p-1">
+      <button
+        type="button"
+        onclick={() => switchMode('login')}
+        class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition {mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
+      >
+        Sign In
+      </button>
+      <button
+        type="button"
+        onclick={() => switchMode('register')}
+        class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition {mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
+      >
+        Register
+      </button>
     </div>
 
     {#if error}
@@ -100,8 +134,8 @@
       </div>
     {/if}
 
-    <!-- Email login -->
-    <form onsubmit={handleEmailLogin} class="space-y-4">
+    <!-- Email login/register form -->
+    <form onsubmit={handleSubmit} class="space-y-4">
       <div>
         <label for="email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
         <input
@@ -125,17 +159,39 @@
         />
       </div>
 
+      {#if mode === 'register'}
+        <div>
+          <label for="confirmPassword" class="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            bind:value={confirmPassword}
+            placeholder="********"
+            class="w-full px-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition"
+            disabled={loading}
+          />
+        </div>
+      {/if}
+
       <button
         type="submit"
-        disabled={loading || !email || !password}
+        disabled={loading || !email || !password || (mode === 'register' && !confirmPassword)}
         class="w-full py-2 px-4 font-medium rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition bg-cyan-600 text-white hover:bg-cyan-700"
       >
-        {loading ? 'Signing in...' : 'Continue'}
+        {#if loading}
+          {mode === 'register' ? 'Creating account...' : 'Signing in...'}
+        {:else}
+          {mode === 'register' ? 'Create Account' : 'Sign In'}
+        {/if}
       </button>
     </form>
 
     <p class="mt-6 text-center text-xs text-slate-500">
-      New here? Just enter your email and password to create an account.
+      {#if mode === 'login'}
+        Don't have an account? <button type="button" onclick={() => switchMode('register')} class="text-cyan-600 hover:underline">Register</button>
+      {:else}
+        Already have an account? <button type="button" onclick={() => switchMode('login')} class="text-cyan-600 hover:underline">Sign in</button>
+      {/if}
     </p>
   </div>
 </div>
