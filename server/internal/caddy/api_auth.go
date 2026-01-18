@@ -9,11 +9,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// API: Register or Login - creates account if not exists, logs in if exists
+// API: Register or Login
+// action: "login" (default) - only login, error if user doesn't exist
+// action: "register" - only register, error if user exists
 func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Request) error {
 	var req struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
+		Action   string `json:"action"` // "login" or "register"
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return h.jsonError(w, http.StatusBadRequest, "invalid request")
@@ -21,6 +24,10 @@ func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Reque
 
 	email := strings.TrimSpace(strings.ToLower(req.Email))
 	password := req.Password
+	action := req.Action
+	if action == "" {
+		action = "login" // default to login
+	}
 
 	if email == "" || password == "" {
 		return h.jsonError(w, http.StatusBadRequest, "email and password required")
@@ -38,7 +45,11 @@ func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Reque
 	user, err := h.app.FindAuthRecordByEmail("users", email)
 
 	if err != nil {
-		// User doesn't exist - create new account
+		// User doesn't exist
+		if action == "login" {
+			return h.jsonError(w, http.StatusUnauthorized, "user not found")
+		}
+		// action == "register" - create new account
 		usersCollection, err := h.app.FindCollectionByNameOrId("users")
 		if err != nil {
 			return h.jsonError(w, http.StatusInternalServerError, "users collection not found")
@@ -89,7 +100,12 @@ func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Reque
 		})
 	}
 
-	// User exists - verify password
+	// User exists
+	if action == "register" {
+		return h.jsonError(w, http.StatusConflict, "user already exists")
+	}
+
+	// Verify password
 	if !user.ValidatePassword(password) {
 		return h.jsonError(w, http.StatusUnauthorized, "invalid password")
 	}

@@ -67,13 +67,13 @@ function createAuth() {
     get token() { return state.token },
     get loading() { return state.loading },
 
-    async login(email: string, password: string) {
+    async login(email: string, password: string, action: 'login' | 'register' = 'login') {
       state.loading = true
       try {
         const response = await fetch('/api/v1/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password, action })
         })
         if (!response.ok) {
           const err = await response.json().catch(() => ({}))

@@ -54,12 +54,12 @@
     loading = true
     error = ''
     try {
-      const result = await auth.login(email, password)
+      const result = await auth.login(email, password, mode === 'register' ? 'register' : 'login')
       if (result.success) {
         message = result.message || (mode === 'register' ? 'Account created' : 'Logged in')
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : (mode === 'register' ? 'Registration failed' : 'Login failed')
+      error = err instanceof Error ? err.message : (mode === 'register' ? 'Sign up failed' : 'Sign in failed')
     } finally {
       loading = false
     }
@@ -91,7 +91,7 @@
         onclick={() => switchMode('register')}
         class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition {mode === 'register' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}"
       >
-        Register
+        Sign Up
       </button>
     </div>
 
@@ -188,7 +188,7 @@
 
     <p class="mt-6 text-center text-xs text-slate-500">
       {#if mode === 'login'}
-        Don't have an account? <button type="button" onclick={() => switchMode('register')} class="text-cyan-600 hover:underline">Register</button>
+        Don't have an account? <button type="button" onclick={() => switchMode('register')} class="text-cyan-600 hover:underline">Sign Up</button>
       {:else}
         Already have an account? <button type="button" onclick={() => switchMode('login')} class="text-cyan-600 hover:underline">Sign in</button>
       {/if}
