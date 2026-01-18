@@ -42,7 +42,7 @@
     confirmPassword = ''
   }
 
-  async function handleSubmit(e: Event) {
+  async function handleSubmit(e: SubmitEvent) {
     e.preventDefault()
     if (!email || !password) return
 
