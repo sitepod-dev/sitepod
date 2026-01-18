@@ -1,4 +1,4 @@
-.PHONY: all build build-server build-cli build-console run dev test lint lint-server lint-cli clean docker docker-push npm-prepare npm-link npm-publish bump-patch bump-minor bump-major release
+.PHONY: all build build-server build-cli build-console run dev test test-examples lint lint-server lint-cli clean docker docker-push npm-prepare npm-link npm-publish bump-patch bump-minor bump-major release
 
 # Default target
 all: build
@@ -43,6 +43,20 @@ test-server:
 
 test-cli:
 	cd cli && cargo test
+
+# Deploy all example sites (requires server running)
+test-examples:
+	@echo "Deploying all example sites..."
+	@for dir in examples/*/; do \
+		if [ -f "$$dir/sitepod.toml" ]; then \
+			name=$$(basename $$dir); \
+			echo ""; \
+			echo "=== Deploying $$name ==="; \
+			(cd "$$dir" && ../../bin/sitepod deploy -y) || exit 1; \
+		fi \
+	done
+	@echo ""
+	@echo "✓ All examples deployed!"
 
 # Run linters
 lint: lint-server lint-cli
