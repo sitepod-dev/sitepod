@@ -69,8 +69,12 @@ make run
 make build          # Build server + CLI
 make build-server   # Build server only
 make build-cli      # Build CLI only
+make build-console  # Build web console frontend
 make run            # Run server (localhost:8080)
+make dev            # Run server with hot reload (requires air)
 make quick-start    # First time setup: build + create data dir
+make init           # Initialize development environment
+make deps           # Install dependencies
 ```
 
 ### Testing
@@ -78,7 +82,15 @@ make quick-start    # First time setup: build + create data dir
 make test           # Run all tests
 make test-server    # Go tests only
 make test-cli       # Rust tests only
+make test-examples  # Test example sites
 ./test-e2e.sh       # End-to-end tests
+```
+
+### Linting
+```bash
+make lint           # Run all linters
+make lint-server    # Go linting only
+make lint-cli       # Rust linting only
 ```
 
 ### Docker
@@ -97,6 +109,9 @@ make bump-minor     # Bump version x.Y.0
 make bump-major     # Bump version X.0.0
 make release        # Create git tag and push
 make npm-publish    # Publish CLI to npm
+make npm-prepare    # Prepare npm packages
+make npm-link       # Link npm packages locally
+make install-cli    # Install CLI to system
 ```
 
 ### Cleanup
@@ -112,6 +127,7 @@ sitepod.dev/
 │   ├── cmd/caddy/            # Entry point (Caddy + embedded API)
 │   ├── internal/
 │   │   ├── caddy/            # Caddy module (API + static serving)
+│   │   ├── models/           # Data models
 │   │   ├── storage/          # Storage backends (local, S3)
 │   │   └── gc/               # Garbage collection
 │   └── migrations/           # Database migrations
@@ -124,11 +140,18 @@ sitepod.dev/
 │   │   ├── scanner.rs        # File discovery
 │   │   └── commands/         # Command implementations
 │   └── Cargo.toml
+├── console/                   # Web console frontend
+├── www/                       # Marketing website
 ├── docs/                      # Planning documents
 │   ├── prd.md                # Product requirements
 │   ├── tdd.md                # Technical design
 │   ├── ops.md                # Operations manual
 │   └── brand.md              # Brand guidelines
+├── examples/                  # Example sites for testing
+├── npm-packages/              # NPM package wrappers for CLI
+├── scripts/                   # Build and utility scripts
+├── bin/                       # Compiled binaries (gitignored)
+├── data/                      # Runtime data (gitignored)
 ├── Dockerfile
 └── Makefile
 ```
@@ -178,11 +201,31 @@ data/
 
 ## API Endpoints
 
+### Core
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /api/v1/config` | Get server configuration (domain, is_demo) |
+| `GET /api/v1/health` | Health check |
+| `GET /api/v1/metrics` | Server metrics |
+
+### Authentication
+| Endpoint | Purpose |
+|----------|---------|
 | `POST /api/v1/auth/login` | Register or login with email/password |
 | `GET /api/v1/auth/info` | Get current user info (supports admin tokens) |
+| `DELETE /api/v1/account` | Delete user account and all projects |
+
+### Projects
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/v1/projects` | List projects (supports admin and user tokens) |
+| `GET /api/v1/projects/{project}` | Get specific project details |
+| `DELETE /api/v1/projects/{project}` | Delete a project |
+| `GET /api/v1/subdomain/check` | Check subdomain availability |
+
+### Deployment
+| Endpoint | Purpose |
+|----------|---------|
 | `POST /api/v1/plan` | Submit file manifest, get missing blob upload URLs |
 | `POST /api/v1/upload/{plan_id}/{hash}` | Upload blob (direct mode for local storage) |
 | `POST /api/v1/commit` | Confirm upload completion, create image |
@@ -191,11 +234,25 @@ data/
 | `POST /api/v1/preview` | Create temporary preview with expiry |
 | `GET /api/v1/current` | Get current deployment for environment |
 | `GET /api/v1/history` | Get deployment history |
-| `GET /api/v1/health` | Health check |
+| `GET /api/v1/images` | List all images for a project |
+
+### Domains
+| Endpoint | Purpose |
+|----------|---------|
 | `POST /api/v1/domains` | Add custom domain |
-| `POST /api/v1/domains/{domain}/verify` | Verify domain ownership |
 | `GET /api/v1/domains` | List domains |
 | `DELETE /api/v1/domains/{domain}` | Remove domain |
+| `POST /api/v1/domains/{domain}/verify` | Verify domain ownership |
+| `PUT /api/v1/domains/rename` | Rename system-assigned subdomain |
+| `GET /api/v1/domains/check` | Check domain availability (used by Caddy for on-demand TLS) |
+
+### Admin (requires SITEPOD_ADMIN_TOKEN)
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/v1/cleanup` | Cleanup expired users/previews |
+| `POST /api/v1/gc` | Garbage collection |
+| `POST /api/v1/admin/cache/invalidate` | Invalidate ref cache |
+| `POST /api/v1/admin/routing/rebuild` | Rebuild routing index |
 
 ## CLI Commands
 
@@ -225,19 +282,38 @@ sitepod console        # Open SitePod console in browser
 
 ## Environment Variables
 
+### Server Configuration
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SITEPOD_DOMAIN` | Base domain for sites | `localhost` |
-| `SITEPOD_PROXY_MODE` | Run behind reverse proxy (no TLS) | Not set |
+| `SITEPOD_DOMAIN` | Base domain for sites (Caddyfile directive) | `localhost` |
+| `SITEPOD_DATA_DIR` | Data directory path (Caddyfile directive) | `./data` |
 | `SITEPOD_STORAGE_TYPE` | Storage backend: `local`, `s3`, `oss`, `r2` | `local` |
 | `SITEPOD_ACCESS_LOG` | Log all static file requests | Not set |
+| `SITEPOD_PB_DEV` | Enable PocketBase dev mode logging | Not set |
+
+### Authentication & Admin
+| Variable | Description | Default |
+|----------|-------------|---------|
 | `SITEPOD_ADMIN_EMAIL` | PocketBase admin email (PB admin UI only) | `admin@sitepod.local` |
 | `SITEPOD_ADMIN_PASSWORD` | PocketBase admin password (PB admin UI only) | `sitepod123` |
+| `SITEPOD_ADMIN_TOKEN` | Admin token for privileged API operations (cleanup, gc) | Not set |
 | `SITEPOD_CONSOLE_ADMIN_EMAIL` | Console admin email (users.is_admin) | Not set |
 | `SITEPOD_CONSOLE_ADMIN_PASSWORD` | Console admin password (users.is_admin) | Not set |
-| `IS_DEMO` | Demo mode - creates demo user | Not set |
+| `SITEPOD_SYSTEM_EMAIL` | Email for internal system user | `system@sitepod.local` |
+| `SITEPOD_LOG_ADMIN_PASSWORD` | Log admin password in startup banner | Not set |
+
+### Quota Limits
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `SITEPOD_MAX_FILES_PER_DEPLOY` | Max files per deployment | `10000` |
+| `SITEPOD_MAX_FILE_SIZE` | Max individual file size in bytes | `104857600` (100MB) |
+| `SITEPOD_MAX_DEPLOY_SIZE` | Max total deployment size in bytes | `524288000` (500MB) |
+| `SITEPOD_MAX_PROJECTS_PER_USER` | Max projects per user | `100` |
 
 ### Demo Mode
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `IS_DEMO` | Demo mode - creates demo user | Not set |
 
 When `IS_DEMO=1`:
 - Creates demo user: `demo@sitepod.dev` / `demo123`
