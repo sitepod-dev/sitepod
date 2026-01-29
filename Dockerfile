@@ -16,7 +16,7 @@
 # -----------------------------------------------------------------------------
 # Stage: Build Caddy with embedded SitePod API
 # -----------------------------------------------------------------------------
-FROM golang:1.21-alpine AS caddy-builder
+FROM golang:1.24-alpine AS caddy-builder
 
 WORKDIR /app
 
