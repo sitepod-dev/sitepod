@@ -70,16 +70,16 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <CardGrid>
   <Card title="Single Binary" icon="rocket">
-    Caddy + PocketBase + SQLite. Download, run, done. No Docker, no dependencies.
+    Caddy + PocketBase + SQLite in one file. No Docker.
   </Card>
   <Card title="Instant Rollback" icon="seti:clock">
-    Every deploy is an immutable snapshot. Roll back to any version in under a second. No rebuild.
+    Every deploy is an immutable snapshot. Roll back to any version without rebuilding.
   </Card>
   <Card title="Zero Config" icon="seti:config">
-    Detects your build directory, generates subdomains, handles SSL. Just run `deploy`.
+    Auto-detects build directory, generates subdomains, handles SSL.
   </Card>
   <Card title="Self-Hosted" icon="seti:lock">
-    Your server, your data. Runs on any $5/mo VPS.
+    Runs on any $5/mo VPS. Your server, your data.
   </Card>
 </CardGrid>
 
@@ -113,16 +113,16 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <CardGrid>
   <Card title="Content-Addressed" icon="seti:folder">
-    Files stored by hash. Deploy 100MB, change 1KB, upload 1KB.
+    Files stored by hash. Only changed files are uploaded.
   </Card>
   <Card title="Preview Links" icon="seti:image">
-    Shareable, auto-expiring URLs for work-in-progress.
+    Shareable, auto-expiring URLs.
   </Card>
   <Card title="Multi-Environment" icon="seti:git">
-    Built-in beta + prod. Switch instantly.
+    Built-in beta and prod refs.
   </Card>
   <Card title="Custom Domains" icon="seti:favicon">
-    Bring your domain. Auto SSL via Let's Encrypt.
+    Auto SSL via Let's Encrypt.
   </Card>
 </CardGrid>
 
@@ -130,23 +130,23 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <CardGrid>
   <LinkCard
-    title="Deploy in 30 Seconds"
-    description="npx sitepod deploy — that's it"
+    title="Quick Start"
+    description="npx sitepod deploy"
     href="/docs/quickstart/"
   />
   <LinkCard
-    title="Self-Host Guide"
-    description="Run on your own VPS"
+    title="Self-Hosting"
+    description="Run your own server"
     href="/docs/self-hosting/overview/"
   />
   <LinkCard
     title="CLI Reference"
-    description="deploy, rollback, preview, history"
+    description="All available commands"
     href="/docs/cli/deploy/"
   />
   <LinkCard
-    title="API Docs"
-    description="CI/CD integration and automation"
+    title="API Reference"
+    description="REST API for automation"
     href="/docs/api/overview/"
   />
 </CardGrid>

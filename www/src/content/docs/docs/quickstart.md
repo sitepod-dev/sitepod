@@ -3,11 +3,7 @@ title: Quick Start
 description: Deploy, preview, and rollback in under a minute
 ---
 
-## Prerequisites
-
-- Node.js 18+
-- A built static site (`dist/`, `build/`, `out/`)
-- SitePod does **not** build your app — run your build first
+You need Node.js 18+ and a built static site (`dist/`, `build/`, `out/`). SitePod does not build your app.
 
 ## Deploy
 
@@ -16,7 +12,7 @@ cd your-project
 npx sitepod deploy
 ```
 
-First run prompts for email/password, detects your build directory, and deploys to beta:
+On first run, the CLI will prompt for credentials, detect your build directory, and deploy to `beta`:
 
 ```
 $ npx sitepod deploy
@@ -54,11 +50,8 @@ $ npx sitepod deploy
 ## Preview and rollback
 
 ```bash
-# Shareable preview URL (expires in 24h)
-npx sitepod preview
-
-# Roll back to a previous version
-npx sitepod rollback
+npx sitepod preview    # shareable URL, expires in 24h
+npx sitepod rollback   # switch to a previous version
 ```
 
 ## Deploy to production
@@ -67,17 +60,9 @@ npx sitepod rollback
 npx sitepod deploy --prod
 ```
 
-## Install globally (optional)
-
-```bash
-npm install --global sitepod
-```
-
-Then drop `npx` from all commands.
-
 ## Configuration
 
-SitePod creates `sitepod.toml` in your project root:
+The CLI creates a `sitepod.toml` in your project root:
 
 ```toml
 [project]
@@ -87,21 +72,15 @@ name = "my-site"
 directory = "./dist"
 ```
 
-Commit this file.
+You can optionally install globally with `npm install --global sitepod` and drop `npx`.
 
 ## Using your own server
 
-The examples above use the public SitePod instance. To deploy to your own:
+The examples above use the public instance. To deploy to your own:
 
 ```bash
 npx sitepod login --endpoint https://your-server.com
 npx sitepod deploy
 ```
 
-See [Self-Hosting](/docs/self-hosting/overview/) to set up a server.
-
-## Next steps
-
-- [Add a custom domain](/docs/guides/custom-domains/)
-- [Set up CI/CD](/docs/guides/ci-cd/)
-- [CLI reference](/docs/cli/deploy/)
+See [Self-Hosting](/docs/self-hosting/overview/) for setup.

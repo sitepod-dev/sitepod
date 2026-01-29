@@ -5,9 +5,7 @@ description: Understanding SitePod's architecture and terminology
 
 ## Pods
 
-A Pod is an immutable snapshot of your static files. Created on every deploy, never modified after.
-
-Files are content-addressed (BLAKE3 hash), so identical files are stored once regardless of how many Pods reference them.
+A Pod is an immutable snapshot of your static files, created on every deploy. Files are content-addressed by BLAKE3 hash, so identical files across Pods are stored once.
 
 ```
 Pod v1: { index.html, app.js, style.css }
@@ -17,14 +15,14 @@ Pod v3: { index.html, app.js, style.css, new-page.html }
 
 ## Environments
 
-Environments are named pointers (refs) to Pods. Built-in: `beta` and `prod`.
+Environments are named pointers to Pods. Built-in: `beta` and `prod`.
 
 ```
 beta  → Pod v3 (latest)
 prod  → Pod v2 (stable)
 ```
 
-Rollback moves the pointer. That's it.
+Rollback moves the pointer:
 
 ```
 # Before
@@ -34,11 +32,11 @@ prod → Pod v3
 prod → Pod v2
 ```
 
-No files copied. Atomic pointer update. Site serves the previous version immediately.
+Atomic update, no files copied.
 
-## Images (Manifests)
+## Images
 
-An Image is the metadata record of a Pod — a mapping from file paths to content hashes:
+An Image is the metadata record of a Pod — a mapping from paths to content hashes:
 
 ```json
 {
@@ -53,16 +51,11 @@ An Image is the metadata record of a Pod — a mapping from file paths to conten
 }
 ```
 
-Creating a new Image doesn't duplicate files. It just records which blobs belong together.
+Creating an Image doesn't duplicate blobs. It records which ones belong together.
 
 ## Projects
 
-A Project groups deployments for a single site. It has:
-
-- A subdomain (e.g., `my-site.sitepod.dev`)
-- Version history (Images)
-- Environment refs (beta, prod)
-- Optional custom domains
+A Project groups deployments for a single site. Each project has a subdomain (e.g., `my-site.sitepod.dev`), version history, environment refs, and optionally custom domains.
 
 ## Storage layout
 
@@ -83,9 +76,9 @@ data/
 
 ## Control plane vs data plane
 
-The serving path (data plane) reads only from `refs/` and `blobs/`. No database dependency. If the DB goes down, sites keep working.
+The serving path reads from `refs/` and `blobs/` only — no database dependency. If the DB goes down, sites keep working.
 
-The management path (control plane) uses SQLite via PocketBase for auth, audit logs, and history. Not in the critical serving path.
+The management path (auth, audit logs, history) uses SQLite via PocketBase. It is not in the critical serving path.
 
 ## Request flow
 
@@ -101,10 +94,4 @@ Request: https://my-site.sitepod.dev/app.js
 └─────────────────────────────────────┘
 ```
 
-Ref files are cached (5s TTL) — fast enough for serving, short enough for quick rollbacks.
-
-## Next steps
-
-- [CLI Reference](/docs/cli/deploy/) — available commands
-- [Self-Hosting](/docs/self-hosting/overview/) — architecture details
-- [API Reference](/docs/api/overview/) — build integrations
+Ref files are cached with a 5s TTL.
