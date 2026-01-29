@@ -11,7 +11,7 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-GITHUB_REPO="sitepod/sitepod"
+GITHUB_REPO="sitepod-dev/sitepod"
 BINARY_NAME="sitepod"
 INSTALL_DIR="${SITEPOD_INSTALL_DIR:-/usr/local/bin}"
 
