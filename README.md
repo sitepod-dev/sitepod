@@ -1,5 +1,8 @@
 # SitePod
 
+> [!WARNING]
+> **Early Stage Project** — SitePod is under active development and not yet recommended for production use. APIs, configuration formats, and features may introduce breaking changes between releases. We welcome feedback and contributions!
+
 **Self-hosted static releases with instant rollback.**
 
 SitePod treats every deployment as an immutable **Pod** — a content-addressed snapshot of your site. Environments (prod, beta, preview) are just refs pointing to pods. Switch versions in seconds, not minutes.
