@@ -70,16 +70,16 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <CardGrid>
   <Card title="Single Binary" icon="rocket">
-    Caddy + PocketBase + SQLite in one executable. No Docker required. No external dependencies. Just download and run.
+    Caddy + PocketBase + SQLite. Download, run, done. No Docker, no dependencies.
   </Card>
   <Card title="Instant Rollback" icon="seti:clock">
-    Every deploy is an immutable snapshot. Roll back to any version in **< 1 second**. No rebuild, no redeploy.
+    Every deploy is an immutable snapshot. Roll back to any version in under a second. No rebuild.
   </Card>
   <Card title="Zero Config" icon="seti:config">
-    Auto-detect build directory. Generate subdomains. Handle SSL. Just run `deploy` and you're live.
+    Detects your build directory, generates subdomains, handles SSL. Just run `deploy`.
   </Card>
   <Card title="Self-Hosted" icon="seti:lock">
-    Your server. Your data. Your rules. Works on any $5/mo VPS. No vendor lock-in.
+    Your server, your data. Runs on any $5/mo VPS.
   </Card>
 </CardGrid>
 
@@ -113,16 +113,16 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 <CardGrid>
   <Card title="Content-Addressed" icon="seti:folder">
-    Files stored by hash. Same file = one copy. Deploy 100MB, change 1KB, upload only 1KB.
+    Files stored by hash. Deploy 100MB, change 1KB, upload 1KB.
   </Card>
   <Card title="Preview Links" icon="seti:image">
-    Share WIP with your team. Auto-expiring URLs. No environment pollution.
+    Shareable, auto-expiring URLs for work-in-progress.
   </Card>
   <Card title="Multi-Environment" icon="seti:git">
-    Built-in beta + prod. Or create custom environments. Switch instantly.
+    Built-in beta + prod. Switch instantly.
   </Card>
   <Card title="Custom Domains" icon="seti:favicon">
-    Bring your domain. Auto SSL via Let's Encrypt. Wildcard support.
+    Bring your domain. Auto SSL via Let's Encrypt.
   </Card>
 </CardGrid>
 
@@ -136,17 +136,17 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
   />
   <LinkCard
     title="Self-Host Guide"
-    description="Run on your own VPS or Kubernetes"
+    description="Run on your own VPS"
     href="/docs/self-hosting/overview/"
   />
   <LinkCard
     title="CLI Reference"
-    description="deploy, rollback, preview, history..."
+    description="deploy, rollback, preview, history"
     href="/docs/cli/deploy/"
   />
   <LinkCard
     title="API Docs"
-    description="CI/CD integration, webhooks, automation"
+    description="CI/CD integration and automation"
     href="/docs/api/overview/"
   />
 </CardGrid>

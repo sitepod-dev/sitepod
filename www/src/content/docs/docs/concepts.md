@@ -3,16 +3,11 @@ title: Core Concepts
 description: Understanding SitePod's architecture and terminology
 ---
 
-This page explains the key concepts behind SitePod.
+## Pods
 
-## Pods (Immutable Snapshots)
+A Pod is an immutable snapshot of your static files. Created on every deploy, never modified after.
 
-A **Pod** is an immutable snapshot of your static files at a point in time.
-
-- Created on every deployment
-- Content-addressed (files are deduplicated by hash)
-- Never modified after creation
-- Referenced by a unique ID
+Files are content-addressed (BLAKE3 hash), so identical files are stored once regardless of how many Pods reference them.
 
 ```
 Pod v1: { index.html, app.js, style.css }
@@ -20,52 +15,30 @@ Pod v2: { index.html, app.js (updated), style.css }
 Pod v3: { index.html, app.js, style.css, new-page.html }
 ```
 
-## Environments (Refs)
+## Environments
 
-**Environments** are named pointers to Pods.
-
-Built-in environments:
-- `beta` - For testing/staging
-- `prod` - For production
+Environments are named pointers (refs) to Pods. Built-in: `beta` and `prod`.
 
 ```
 beta  → Pod v3 (latest)
 prod  → Pod v2 (stable)
 ```
 
-### How rollback works
-
-Rollback simply moves the pointer to a previous Pod:
+Rollback moves the pointer. That's it.
 
 ```
-# Before rollback
+# Before
 prod → Pod v3
 
 # After: sitepod rollback --to v2
 prod → Pod v2
 ```
 
-No files are copied. The pointer update is atomic. Your site is instantly serving the previous version.
-
-## Content-Addressed Storage
-
-Files are stored by their content hash (BLAKE3).
-
-```
-data/blobs/
-├── a1/a1b2c3d4...  (index.html)
-├── e5/e5f6g7h8...  (app.js)
-└── i9/i9j0k1l2...  (style.css)
-```
-
-Benefits:
-- **Deduplication**: Same file uploaded once, referenced many times
-- **Fast uploads**: Only new/changed files are transferred
-- **Integrity**: Content verified by hash
+No files copied. Atomic pointer update. Site serves the previous version immediately.
 
 ## Images (Manifests)
 
-An **Image** is the metadata record of a Pod:
+An Image is the metadata record of a Pod — a mapping from file paths to content hashes:
 
 ```json
 {
@@ -80,18 +53,18 @@ An **Image** is the metadata record of a Pod:
 }
 ```
 
-The Image points to blobs in storage. Creating a new Image doesn't duplicate files.
+Creating a new Image doesn't duplicate files. It just records which blobs belong together.
 
 ## Projects
 
-A **Project** groups deployments for a single site:
+A Project groups deployments for a single site. It has:
 
-- Has a unique subdomain (e.g., `my-site.sitepod.dev`)
-- Contains multiple Images (version history)
-- Has environment refs (beta, prod)
-- Can have custom domains
+- A subdomain (e.g., `my-site.sitepod.dev`)
+- Version history (Images)
+- Environment refs (beta, prod)
+- Optional custom domains
 
-## Storage Layout
+## Storage layout
 
 ```
 data/
@@ -108,23 +81,13 @@ data/
 └── pb_data/         # SQLite database
 ```
 
-## Control Plane vs Data Plane
+## Control plane vs data plane
 
-SitePod separates concerns:
+The serving path (data plane) reads only from `refs/` and `blobs/`. No database dependency. If the DB goes down, sites keep working.
 
-**Data Plane** (serving requests):
-- Reads only from `refs/` and `blobs/`
-- No database dependency
-- If DB goes down, sites keep working
+The management path (control plane) uses SQLite via PocketBase for auth, audit logs, and history. Not in the critical serving path.
 
-**Control Plane** (management):
-- SQLite database via PocketBase
-- Handles auth, audit logs, history
-- Not in the critical path for serving
-
-This separation means a database issue won't take down your sites.
-
-## Request Flow
+## Request flow
 
 ```
 Request: https://my-site.sitepod.dev/app.js
@@ -138,10 +101,10 @@ Request: https://my-site.sitepod.dev/app.js
 └─────────────────────────────────────┘
 ```
 
-The ref file is cached (5s TTL) for performance while allowing quick updates.
+Ref files are cached (5s TTL) — fast enough for serving, short enough for quick rollbacks.
 
-## Next Steps
+## Next steps
 
-- [CLI Reference](/docs/cli/deploy/) - Available commands
-- [Self-Hosting](/docs/self-hosting/overview/) - Architecture details
-- [API Reference](/docs/api/overview/) - Build integrations
+- [CLI Reference](/docs/cli/deploy/) — available commands
+- [Self-Hosting](/docs/self-hosting/overview/) — architecture details
+- [API Reference](/docs/api/overview/) — build integrations

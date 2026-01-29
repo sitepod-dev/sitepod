@@ -3,24 +3,11 @@ title: Introduction
 description: What is SitePod and why you should use it
 ---
 
-SitePod is a **self-hosted static release & rollback platform** for static sites. Deploy once, rollback in seconds.
+SitePod is a **self-hosted static release & rollback platform**. Single binary. Deploy a directory, roll back in seconds.
 
-## What is SitePod?
+## What it does
 
-SitePod provides a simple way to release static websites with:
-
-- **Single binary** - One executable contains the HTTP server (Caddy), API, and SQLite database
-- **Instant rollbacks** - Switch between any previous deployment version instantly
-- **Directory-first** - Upload your build output (`dist/`, `build/`, `out/`)
-- **Self-hosted** - Run on your own infrastructure with full control
-
-## How it works
-
-SitePod uses a **Pod-based architecture**:
-
-1. **Pods** are immutable, content-addressed snapshots of your static files
-2. **Environments** (beta, prod) are just pointers to Pods
-3. **Rollback** means updating a pointer - no file copying, instant
+You give SitePod a build directory (`dist/`, `build/`, `out/`). It snapshots the files into an immutable **Pod**, then points an environment (beta, prod) at that Pod. Rollback means moving the pointer — no file copying, instant.
 
 ```
 Upload files → Create Pod (snapshot) → Point environment to Pod
@@ -28,51 +15,37 @@ Upload files → Create Pod (snapshot) → Point environment to Pod
                                       Rollback = move pointer
 ```
 
-## Where SitePod fits
+One executable contains the HTTP server (Caddy), API, and SQLite database. No Docker, no external dependencies.
 
-Think of static deployment along two axes:
+## Where it fits
 
-- **Upload model**: directory upload vs Git-driven
-- **Hosting**: platform-hosted vs self-hosted
+Think Surge, but self-hosted.
 
 | | Directory upload | Git-driven |
 |---|---|---|
 | **Platform-hosted** | Surge | GitHub Pages / Cloudflare Pages |
-| **Self-hosted** | **SitePod (primary path)** | DIY CI + OSS/CDN |
+| **Self-hosted** | **SitePod** | DIY CI + OSS/CDN |
 
-If you've used Surge, the CLI flow will feel familiar — but SitePod deploys to **your** storage and domains.
+SitePod focuses on **release and rollback**. Bring your own build system.
 
-## Key Features
+## What you get
 
-### For Developers
+- `sitepod deploy` — one command, done
+- Immutable versioned snapshots with content deduplication
+- Built-in beta and prod environments
+- Preview URLs for sharing work-in-progress
+- Local or S3 storage backends
+- Automatic HTTPS via Let's Encrypt
+- API tokens for CI/CD
+- Runs on a $5/mo VPS
 
-- **One command deploy**: `sitepod deploy`
-- **Preview deployments**: Share work-in-progress with teammates
-- **Multiple environments**: Built-in beta and production
-- **CI/CD friendly**: API tokens for automation
+## When to use something else
 
-### For Operations
+- You want managed builds (Vercel, Netlify)
+- You want Git-push-to-deploy without running a server
 
-- **Single binary**: No complex infrastructure
-- **Local or S3 storage**: Choose your storage backend
-- **Automatic HTTPS**: Let's Encrypt integration via Caddy
-- **Low resource usage**: Runs on minimal VPS
+## Next steps
 
-## When SitePod is a fit
-
-- You need **self-hosting** for compliance, latency, or control
-- You already have a build step and want **versioned releases + fast rollback**
-- You want **multi-environment** releases without building a custom pipeline
-
-## When another option may be better
-
-- You want a **managed build service** (e.g., Vercel/Netlify)
-- You prefer **Git-driven auto-deploy** without self-hosting
-
-SitePod focuses on **release and rollback**. Bring your own build system (npm, Vite, Next export, etc.).
-
-## Next Steps
-
-- [Quick Start](/docs/quickstart/) - Deploy your first site
-- [Core Concepts](/docs/concepts/) - Understand the architecture
-- [Self-Hosting](/docs/self-hosting/overview/) - Run your own SitePod server
+- [Quick Start](/docs/quickstart/) — deploy your first site
+- [Core Concepts](/docs/concepts/) — how Pods and environments work
+- [Self-Hosting](/docs/self-hosting/overview/) — run your own server
