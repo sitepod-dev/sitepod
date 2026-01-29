@@ -1,147 +1,93 @@
 # SitePod
 
 > [!WARNING]
-> **Early Stage Project** — SitePod is under active development and not yet recommended for production use. APIs, configuration formats, and features may introduce breaking changes between releases. We welcome feedback and contributions!
+> Early stage. Not production-ready. APIs may change.
 
-**Self-hosted static releases with instant rollback.**
+Self-hosted static site deployment with instant rollback.
 
-SitePod treats every deployment as an immutable **Pod** — a content-addressed snapshot of your site. Environments (prod, beta, preview) are just refs pointing to pods. Switch versions in seconds, not minutes.
+Every deploy creates an immutable snapshot (Pod). Environments are just pointers to Pods. Rollback = move the pointer. No rebuild.
 
-- 🚀 One command release: `sitepod deploy --prod`
-- 👀 Preview URLs for fast review
-- ⚡ Instant rollback: switch refs, not rebuild
-- 📦 Incremental uploads: only upload what changed
-- 🔒 Self-hosted: your data, your infrastructure
+SitePod does not build your app. Bring your own `dist/`.
 
-SitePod is **directory-first**. It does not build your app — bring your own output (`dist/`, `build/`, `out/`).
+## Features
 
-## Positioning (2×2)
-
-| | Directory upload | Git-driven |
-|---|---|---|
-| **Platform-hosted** | Surge | GitHub Pages / Cloudflare Pages |
-| **Self-hosted** | **SitePod** | DIY CI + OSS/CDN |
+- `sitepod deploy --prod` and you're live
+- Preview URLs for sharing WIP
+- Instant rollback (pointer swap, not rebuild)
+- Incremental uploads (only changed files)
+- Self-hosted, single binary
 
 ## Quick Start
 
-### Local Testing (60 seconds: deploy → preview → rollback)
-
 ```bash
-# Build everything
 make quick-start
-
-# Start server (in terminal 1)
 make run
 
-# Login (in terminal 2) - creates account if new email
+# In another terminal
 ./bin/sitepod login --endpoint http://localhost:8080
-# Enter your email and password
-
-# Deploy example site
 cd examples/simple-site
 ../../bin/sitepod deploy
 
-# Visit your site
 open http://demo-site-beta.localhost:8080
-
-# Create a 24h preview URL
-../../bin/sitepod preview
-
-# Roll back (interactive selection)
-../../bin/sitepod rollback
 ```
 
 ### Install CLI
 
 ```bash
-# macOS/Linux
 curl -fsSL https://get.sitepod.dev | sh
 
-# Or build from source
+# Or from source
 cd cli && cargo build --release
 ```
 
-### Deploy Your Site
+### Deploy
 
 ```bash
-# Initialize project
 sitepod init
-
-# Deploy to beta
-sitepod deploy
-
-# Deploy to production
-sitepod deploy --prod
-
-# Create preview
-sitepod preview
-
-# Rollback
-sitepod rollback
+sitepod deploy          # beta
+sitepod deploy --prod   # production
+sitepod preview         # shareable preview URL
+sitepod rollback        # interactive rollback
 ```
 
 ## Self-Hosting
 
-### Docker
-
 ```bash
-# Start with docker-compose
 docker-compose up -d
 
-# Or use the image directly
+# Or directly
 docker run -d \
-  -p 80:8080 -p 443:8443 -p 8090:8090 \
+  -p 80:8080 -p 443:8443 \
   -v sitepod-data:/data \
   -e SITEPOD_DOMAIN=example.com \
   ghcr.io/sitepod-dev/sitepod:latest
 ```
 
-### Binary
-
-```bash
-# Download and run
-./sitepod-server serve --http=:8080 --data=/var/sitepod-data
-```
-
 ## Architecture
 
+Single binary: Caddy + PocketBase + SQLite.
+
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         Control Plane                            │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                      PocketBase                            │  │
-│  │  Auth │ API │ Admin UI │ GC/Cleanup                       │  │
-│  │                    ↓                                       │  │
-│  │  SQLite (Control Plane SSOT): auth, audit, history, GC    │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                          Data Plane                              │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                   Storage Backend                          │  │
-│  │   refs/{project}/{env}.json  ← Caddy reads directly        │  │
-│  │   blobs/{hash[0:2]}/{hash}   ← File content                │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│                              ↑                                   │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │                      Caddy Server                          │  │
-│  │   TLS (ACME) │ SitePod Module │ Reverse Proxy             │  │
-│  └───────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+Control Plane (SQLite)     Data Plane (filesystem)
+  auth, audit, history       refs/{project}/{env}.json
+  GC roots                   blobs/{hash[0:2]}/{hash}
+         │                          ▲
+         └── writes refs ──────────┘
+                                    │
+                              Caddy serves
+                              (reads storage only)
 ```
 
-**Key invariant**: Caddy serves requests by reading Storage only, never the DB. DB failure doesn't affect live sites.
+Caddy never touches the DB. If the DB goes down, sites keep serving.
 
 ## Configuration
 
-### Server (`/etc/sitepod/config.toml`)
+### Server
 
 ```toml
 [server]
 http_addr = ":80"
 https_addr = ":443"
-admin_addr = ":8090"
 
 [domain]
 primary = "example.com"
@@ -150,15 +96,9 @@ acme_email = "admin@example.com"
 [storage]
 type = "local"  # local | s3 | oss | r2
 path = "/data/blobs"
-
-[gc]
-enabled = true
-interval = "24h"
-grace_period = "1h"
-min_versions = 5
 ```
 
-### CLI (`sitepod.toml`)
+### Project (`sitepod.toml`)
 
 ```toml
 [project]
@@ -169,63 +109,42 @@ directory = "./dist"
 
 [deploy]
 ignore = ["**/*.map", ".*", "node_modules/**"]
-concurrent = 20
 ```
 
-## CLI Commands
+## CLI
 
-| Command | Description |
-|---------|-------------|
-| `sitepod login` | Login to server |
-| `sitepod init` | Initialize project configuration |
-| `sitepod deploy` | Deploy to beta (default) |
+| Command | |
+|---|---|
+| `sitepod login` | Authenticate |
+| `sitepod init` | Create sitepod.toml |
+| `sitepod deploy` | Deploy to beta |
 | `sitepod deploy --prod` | Deploy to production |
-| `sitepod preview` | Create preview deployment |
-| `sitepod rollback` | Rollback to previous version |
-| `sitepod history` | View deployment history |
+| `sitepod preview` | Create preview URL |
+| `sitepod rollback` | Rollback (interactive) |
+| `sitepod history` | View deploy history |
 
-## API Endpoints
+## API
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/v1/auth/login` | Register or login with email/password |
-| `GET /api/v1/auth/info` | Get current user info |
-| `POST /api/v1/plan` | Submit file manifest, get upload URLs |
-| `POST /api/v1/upload/{plan_id}/{hash}` | Upload blob (direct mode) |
-| `POST /api/v1/commit` | Confirm upload, create image |
-| `POST /api/v1/release` | Release image to environment |
-| `POST /api/v1/rollback` | Rollback to previous image |
-| `POST /api/v1/preview` | Create preview deployment |
-| `GET /api/v1/history` | Get deployment history |
-| `GET /api/v1/current` | Get current deployment |
+| Endpoint | |
+|---|---|
+| `POST /api/v1/auth/login` | Register or login |
+| `POST /api/v1/plan` | Submit manifest, get upload URLs |
+| `POST /api/v1/upload/{plan_id}/{hash}` | Upload blob |
+| `POST /api/v1/commit` | Finalize upload |
+| `POST /api/v1/release` | Release to environment |
+| `POST /api/v1/rollback` | Rollback |
+| `POST /api/v1/preview` | Create preview |
+| `GET /api/v1/history` | Deploy history |
 | `GET /api/v1/health` | Health check |
-| `GET /api/v1/metrics` | Prometheus metrics |
 
 ## Development
 
 ```bash
-# Install dependencies
-make deps
-
-# Run server
-make run
-
-# Build everything
-make build
-
-# Run tests
-make test
-
-# Docker build
-make docker-build
+make deps     # install dependencies
+make run      # start server
+make build    # build everything
+make test     # run tests
 ```
-
-## Documentation
-
-- [Product Requirements](./prd.md)
-- [Technical Design](./tdd.md)
-- [Operations Manual](./docs/ops.md)
-- [Brand Guidelines](./brand.md)
 
 ## License
 
