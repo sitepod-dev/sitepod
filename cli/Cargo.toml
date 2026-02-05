@@ -1,6 +1,6 @@
 [package]
 name = "sitepod"
-version = "0.2.4"
+version = "0.2.5"
 edition = "2021"
 description = "CLI for SitePod - Self-hosted static releases"
 license = "MIT"
