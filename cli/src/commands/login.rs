@@ -1,17 +1,32 @@
 use anyhow::{Context, Result};
 use dialoguer::{Input, Password};
+use std::env;
 
 use crate::config::Config;
 use crate::ui;
 
 /// Run the login command
+/// 
+/// Supports non-interactive mode via environment variables:
+/// - SITEPOD_EMAIL: Account email
+/// - SITEPOD_PASSWORD: Account password
 pub async fn run(endpoint: Option<String>) -> Result<()> {
-    ui::heading("Login");
-    println!();
+    // Check for non-interactive mode (CI/CD)
+    let env_email = env::var("SITEPOD_EMAIL").ok();
+    let env_password = env::var("SITEPOD_PASSWORD").ok();
+    let non_interactive = env_email.is_some() && env_password.is_some();
+
+    if !non_interactive {
+        ui::heading("Login");
+        println!();
+    }
 
     // Get endpoint
     let endpoint: String = if let Some(ep) = endpoint {
         ep
+    } else if non_interactive {
+        // In CI, endpoint must be provided via --endpoint or SITEPOD_ENDPOINT
+        anyhow::bail!("Endpoint required in non-interactive mode (use --endpoint or SITEPOD_ENDPOINT)");
     } else {
         Input::new()
             .with_prompt("Server endpoint")
@@ -19,11 +34,22 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
             .interact_text()?
     };
 
-    // Get email and password
-    let email: String = Input::new().with_prompt("Email").interact_text()?;
-    let password: String = Password::new().with_prompt("Password").interact()?;
+    // Get email and password (from env or interactive)
+    let email: String = if let Some(e) = env_email {
+        e
+    } else {
+        Input::new().with_prompt("Email").interact_text()?
+    };
+    
+    let password: String = if let Some(p) = env_password {
+        p
+    } else {
+        Password::new().with_prompt("Password").interact()?
+    };
 
-    println!();
+    if !non_interactive {
+        println!();
+    }
     ui::step("Authenticating");
 
     let client = reqwest::Client::new();
@@ -59,14 +85,23 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
     // Save to config
     Config::save_token(&endpoint, &token)?;
 
-    println!();
-    if created {
-        ui::ok("Account created");
+    if non_interactive {
+        // Minimal output for CI
+        if created {
+            println!("Account created");
+        } else {
+            println!("Logged in");
+        }
     } else {
-        ui::ok("Logged in");
+        println!();
+        if created {
+            ui::ok("Account created");
+        } else {
+            ui::ok("Logged in");
+        }
+        let config_path = Config::global_config_path().unwrap().display().to_string();
+        ui::kv("config", ui::dim(&config_path));
     }
-    let config_path = Config::global_config_path().unwrap().display().to_string();
-    ui::kv("config", ui::dim(&config_path));
 
     Ok(())
 }
