@@ -44,3 +44,9 @@ jobs:
 
       - name: Deploy
         run: ../cli/target/release/sitepod deploy --prod --name sitepod-www -y
+
+      - name: Bind custom domains
+        run: |
+          # Bind sitepod.dev and www.sitepod.dev (idempotent - fails silently if already bound)
+          ../cli/target/release/sitepod domain add sitepod.dev --project sitepod-www || true
+          ../cli/target/release/sitepod domain add www.sitepod.dev --project sitepod-www || true
