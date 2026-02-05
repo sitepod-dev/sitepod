@@ -9,7 +9,7 @@ use crate::ui;
 const SITEPOD_CLOUD_ENDPOINT: &str = "https://app.sitepod.dev";
 
 /// Run the login command
-/// 
+///
 /// Supports non-interactive mode via environment variables:
 /// - SITEPOD_EMAIL: Account email
 /// - SITEPOD_PASSWORD: Account password
@@ -29,11 +29,10 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
         ep
     } else if non_interactive {
         // In CI, try SITEPOD_ENDPOINT env var, otherwise require --endpoint
-        env::var("SITEPOD_ENDPOINT")
-            .unwrap_or_else(|_| {
-                // Default to cloud in CI if not specified
-                SITEPOD_CLOUD_ENDPOINT.to_string()
-            })
+        env::var("SITEPOD_ENDPOINT").unwrap_or_else(|_| {
+            // Default to cloud in CI if not specified
+            SITEPOD_CLOUD_ENDPOINT.to_string()
+        })
     } else {
         // Interactive: let user choose server
         let options = vec![
@@ -49,12 +48,10 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
 
         match selection {
             0 => SITEPOD_CLOUD_ENDPOINT.to_string(),
-            _ => {
-                Input::new()
-                    .with_prompt("Server URL")
-                    .default("http://localhost:8080".to_string())
-                    .interact_text()?
-            }
+            _ => Input::new()
+                .with_prompt("Server URL")
+                .default("http://localhost:8080".to_string())
+                .interact_text()?,
         }
     };
 
@@ -64,7 +61,7 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
     } else {
         Input::new().with_prompt("Email").interact_text()?
     };
-    
+
     let password: String = if let Some(p) = env_password {
         p
     } else {

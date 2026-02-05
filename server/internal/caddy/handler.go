@@ -374,16 +374,6 @@ func (h *SitePodHandler) authenticate(r *http.Request) (*core.Record, error) {
 	return record, nil
 }
 
-// authenticateAny validates the auth token and returns an AuthContext
-// Only accepts users from the users collection (not PocketBase superusers)
-func (h *SitePodHandler) authenticateAny(r *http.Request) (*AuthContext, error) {
-	user, err := h.authenticate(r)
-	if err != nil {
-		return nil, err
-	}
-	return &AuthContext{User: user}, nil
-}
-
 // jsonResponse writes a JSON response
 func (h *SitePodHandler) jsonResponse(w http.ResponseWriter, status int, data any) error {
 	w.Header().Set("Content-Type", "application/json")

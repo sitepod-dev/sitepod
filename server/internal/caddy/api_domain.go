@@ -58,18 +58,15 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 	if idx := strings.Index(baseDomain, ":"); idx != -1 {
 		baseDomain = baseDomain[:idx]
 	}
-	domainType := "custom"
-	status := "active"
 	isAdmin := user.GetBool("is_admin")
 
+	var domainType string
 	if strings.HasSuffix(domain, "."+baseDomain) || domain == baseDomain {
 		// System domain (under SITEPOD_DOMAIN) - always allowed
 		domainType = "system"
-		status = "active"
 	} else if isAdmin {
 		// Admin can bind any custom domain without verification
 		domainType = "custom"
-		status = "active"
 	} else {
 		// Non-admin users cannot bind custom domains
 		return h.jsonError(w, http.StatusForbidden, "custom domains require admin privileges")
@@ -85,7 +82,7 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 	domainRecord.Set("slug", slug)
 	domainRecord.Set("project_id", project.Id)
 	domainRecord.Set("type", domainType)
-	domainRecord.Set("status", status)
+	domainRecord.Set("status", "active")
 	domainRecord.Set("verification_token", "")
 	domainRecord.Set("is_primary", false)
 
@@ -93,7 +90,8 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 		return h.jsonError(w, http.StatusInternalServerError, "failed to create domain")
 	}
 
-	if status == "active" {
+	// Status is always "active" for allowed domains
+	{
 		if err := h.rebuildRoutingIndex(); err != nil {
 			return h.jsonError(w, http.StatusInternalServerError, "failed to rebuild routing index")
 		}
@@ -102,7 +100,7 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 	return h.jsonResponse(w, http.StatusOK, map[string]any{
 		"domain": domain,
 		"slug":   slug,
-		"status": status,
+		"status": "active",
 	})
 }
 
