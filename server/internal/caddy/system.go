@@ -28,7 +28,24 @@ func (h *SitePodHandler) initDatabaseSchema() error {
 }
 
 // ensureDefaultAdmin creates a default superuser account if none exists
+// and ensures an API admin user exists in the users collection
 func (h *SitePodHandler) ensureDefaultAdmin() error {
+	// Get credentials from environment or use defaults
+	email := os.Getenv("SITEPOD_ADMIN_EMAIL")
+	if email == "" {
+		email = "admin@sitepod.local"
+	}
+
+	password := os.Getenv("SITEPOD_ADMIN_PASSWORD")
+	if password == "" {
+		password = "sitepod123"
+	}
+
+	// Always ensure API admin user exists (even if superuser already exists)
+	if err := h.ensureAPIAdminUser(email, password); err != nil {
+		h.logger.Warn("failed to ensure API admin user", zap.Error(err))
+	}
+
 	// Check if any superuser exists
 	superusers, err := h.app.FindAllRecords(core.CollectionNameSuperusers)
 	if err != nil {
@@ -39,15 +56,8 @@ func (h *SitePodHandler) ensureDefaultAdmin() error {
 		return nil // Superuser already exists
 	}
 
-	// Get credentials from environment or use defaults
-	email := os.Getenv("SITEPOD_ADMIN_EMAIL")
-	if email == "" {
-		email = "admin@sitepod.local"
-	}
-
-	password := os.Getenv("SITEPOD_ADMIN_PASSWORD")
-	if password == "" {
-		password = "sitepod123"
+	// Log warning if using default password
+	if os.Getenv("SITEPOD_ADMIN_PASSWORD") == "" {
 		h.logger.Warn("SITEPOD_ADMIN_PASSWORD not set; default admin password in use")
 	}
 
@@ -70,6 +80,43 @@ func (h *SitePodHandler) ensureDefaultAdmin() error {
 		zap.String("hint", "Change password via environment variables SITEPOD_ADMIN_EMAIL and SITEPOD_ADMIN_PASSWORD"),
 	)
 
+	return nil
+}
+
+// ensureAPIAdminUser creates an admin user in the users collection for API access
+func (h *SitePodHandler) ensureAPIAdminUser(email, password string) error {
+	// Check if user already exists
+	existingUser, _ := h.app.FindAuthRecordByEmail("users", email)
+	if existingUser != nil {
+		// User exists, ensure is_admin is true
+		if !existingUser.GetBool("is_admin") {
+			existingUser.Set("is_admin", true)
+			if err := h.app.Save(existingUser); err != nil {
+				return err
+			}
+			h.logger.Info("Updated existing user to admin", zap.String("email", email))
+		}
+		return nil
+	}
+
+	// Create new admin user
+	usersCollection, err := h.app.FindCollectionByNameOrId("users")
+	if err != nil {
+		return err
+	}
+
+	user := core.NewRecord(usersCollection)
+	user.SetEmail(email)
+	user.Set("username", "admin")
+	user.SetVerified(true)
+	user.SetPassword(password)
+	user.Set("is_admin", true)
+
+	if err := h.app.Save(user); err != nil {
+		return err
+	}
+
+	h.logger.Info("API admin user created", zap.String("email", email))
 	return nil
 }
 
