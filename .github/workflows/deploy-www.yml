@@ -43,4 +43,4 @@ jobs:
         run: ../cli/target/release/sitepod login --endpoint https://app.sitepod.dev
 
       - name: Deploy
-        run: ../cli/target/release/sitepod deploy --env production
+        run: ../cli/target/release/sitepod deploy --prod --name sitepod-www -y
