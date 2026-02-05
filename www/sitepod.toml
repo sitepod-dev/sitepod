@@ -1,0 +1,5 @@
+[project]
+name = "sitepod-www"
+
+[build]
+directory = "./dist"

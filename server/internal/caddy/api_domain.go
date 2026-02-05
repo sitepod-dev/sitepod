@@ -59,14 +59,20 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 		baseDomain = baseDomain[:idx]
 	}
 	domainType := "custom"
-	status := "pending"
-	verificationToken := ""
+	status := "active"
+	isAdmin := user.GetBool("is_admin")
 
 	if strings.HasSuffix(domain, "."+baseDomain) || domain == baseDomain {
+		// System domain (under SITEPOD_DOMAIN) - always allowed
 		domainType = "system"
 		status = "active"
+	} else if isAdmin {
+		// Admin can bind any custom domain without verification
+		domainType = "custom"
+		status = "active"
 	} else {
-		verificationToken = "sitepod-verify-" + uuid.New().String()[:16]
+		// Non-admin users cannot bind custom domains
+		return h.jsonError(w, http.StatusForbidden, "custom domains require admin privileges")
 	}
 
 	domainsCollection, err := h.app.FindCollectionByNameOrId("domains")
@@ -80,7 +86,7 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 	domainRecord.Set("project_id", project.Id)
 	domainRecord.Set("type", domainType)
 	domainRecord.Set("status", status)
-	domainRecord.Set("verification_token", verificationToken)
+	domainRecord.Set("verification_token", "")
 	domainRecord.Set("is_primary", false)
 
 	if err := h.app.Save(domainRecord); err != nil {
@@ -93,18 +99,11 @@ func (h *SitePodHandler) apiAddDomain(w http.ResponseWriter, r *http.Request, us
 		}
 	}
 
-	resp := map[string]any{
+	return h.jsonResponse(w, http.StatusOK, map[string]any{
 		"domain": domain,
 		"slug":   slug,
 		"status": status,
-	}
-
-	if verificationToken != "" {
-		resp["verification_token"] = verificationToken
-		resp["verification_txt"] = fmt.Sprintf("_sitepod.%s TXT \"%s\"", domain, verificationToken)
-	}
-
-	return h.jsonResponse(w, http.StatusOK, resp)
+	})
 }
 
 // API: List Domains
