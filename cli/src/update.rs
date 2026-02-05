@@ -1,4 +1,4 @@
-//! Version check module - checks for CLI updates from GitHub releases
+//! Version check module - checks for CLI updates from npm registry
 
 use anyhow::Result;
 use console::style;
@@ -7,15 +7,13 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
-const GITHUB_REPO: &str = "sitepod-dev/sitepod";
+const NPM_PACKAGE: &str = "sitepod";
 const CHECK_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60); // 24 hours
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Deserialize)]
-struct GitHubRelease {
-    tag_name: String,
-    #[allow(dead_code)]
-    html_url: String,
+struct NpmPackageInfo {
+    version: String,
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
@@ -96,10 +94,7 @@ fn write_cache(path: &PathBuf, cache: &VersionCache) -> Result<()> {
 }
 
 async fn fetch_latest_version() -> Result<String> {
-    let url = format!(
-        "https://api.github.com/repos/{}/releases/latest",
-        GITHUB_REPO
-    );
+    let url = format!("https://registry.npmjs.org/{}/latest", NPM_PACKAGE);
 
     let client = reqwest::Client::builder()
         .user_agent("sitepod-cli")
@@ -109,15 +104,12 @@ async fn fetch_latest_version() -> Result<String> {
     let resp = client.get(&url).send().await?;
 
     if !resp.status().is_success() {
-        anyhow::bail!("GitHub API returned {}", resp.status());
+        anyhow::bail!("npm registry returned {}", resp.status());
     }
 
-    let release: GitHubRelease = resp.json().await?;
+    let info: NpmPackageInfo = resp.json().await?;
 
-    // Remove 'v' prefix if present
-    let version = release.tag_name.trim_start_matches('v').to_string();
-
-    Ok(version)
+    Ok(info.version)
 }
 
 /// Compare versions (simple semver comparison)
@@ -150,10 +142,9 @@ fn print_update_notification(latest: &str) {
         style(CURRENT_VERSION).dim(),
         style(latest).green().bold()
     );
-    eprintln!("  Run {} or visit:", style("npm install -g sitepod").cyan());
     eprintln!(
-        "  {}",
-        style(format!("https://github.com/{}/releases", GITHUB_REPO)).dim()
+        "  Run: {}",
+        style("npm install -g sitepod").cyan()
     );
     eprintln!();
 }
