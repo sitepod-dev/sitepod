@@ -30,14 +30,17 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Install SitePod CLI
-        run: npm install -g sitepod
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Build SitePod CLI
+        run: cargo build --release --manifest-path ../cli/Cargo.toml
 
       - name: Login to SitePod
         env:
           SITEPOD_EMAIL: ${{ secrets.SITEPOD_EMAIL }}
           SITEPOD_PASSWORD: ${{ secrets.SITEPOD_PASSWORD }}
-        run: sitepod login --endpoint https://app.sitepod.dev
+        run: ../cli/target/release/sitepod login --endpoint https://app.sitepod.dev
 
       - name: Deploy
-        run: sitepod deploy --env production
+        run: ../cli/target/release/sitepod deploy --env production
