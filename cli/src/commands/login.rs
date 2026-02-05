@@ -1,9 +1,12 @@
 use anyhow::{Context, Result};
-use dialoguer::{Input, Password};
+use dialoguer::{Input, Password, Select};
 use std::env;
 
 use crate::config::Config;
 use crate::ui;
+
+/// Default SitePod Cloud endpoint
+const SITEPOD_CLOUD_ENDPOINT: &str = "https://app.sitepod.dev";
 
 /// Run the login command
 /// 
@@ -25,13 +28,34 @@ pub async fn run(endpoint: Option<String>) -> Result<()> {
     let endpoint: String = if let Some(ep) = endpoint {
         ep
     } else if non_interactive {
-        // In CI, endpoint must be provided via --endpoint or SITEPOD_ENDPOINT
-        anyhow::bail!("Endpoint required in non-interactive mode (use --endpoint or SITEPOD_ENDPOINT)");
+        // In CI, try SITEPOD_ENDPOINT env var, otherwise require --endpoint
+        env::var("SITEPOD_ENDPOINT")
+            .unwrap_or_else(|_| {
+                // Default to cloud in CI if not specified
+                SITEPOD_CLOUD_ENDPOINT.to_string()
+            })
     } else {
-        Input::new()
-            .with_prompt("Server endpoint")
-            .default("http://localhost:8080".to_string())
-            .interact_text()?
+        // Interactive: let user choose server
+        let options = vec![
+            format!("SitePod Cloud ({})", SITEPOD_CLOUD_ENDPOINT),
+            "Self-hosted (enter URL)".to_string(),
+        ];
+
+        let selection = Select::new()
+            .with_prompt("Select SitePod server")
+            .items(&options)
+            .default(0)
+            .interact()?;
+
+        match selection {
+            0 => SITEPOD_CLOUD_ENDPOINT.to_string(),
+            _ => {
+                Input::new()
+                    .with_prompt("Server URL")
+                    .default("http://localhost:8080".to_string())
+                    .interact_text()?
+            }
+        }
     };
 
     // Get email and password (from env or interactive)
