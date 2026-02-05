@@ -27,58 +27,50 @@ func (h *SitePodHandler) initDatabaseSchema() error {
 	return nil
 }
 
-// ensureDefaultAdmin creates a default superuser account if none exists
-// and ensures an API admin user exists in the users collection
+// ensureDefaultAdmin creates admin accounts based on environment variables.
+// If SITEPOD_ADMIN_EMAIL and SITEPOD_ADMIN_PASSWORD are set, creates both:
+//   - PocketBase superuser (for /_/ admin panel)
+//   - SitePod admin user (for API, with is_admin=true)
+//
+// If not set, no admin is created at startup. The first user to register
+// will automatically become admin (handled in apiRegisterOrLogin).
 func (h *SitePodHandler) ensureDefaultAdmin() error {
-	// Get credentials from environment or use defaults
 	email := os.Getenv("SITEPOD_ADMIN_EMAIL")
-	if email == "" {
-		email = "admin@sitepod.local"
-	}
-
 	password := os.Getenv("SITEPOD_ADMIN_PASSWORD")
-	if password == "" {
-		password = "sitepod123"
+
+	// If env vars not set, skip auto-creation (first registered user will become admin)
+	if email == "" || password == "" {
+		h.logger.Info("SITEPOD_ADMIN_EMAIL/PASSWORD not set; first registered user will become admin")
+		return nil
 	}
 
-	// Always ensure API admin user exists (even if superuser already exists)
-	if err := h.ensureAPIAdminUser(email, password); err != nil {
-		h.logger.Warn("failed to ensure API admin user", zap.Error(err))
-	}
-
-	// Check if any superuser exists
+	// Create PocketBase superuser if not exists
 	superusers, err := h.app.FindAllRecords(core.CollectionNameSuperusers)
 	if err != nil {
 		return err
 	}
 
-	if len(superusers) > 0 {
-		return nil // Superuser already exists
+	if len(superusers) == 0 {
+		superusersCollection, err := h.app.FindCollectionByNameOrId(core.CollectionNameSuperusers)
+		if err != nil {
+			return err
+		}
+
+		superuser := core.NewRecord(superusersCollection)
+		superuser.SetEmail(email)
+		superuser.SetPassword(password)
+
+		if err := h.app.Save(superuser); err != nil {
+			return err
+		}
+
+		h.logger.Info("PocketBase superuser created from env vars", zap.String("email", email))
 	}
 
-	// Log warning if using default password
-	if os.Getenv("SITEPOD_ADMIN_PASSWORD") == "" {
-		h.logger.Warn("SITEPOD_ADMIN_PASSWORD not set; default admin password in use")
+	// Create SitePod admin user if not exists
+	if err := h.ensureAPIAdminUser(email, password); err != nil {
+		h.logger.Warn("failed to ensure API admin user", zap.Error(err))
 	}
-
-	// Create superuser
-	superusersCollection, err := h.app.FindCollectionByNameOrId(core.CollectionNameSuperusers)
-	if err != nil {
-		return err
-	}
-
-	superuser := core.NewRecord(superusersCollection)
-	superuser.SetEmail(email)
-	superuser.SetPassword(password)
-
-	if err := h.app.Save(superuser); err != nil {
-		return err
-	}
-
-	h.logger.Info("Default admin created",
-		zap.String("email", email),
-		zap.String("hint", "Change password via environment variables SITEPOD_ADMIN_EMAIL and SITEPOD_ADMIN_PASSWORD"),
-	)
 
 	return nil
 }

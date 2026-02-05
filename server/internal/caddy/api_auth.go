@@ -69,11 +69,26 @@ func (h *SitePodHandler) apiRegisterOrLogin(w http.ResponseWriter, r *http.Reque
 			username = "user" + username
 		}
 
+		// Check if this is the first user (should become admin)
+		existingUsers, _ := h.app.FindAllRecords("users")
+		isFirstUser := len(existingUsers) == 0
+
 		user = core.NewRecord(usersCollection)
 		user.SetEmail(email)
 		user.Set("username", username)
 		user.SetVerified(true)
 		user.SetPassword(password)
+
+		// First user automatically becomes admin
+		if isFirstUser {
+			user.Set("is_admin", true)
+			h.logger.Info("First user registered, granting admin privileges", zap.String("email", email))
+
+			// Also create PocketBase superuser with same credentials
+			if err := h.createPocketBaseSuperuser(email, password); err != nil {
+				h.logger.Warn("failed to create PocketBase superuser", zap.Error(err))
+			}
+		}
 
 		if err := h.app.Save(user); err != nil {
 			// Check if username conflict, try with suffix
@@ -221,6 +236,34 @@ func (h *SitePodHandler) apiDeleteAccount(w http.ResponseWriter, r *http.Request
 		"message":          "Account deleted successfully",
 		"deleted_projects": len(projects),
 	})
+}
+
+// createPocketBaseSuperuser creates a PocketBase superuser with the given credentials
+func (h *SitePodHandler) createPocketBaseSuperuser(email, password string) error {
+	// Check if superuser already exists
+	superusers, err := h.app.FindAllRecords(core.CollectionNameSuperusers)
+	if err != nil {
+		return err
+	}
+	if len(superusers) > 0 {
+		return nil // Superuser already exists
+	}
+
+	superusersCollection, err := h.app.FindCollectionByNameOrId(core.CollectionNameSuperusers)
+	if err != nil {
+		return err
+	}
+
+	superuser := core.NewRecord(superusersCollection)
+	superuser.SetEmail(email)
+	superuser.SetPassword(password)
+
+	if err := h.app.Save(superuser); err != nil {
+		return err
+	}
+
+	h.logger.Info("PocketBase superuser created (synced with first user)", zap.String("email", email))
+	return nil
 }
 
 // API: Auth Info - returns current user info
