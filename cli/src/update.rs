@@ -7,7 +7,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::time::{Duration, SystemTime};
 
-const GITHUB_REPO: &str = "cosformula/sitepod.dev";
+const GITHUB_REPO: &str = "sitepod-dev/sitepod";
 const CHECK_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60); // 24 hours
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
