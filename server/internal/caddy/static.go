@@ -105,9 +105,18 @@ func (h *SitePodHandler) resolveRouting(host, path string) (string, string, stri
 	return project, env, ""
 }
 
+// Reserved subdomains that map to system projects
+var reservedSubdomains = map[string]string{
+	"":    "sitepod-www", // root domain → landing page
+	"app": "console",     // app.domain → console
+	"www": "sitepod-www", // www.domain → landing page
+}
+
 // extractProjectAndEnv parses the host to determine project and environment
 // Domain structure:
-// - {domain} (root) → console project
+// - {domain} (root) → sitepod-www (landing page)
+// - app.{domain} → console
+// - www.{domain} → sitepod-www (landing page)
 // - {project}.{domain} → prod env
 // - {project}-beta.{domain} → beta env
 // - {project}--{slug}.{domain}/__preview__/{slug}/ → preview
@@ -128,9 +137,9 @@ func (h *SitePodHandler) extractProjectAndEnv(host string) (string, string) {
 	subdomain := strings.TrimSuffix(host, baseDomain)
 	subdomain = strings.TrimSuffix(subdomain, ".")
 
-	// Root domain → console
-	if subdomain == "" {
-		return "console", "prod"
+	// Check reserved subdomains (root, app, www)
+	if project, ok := reservedSubdomains[subdomain]; ok {
+		return project, "prod"
 	}
 
 	// Check for beta suffix: {project}-beta
